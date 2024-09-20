@@ -111,8 +111,7 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APS_Character::SprintEnd);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &APS_Character::JumpStart);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &APS_Character::JumpEnd);
-		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &APS_Character::AttackStart);
-		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Completed, this, &APS_Character::EndAttack);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APS_Character::AttackStart);
 	}
 
 }
@@ -225,13 +224,14 @@ void APS_Character::JumpEnd(const FInputActionValue& Value)
 
 void APS_Character::AttackStart(const FInputActionValue& Value)
 {
+	UE_LOG(LogTemp, Warning, TEXT("AttackStart"));
 	// 공격 중으로 설정
 	bIsAttacking = true;
 
 	// 캐릭터의 컨트롤 회전 (바라보는 방향)
 	FRotator ControlRotation = GetControlRotation();
 	FVector Start = GetActorLocation();
-	FVector ForwardVector = ControlRotation.Vector();
+	FVector ForwardVector = GetActorForwardVector();
 	FVector End = Start + (ForwardVector * AttackRange);
 
 	// 라인 트레이스 (RayCast)
@@ -271,4 +271,5 @@ void APS_Character::EndAttack()
 {
 	// 공격이 끝났음을 표시
 	bIsAttacking = false;
+	UE_LOG(LogTemp, Warning, TEXT("AttackEnd"));
 }

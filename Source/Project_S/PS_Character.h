@@ -62,10 +62,11 @@ protected:
 	void Interact(const FInputActionValue& Value);
 	void JumpStart(const FInputActionValue& Value);
 	void JumpEnd(const FInputActionValue& Value);
-	void Attack(const FInputActionValue& Value);
+	void AttackStart(const FInputActionValue& Value);
+	void EndAttack();
 
 	// 공격 함수
-	void AttackStart(const FInputActionValue& Value);
+	
 
 	// Sprint Server functions
 	UFUNCTION(Server, Reliable)
@@ -78,8 +79,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	float AttackRange = 200.0f;
 
-	// 공격이 끝난 후 호출되는 함수
-	void EndAttack();
+	
 
 	// 공격 판정이 유지되는 시간
 	UPROPERTY(EditAnywhere, Category = "Attack")
