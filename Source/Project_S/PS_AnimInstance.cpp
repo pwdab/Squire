@@ -2,6 +2,7 @@
 
 #include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "PS_AnimInstance.h"
 
 UPS_AnimInstance::UPS_AnimInstance()
@@ -29,8 +30,5 @@ void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			IsInAir = Character->GetMovementComponent()->IsFalling();
 		}
 	}
-
-	GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Yellow, FString::Printf(TEXT("Character Speed Vector: %s"), *CurrentPawnSpeed.ToString()));
-	
 }
 

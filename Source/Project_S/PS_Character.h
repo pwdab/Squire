@@ -55,6 +55,11 @@ protected:
 	void JumpStart(const FInputActionValue& Value);
 	void JumpEnd(const FInputActionValue& Value);
 
+	UFUNCTION(Server, Reliable)
+	void SprintStart_Server();
+	UFUNCTION(Server, Reliable)
+	void SprintEnd_Server();
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

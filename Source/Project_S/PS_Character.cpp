@@ -71,14 +71,18 @@ void APS_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	
+	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::White, FString::Printf(TEXT("Pos:\t%f %f %f"), GetTransform().GetLocation().X, GetTransform().GetLocation().X, GetTransform().GetLocation().X));
+	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::White, FString::Printf(TEXT("ANG:\t%f %f %f"), GetControlRotation().Yaw, GetControlRotation().Pitch, GetControlRotation().Roll));
+	GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::White, FString::Printf(TEXT("VEL:\t%f"), FVector(GetCharacterMovement()->Velocity.X, GetCharacterMovement()->Velocity.Y, 0.0f).Length()));
+	
+
 	if (GetMovementComponent()->IsFalling())
 	{
-		GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::Green, TEXT("JumpStart"));
 		GetCharacterMovement()->RotationRate = FRotator(0.0f, 150.0f, 0.0f);
 	}
 	else
 	{
-		GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::Green, TEXT("JumpEnd"));
 		GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	}
 }
@@ -105,7 +109,7 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 void APS_Character::Move(const FInputActionValue& Value)
 {
 	const auto MovementVector = Value.Get<FVector2D>();
-	GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Yellow, FString::Printf(TEXT("MovementVector: %s"), *MovementVector.ToString()));
+	//GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Yellow, FString::Printf(TEXT("MovementVector: %s"), *MovementVector.ToString()));
 
 	if (Controller != nullptr)
 	{
@@ -123,7 +127,7 @@ void APS_Character::Move(const FInputActionValue& Value)
 void APS_Character::Look(const FInputActionValue& Value)
 {
 	const auto LookAxisVector = Value.Get<FVector2D>();
-	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Green, FString::Printf(TEXT("LookAxisVector: %s"), *LookAxisVector.ToString()));
+	//GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Green, FString::Printf(TEXT("LookAxisVector: %s"), *LookAxisVector.ToString()));
 
 	if (Controller != nullptr)
 	{
@@ -134,11 +138,29 @@ void APS_Character::Look(const FInputActionValue& Value)
 
 void APS_Character::SprintStart(const FInputActionValue& Value)
 {
+	/*
+	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintStart"));
+	GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+	*/
+	SprintStart_Server();
+}
+
+void APS_Character::SprintEnd(const FInputActionValue& Value)
+{
+	/*
+	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintEnd"));
+	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	*/
+	SprintEnd_Server();
+}
+
+void APS_Character::SprintStart_Server_Implementation()
+{
 	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintStart"));
 	GetCharacterMovement()->MaxWalkSpeed = 1000.f;
 }
 
-void APS_Character::SprintEnd(const FInputActionValue& Value)
+void APS_Character::SprintEnd_Server_Implementation()
 {
 	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintEnd"));
 	GetCharacterMovement()->MaxWalkSpeed = 500.f;
