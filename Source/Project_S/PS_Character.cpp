@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
+#include "PS_Character.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -11,7 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "PS_CharacterStats.h"
 #include "Engine/DataTable.h"
-#include "PS_Character.h"
+
 
 // Sets default values
 APS_Character::APS_Character()

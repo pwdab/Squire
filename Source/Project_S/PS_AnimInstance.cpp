@@ -1,9 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
+#include "PS_AnimInstance.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "PS_AnimInstance.h"
+
 
 UPS_AnimInstance::UPS_AnimInstance()
 {

@@ -1,12 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
+#include "PS_GameMode.h"
 #include "PS_GameState.h"
 #include "PS_PlayerController.h"
 #include "PS_PlayerState.h"
 #include "PS_Character.h"
 #include "UObject/ConstructorHelpers.h"
-#include "PS_GameMode.h"
+
 
 APS_GameMode::APS_GameMode()
 {
