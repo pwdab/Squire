@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PS_Character.h"
 #include "Animation/AnimInstance.h"
 #include "PS_AnimInstance.generated.h"
 
@@ -20,6 +21,9 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 private:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
+	float Walk_MaxWalkSpeed;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	FVector2D CurrentPawnSpeed;
 

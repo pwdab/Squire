@@ -9,6 +9,8 @@
 #include "GameFramework/Controller.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "PS_CharacterStats.h"
+#include "Engine/DataTable.h"
 #include "PS_Character.h"
 
 // Sets default values
@@ -64,6 +66,8 @@ void APS_Character::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	UpdateCharacterStats();
 }
 
 // Called every frame
@@ -71,7 +75,7 @@ void APS_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	
+	//GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::White, FString::Printf(TEXT("Name:\t%s"), this->get);
 	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::White, FString::Printf(TEXT("Pos:\t%f %f %f"), GetTransform().GetLocation().X, GetTransform().GetLocation().X, GetTransform().GetLocation().X));
 	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::White, FString::Printf(TEXT("ANG:\t%f %f %f"), GetControlRotation().Yaw, GetControlRotation().Pitch, GetControlRotation().Roll));
 	GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::White, FString::Printf(TEXT("VEL:\t%f"), FVector(GetCharacterMovement()->Velocity.X, GetCharacterMovement()->Velocity.Y, 0.0f).Length()));
@@ -97,13 +101,32 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APS_Character::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APS_Character::Look);
-		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &APS_Character::Interact);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &APS_Character::Interact);
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &APS_Character::SprintStart);
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APS_Character::SprintEnd);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &APS_Character::JumpStart);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &APS_Character::JumpEnd);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APS_Character::Attack);
 	}
 
+}
+
+void APS_Character::UpdateCharacterStats()
+{
+	if (CharacterDataTable)
+	{
+		TArray<FPS_CharacterStats*> CharacterStatsRows;
+		CharacterDataTable->GetAllRows<FPS_CharacterStats>(TEXT("PS_Character"), CharacterStatsRows);
+
+		if (CharacterStatsRows.Num() > 0)
+		{
+			//const auto NewCharacterLevel = FMath::Clamp(CharacterLevel, 1, CharacterStatsRows.Num());
+			//CharacterStats = CharacterStatsRows[NewCharacterLevel - 1];
+			CharacterStats = CharacterStatsRows[0];
+
+			GetCharacterMovement()->MaxWalkSpeed = GetCharacterStats()->WalkSpeed;
+		}
+	}
 }
 
 void APS_Character::Move(const FInputActionValue& Value)
@@ -156,14 +179,22 @@ void APS_Character::SprintEnd(const FInputActionValue& Value)
 
 void APS_Character::SprintStart_Server_Implementation()
 {
-	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintStart"));
-	GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+	//GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintStart"));
+	//GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+	if (GetCharacterStats())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = GetCharacterStats()->SprintSpeed;
+	}
 }
 
 void APS_Character::SprintEnd_Server_Implementation()
 {
-	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintEnd"));
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	//GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintEnd"));
+	//GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	if (GetCharacterStats())
+	{
+		GetCharacterMovement()->MaxWalkSpeed = GetCharacterStats()->WalkSpeed;
+	}
 }
 
 void APS_Character::Interact(const FInputActionValue& Value)
@@ -183,4 +214,9 @@ void APS_Character::JumpEnd(const FInputActionValue& Value)
 	//GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::Green, TEXT("JumpEnd"));
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	bPressedJump = false;
+}
+
+void APS_Character::Attack(const FInputActionValue& Value)
+{
+	//Attack
 }

@@ -7,6 +7,7 @@
 
 UPS_AnimInstance::UPS_AnimInstance()
 {
+	Walk_MaxWalkSpeed = 500.0f;
 	CurrentPawnSpeed = FVector2D::ZeroVector;
 	IsInAir = false;
 }

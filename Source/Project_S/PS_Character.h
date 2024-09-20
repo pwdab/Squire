@@ -38,6 +38,14 @@ class PROJECT_S_API APS_Character : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> JumpAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> AttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CharacterData, meta = (AllowPrivateAccess = "true"))
+	class UDataTable* CharacterDataTable;
+
+	struct FPS_CharacterStats* CharacterStats;
+
 
 public:
 	// Sets default values for this character's properties
@@ -54,6 +62,7 @@ protected:
 	void Interact(const FInputActionValue& Value);
 	void JumpStart(const FInputActionValue& Value);
 	void JumpEnd(const FInputActionValue& Value);
+	void Attack(const FInputActionValue& Value);
 
 	UFUNCTION(Server, Reliable)
 	void SprintStart_Server();
@@ -67,7 +76,10 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	void UpdateCharacterStats();
+
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE FPS_CharacterStats* GetCharacterStats() const { return CharacterStats; }
 
 };
