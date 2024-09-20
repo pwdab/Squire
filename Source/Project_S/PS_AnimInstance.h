@@ -30,6 +30,4 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	bool IsInAir;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
-	bool IsAttacking;
 };
