@@ -8,9 +8,10 @@
 
 UPS_AnimInstance::UPS_AnimInstance()
 {
-	Walk_MaxWalkSpeed = 500.0f;
+	MaxWalkSpeed = 0.0f;
 	CurrentPawnSpeed = FVector2D::ZeroVector;
 	IsInAir = false;
+	IsSprinting = false;
 }
 
 void UPS_AnimInstance::NativeInitializeAnimation()
@@ -30,7 +31,7 @@ void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		if (Character)
 		{
 			IsInAir = Character->GetMovementComponent()->IsFalling();
+			MaxWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
 		}
 	}
 }
-

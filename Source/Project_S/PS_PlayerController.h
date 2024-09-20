@@ -13,5 +13,5 @@ UCLASS()
 class PROJECT_S_API APS_PlayerController : public APlayerController
 {
 	GENERATED_BODY()
-	
+
 };

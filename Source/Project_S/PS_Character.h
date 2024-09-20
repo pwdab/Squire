@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "PS_Character.generated.h"
 
+//DECLARE_DELEGATE_OneParam(FOnSprint, bool);
 UCLASS()
 class PROJECT_S_API APS_Character : public ACharacter
 {
@@ -63,10 +64,7 @@ protected:
 	void JumpStart(const FInputActionValue& Value);
 	void JumpEnd(const FInputActionValue& Value);
 	void AttackStart(const FInputActionValue& Value);
-	void EndAttack();
-
-	// 공격 함수
-	
+	void EndAttack();	
 
 	// Sprint Server functions
 	UFUNCTION(Server, Reliable)
@@ -75,11 +73,15 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void SprintEnd_Server();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void SprintStart_Client();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SprintEnd_Client();
+
 	// Trace에 사용할 변수
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	float AttackRange = 200.0f;
-
-	
 
 	// 공격 판정이 유지되는 시간
 	UPROPERTY(EditAnywhere, Category = "Attack")
@@ -87,6 +89,7 @@ protected:
 
 public:
 	virtual void Tick(float DeltaTime) override;
+	virtual void PostInitializeComponents() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	void UpdateCharacterStats();

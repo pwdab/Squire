@@ -17,6 +17,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
+#include "PS_AnimInstance.h"
 
 // Sets default values
 APS_Character::APS_Character()
@@ -48,7 +49,7 @@ APS_Character::APS_Character()
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
-	GetCharacterMovement()->MaxWalkSpeed = 500.0f;
+	GetCharacterMovement()->MaxWalkSpeed = 0.0f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.0f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
 
@@ -80,11 +81,16 @@ void APS_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	//GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::White, FString::Printf(TEXT("Name:\t%s"), this->get);
-	GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::White, FString::Printf(TEXT("Pos:\t%f %f %f"), GetTransform().GetLocation().X, GetTransform().GetLocation().X, GetTransform().GetLocation().X));
-	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::White, FString::Printf(TEXT("ANG:\t%f %f %f"), GetControlRotation().Yaw, GetControlRotation().Pitch, GetControlRotation().Roll));
-	GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::White, FString::Printf(TEXT("VEL:\t%f"), FVector(GetCharacterMovement()->Velocity.X, GetCharacterMovement()->Velocity.Y, 0.0f).Length()));
-	
+	/*
+	if (IsValid(GetController()) && Cast<APlayerController>(GetController()) && !HasAuthority())
+	{
+		GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::White, FString::Printf(TEXT("Name:\t%s"), *GetName()));
+		GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::White, FString::Printf(TEXT("Pos:\t%f %f %f"), GetTransform().GetLocation().X, GetTransform().GetLocation().X, GetTransform().GetLocation().X));
+		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::White, FString::Printf(TEXT("ANG:\t%f %f %f"), GetControlRotation().Yaw, GetControlRotation().Pitch, GetControlRotation().Roll));
+		GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::White, FString::Printf(TEXT("VEL:\t%f"), FVector(GetCharacterMovement()->Velocity.X, GetCharacterMovement()->Velocity.Y, 0.0f).Length()));
+		GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::White, FString::Printf(TEXT("MaxWalkSpeed:\t%f"), GetCharacterMovement()->MaxWalkSpeed));
+	}
+	*/
 
 	if (GetMovementComponent()->IsFalling())
 	{
@@ -94,6 +100,13 @@ void APS_Character::Tick(float DeltaTime)
 	{
 		GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	}
+}
+
+void APS_Character::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	// 델리게이트 등록
+	
 }
 
 // Called to bind functionality to input
@@ -136,8 +149,8 @@ void APS_Character::UpdateCharacterStats()
 
 void APS_Character::Move(const FInputActionValue& Value)
 {
+	//UE_LOG(LogTemp, Warning, TEXT("Name:\t%s\tVEL:\t%f\tMaxWalkSpeed:\t%f"), *GetName(), FVector(GetCharacterMovement()->Velocity.X, GetCharacterMovement()->Velocity.Y, 0.0f).Length(), GetCharacterMovement()->MaxWalkSpeed);
 	const auto MovementVector = Value.Get<FVector2D>();
-	//GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::Yellow, FString::Printf(TEXT("MovementVector: %s"), *MovementVector.ToString()));
 
 	if (Controller != nullptr)
 	{
@@ -155,7 +168,6 @@ void APS_Character::Move(const FInputActionValue& Value)
 void APS_Character::Look(const FInputActionValue& Value)
 {
 	const auto LookAxisVector = Value.Get<FVector2D>();
-	//GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Green, FString::Printf(TEXT("LookAxisVector: %s"), *LookAxisVector.ToString()));
 
 	if (Controller != nullptr)
 	{
@@ -166,36 +178,34 @@ void APS_Character::Look(const FInputActionValue& Value)
 
 void APS_Character::SprintStart(const FInputActionValue& Value)
 {
-	/*
-	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintStart"));
-	GetCharacterMovement()->MaxWalkSpeed = 1000.f;
-	*/
 	SprintStart_Server();
 }
 
 void APS_Character::SprintEnd(const FInputActionValue& Value)
 {
-	/*
-	GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintEnd"));
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
-	*/
 	SprintEnd_Server();
 }
 
 void APS_Character::SprintStart_Server_Implementation()
 {
-	//GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintStart"));
-	//GetCharacterMovement()->MaxWalkSpeed = 1000.f;
+	SprintStart_Client();
+}
+
+void APS_Character::SprintEnd_Server_Implementation()
+{
+	SprintEnd_Client();
+}
+
+void APS_Character::SprintStart_Client_Implementation()
+{
 	if (GetCharacterStats())
 	{
 		GetCharacterMovement()->MaxWalkSpeed = GetCharacterStats()->SprintSpeed;
 	}
 }
 
-void APS_Character::SprintEnd_Server_Implementation()
+void APS_Character::SprintEnd_Client_Implementation()
 {
-	//GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, TEXT("SprintEnd"));
-	//GetCharacterMovement()->MaxWalkSpeed = 500.f;
 	if (GetCharacterStats())
 	{
 		GetCharacterMovement()->MaxWalkSpeed = GetCharacterStats()->WalkSpeed;
@@ -224,7 +234,7 @@ void APS_Character::JumpEnd(const FInputActionValue& Value)
 
 void APS_Character::AttackStart(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("AttackStart"));
+	//GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Yellow, FString::Printf(TEXT("Name:\t%s"), *GetName()));
 	// 공격 중으로 설정
 	bIsAttacking = true;
 
@@ -271,5 +281,4 @@ void APS_Character::EndAttack()
 {
 	// 공격이 끝났음을 표시
 	bIsAttacking = false;
-	UE_LOG(LogTemp, Warning, TEXT("AttackEnd"));
 }
