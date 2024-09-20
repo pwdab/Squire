@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
+#include "PS_Character.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -11,7 +12,11 @@
 #include "EnhancedInputSubsystems.h"
 #include "PS_CharacterStats.h"
 #include "Engine/DataTable.h"
-#include "PS_Character.h"
+#include "GameFramework/PlayerController.h"
+#include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
+#include "TimerManager.h"
 
 // Sets default values
 APS_Character::APS_Character()
@@ -216,7 +221,53 @@ void APS_Character::JumpEnd(const FInputActionValue& Value)
 	bPressedJump = false;
 }
 
-void APS_Character::Attack(const FInputActionValue& Value)
+
+void APS_Character::AttackStart(const FInputActionValue& Value)
 {
-	//Attack
+	// 공격 중으로 설정
+	bIsAttacking = true;
+
+	// 캐릭터의 컨트롤 회전 (바라보는 방향)
+	FRotator ControlRotation = GetControlRotation();
+	FVector Start = GetActorLocation();
+	FVector ForwardVector = ControlRotation.Vector();
+	FVector End = Start + (ForwardVector * AttackRange);
+
+	// 라인 트레이스 (RayCast)
+	FHitResult HitResult;
+	FCollisionQueryParams TraceParams(FName(TEXT("AttackTrace")), true, this);
+	TraceParams.bReturnPhysicalMaterial = false;
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(
+		HitResult,
+		Start,
+		End,
+		ECollisionChannel::ECC_Visibility,
+		TraceParams
+	);
+
+	// 디버그 라인 그리기 (게임에서 공격 범위 시각화)
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1, 0, 5);
+
+	// 히트 여부 확인
+	if (bHit)
+	{
+		AActor* HitActor = HitResult.GetActor();
+		if (HitActor)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit: %s"), *HitActor->GetName()));
+
+			// 여기서 히트된 액터에 대한 추가 로직 (데미지 처리 등) 구현 가능
+		}
+	}
+
+	// 공격 종료 처리
+	FTimerHandle UnusedHandle;  // FTimerHandle 변수 선언
+	GetWorldTimerManager().SetTimer(UnusedHandle, this, &APS_Character::EndAttack, AttackDuration, false);
+}
+
+void APS_Character::EndAttack()
+{
+	// 공격이 끝났음을 표시
+	bIsAttacking = false;
 }
