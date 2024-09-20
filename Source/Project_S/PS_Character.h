@@ -38,13 +38,16 @@ class PROJECT_S_API APS_Character : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> JumpAction;
 
+	// 공격 액션 추가
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> AttackAction;
 
 public:
-	// Sets default values for this character's properties
 	APS_Character();
+	// Attack 상태 변수
+	bool bIsAttacking;
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	void Move(const struct FInputActionValue& Value);
@@ -55,16 +58,29 @@ protected:
 	void JumpStart(const FInputActionValue& Value);
 	void JumpEnd(const FInputActionValue& Value);
 
+	// 공격 함수
+	void AttackStart(const FInputActionValue& Value);
+
+	// Sprint Server functions
 	UFUNCTION(Server, Reliable)
 	void SprintStart_Server();
+
 	UFUNCTION(Server, Reliable)
 	void SprintEnd_Server();
 
-public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	// Trace에 사용할 변수
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	float AttackRange = 200.0f;
 
-	// Called to bind functionality to input
+	// 공격이 끝난 후 호출되는 함수
+	void EndAttack();
+
+	// 공격 판정이 유지되는 시간
+	UPROPERTY(EditAnywhere, Category = "Attack")
+	float AttackDuration = 0.5f;
+
+public:
+	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
