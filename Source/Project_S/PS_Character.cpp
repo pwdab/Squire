@@ -111,7 +111,8 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APS_Character::SprintEnd);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &APS_Character::JumpStart);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &APS_Character::JumpEnd);
-		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APS_Character::Attack);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &APS_Character::AttackStart);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Completed, this, &APS_Character::EndAttack);
 	}
 
 }
