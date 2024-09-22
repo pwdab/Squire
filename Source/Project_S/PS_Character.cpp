@@ -41,7 +41,7 @@ APS_Character::APS_Character()
 	GetCapsuleComponent()->InitCapsuleSize(45.0f, 100.0f);
 
 	GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -100.0f));
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMeshAsset(TEXT("/Game/Characters/Knight/Knight"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMeshAsset(TEXT("/Game/Characters/Adventurers/Knight/Knight"));
 	if (SkeletalMeshAsset.Succeeded())
 	{
 		GetMesh()->SetSkeletalMesh(SkeletalMeshAsset.Object);
