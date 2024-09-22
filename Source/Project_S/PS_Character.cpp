@@ -17,6 +17,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
+#include "Engine/DamageEvents.h"
 #include "PS_AnimInstance.h"
 
 // Sets default values
@@ -81,17 +82,6 @@ void APS_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	/*
-	if (IsValid(GetController()) && Cast<APlayerController>(GetController()) && !HasAuthority())
-	{
-		GEngine->AddOnScreenDebugMessage(0, 5.f, FColor::White, FString::Printf(TEXT("Name:\t%s"), *GetName()));
-		GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::White, FString::Printf(TEXT("Pos:\t%f %f %f"), GetTransform().GetLocation().X, GetTransform().GetLocation().X, GetTransform().GetLocation().X));
-		GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::White, FString::Printf(TEXT("ANG:\t%f %f %f"), GetControlRotation().Yaw, GetControlRotation().Pitch, GetControlRotation().Roll));
-		GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::White, FString::Printf(TEXT("VEL:\t%f"), FVector(GetCharacterMovement()->Velocity.X, GetCharacterMovement()->Velocity.Y, 0.0f).Length()));
-		GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::White, FString::Printf(TEXT("MaxWalkSpeed:\t%f"), GetCharacterMovement()->MaxWalkSpeed));
-	}
-	*/
-
 	if (GetMovementComponent()->IsFalling())
 	{
 		GetCharacterMovement()->RotationRate = FRotator(0.0f, 150.0f, 0.0f);
@@ -114,7 +104,6 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APS_Character::Move);
@@ -126,7 +115,6 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &APS_Character::JumpEnd);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APS_Character::AttackStart);
 	}
-
 }
 
 void APS_Character::UpdateCharacterStats()
@@ -181,19 +169,9 @@ void APS_Character::SprintStart(const FInputActionValue& Value)
 	SprintStart_Server();
 }
 
-void APS_Character::SprintEnd(const FInputActionValue& Value)
-{
-	SprintEnd_Server();
-}
-
 void APS_Character::SprintStart_Server_Implementation()
 {
 	SprintStart_Client();
-}
-
-void APS_Character::SprintEnd_Server_Implementation()
-{
-	SprintEnd_Client();
 }
 
 void APS_Character::SprintStart_Client_Implementation()
@@ -202,6 +180,16 @@ void APS_Character::SprintStart_Client_Implementation()
 	{
 		GetCharacterMovement()->MaxWalkSpeed = GetCharacterStats()->SprintSpeed;
 	}
+}
+
+void APS_Character::SprintEnd(const FInputActionValue& Value)
+{
+	SprintEnd_Server();
+}
+
+void APS_Character::SprintEnd_Server_Implementation()
+{
+	SprintEnd_Client();
 }
 
 void APS_Character::SprintEnd_Client_Implementation()
@@ -220,14 +208,14 @@ void APS_Character::Interact(const FInputActionValue& Value)
 void APS_Character::JumpStart(const FInputActionValue& Value)
 {
 	//GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::Green, TEXT("JumpStart"));
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 50.0f, 0.0f);
+	//GetCharacterMovement()->RotationRate = FRotator(0.0f, 50.0f, 0.0f);
 	bPressedJump = true;
 }
 
 void APS_Character::JumpEnd(const FInputActionValue& Value)
 {
 	//GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::Green, TEXT("JumpEnd"));
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
+	//GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	bPressedJump = false;
 }
 
@@ -258,7 +246,8 @@ void APS_Character::AttackStart(const FInputActionValue& Value)
 	);
 
 	// 디버그 라인 그리기 (게임에서 공격 범위 시각화)
-	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1, 0, 5);
+	FColor DrawColor = bHit ? FColor::Green : FColor::Red;
+	DrawDebugLine(GetWorld(), Start, End, DrawColor, false, 1, 0, 5);
 
 	// 히트 여부 확인
 	if (bHit)
@@ -269,6 +258,9 @@ void APS_Character::AttackStart(const FInputActionValue& Value)
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit: %s"), *HitActor->GetName()));
 
 			// 여기서 히트된 액터에 대한 추가 로직 (데미지 처리 등) 구현 가능
+			FDamageEvent DamageEvent;
+			// arg_1 : 전달할 대미지의 세기, arg_2 : 대미지의 종류, arg_3 : 가해자, arg_4 : 
+			HitResult.GetActor()->TakeDamage(50.0f, DamageEvent, GetController(), this);
 		}
 	}
 
@@ -281,4 +273,11 @@ void APS_Character::EndAttack()
 {
 	// 공격이 끝났음을 표시
 	bIsAttacking = false;
+}
+
+float APS_Character::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
+{
+	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	UE_LOG(LogTemp, Log, TEXT("Actor : %s took Damage : %f from %s"), *GetName(), FinalDamage, EventInstigator->GetFName());
+	return FinalDamage;
 }
