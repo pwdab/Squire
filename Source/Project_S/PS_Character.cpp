@@ -73,6 +73,9 @@ APS_Character::APS_Character()
 	GetCharacterMovement()->JumpZVelocity = 900.0f;
 	JumpMaxHoldTime = 0.1f;
 	JumpMaxCount = 1;
+
+	// Weapon 설정
+	WeaponItemClass = APS_Weapon::StaticClass();
 }
 
 // Called when the game starts or when spawned
@@ -80,30 +83,28 @@ void APS_Character::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 왼손 소켓 초기화
+	// Weapon 설정
+	auto NewWeapon = GetWorld()->SpawnActor<APS_Weapon>(WeaponItemClass, FVector::ZeroVector, FRotator::ZeroRotator);
+	SetWeapon(NewWeapon);
+	
+	/*
 	FName WeaponLeftSocket(TEXT("hand_lSocket"));
 	auto CurLeftWeapon = GetWorld()->SpawnActor<APS_Weapon>(FVector::ZeroVector, FRotator::ZeroRotator);
 	if (CurLeftWeapon != nullptr)
 	{
-		CurLeftWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponLeftSocket);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("CurLeftWeapon is missing"));
+		FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, false);
+		CurLeftWeapon->AttachToComponent(GetMesh(), AttachmentRules, WeaponLeftSocket);
 	}
 
-	// 오른손 소켓 초기화
 	FName WeaponRightSocket(TEXT("hand_rSocket"));
 	auto CurRightWeapon = GetWorld()->SpawnActor<APS_Weapon>(FVector::ZeroVector, FRotator::ZeroRotator);
 	if (CurRightWeapon != nullptr)
 	{
-		CurRightWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponRightSocket);
+		FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, false);
+		CurRightWeapon->AttachToComponent(GetMesh(), AttachmentRules, WeaponRightSocket);
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("CurRightWeapon is missing"));
-	}
-
+	*/
+	
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -111,6 +112,7 @@ void APS_Character::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+	
 
 	// 캐릭터 Stat 초기화
 	UpdateCharacterStats();
@@ -316,4 +318,49 @@ float APS_Character::TakeDamage(float DamageAmount, struct FDamageEvent const& D
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	UE_LOG(LogTemp, Log, TEXT("Actor : %s took Damage : %f from %s"), *GetName(), FinalDamage, EventInstigator->GetFName());
 	return FinalDamage;
+}
+
+bool APS_Character::CanSetLeftWeapon()
+{
+	return (nullptr == CurrentLeftWeapon);
+}
+
+bool APS_Character::CanSetRightWeapon()
+{
+	return (nullptr == CurrentRightWeapon);
+}
+
+void APS_Character::SetWeapon(APS_Weapon* NewWeapon)
+{
+	if (NewWeapon != nullptr)
+	{
+		FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, false);
+		switch (NewWeapon->GetHand())
+		{
+		case EHand::Left:
+			{
+				if (CurrentLeftWeapon == nullptr)
+				{
+					CurrentLeftWeapon = nullptr;
+				}
+				FName WeaponLeftSocket(TEXT("hand_lSocket"));
+				NewWeapon->AttachToComponent(this->GetMesh(), AttachmentRules, WeaponLeftSocket);
+				NewWeapon->SetOwner(this);
+				CurrentLeftWeapon = NewWeapon;
+				break;
+			}
+		case EHand::Right:
+			{
+				if (CurrentRightWeapon != nullptr)
+				{
+					CurrentRightWeapon = nullptr;
+				}
+				FName WeaponRightSocket(TEXT("hand_rSocket"));
+				NewWeapon->AttachToComponent(this->GetMesh(), AttachmentRules, WeaponRightSocket);
+				NewWeapon->SetOwner(this);
+				CurrentRightWeapon = NewWeapon;
+				break;
+			}
+		}
+	}
 }

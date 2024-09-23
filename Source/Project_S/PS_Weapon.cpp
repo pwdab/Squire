@@ -1,6 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "PS_Weapon.h"
 
 // Sets default values
@@ -23,6 +22,8 @@ APS_Weapon::APS_Weapon()
 	}
 
 	Weapon->SetCollisionProfileName(TEXT("NoCollision"));
+
+	Hand = EHand::Right;
 }
 
 // Called when the game starts or when spawned
