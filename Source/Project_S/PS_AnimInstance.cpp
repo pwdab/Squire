@@ -14,11 +14,13 @@ UPS_AnimInstance::UPS_AnimInstance()
 	IsSprinting = false;
 }
 
+// BeginPlay()와 유사
 void UPS_AnimInstance::NativeInitializeAnimation()
 {
 
 }
 
+// Tick()과 유사
 void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);

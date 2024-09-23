@@ -1,24 +1,34 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "PS_Character.h"
+
+// Core Engine Components
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Components/InputComponent.h"
 #include "GameFramework/Controller.h"
-#include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
-#include "PS_CharacterStats.h"
-#include "Engine/DataTable.h"
 #include "GameFramework/PlayerController.h"
-#include "DrawDebugHelpers.h"
-#include "Kismet/GameplayStatics.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
-#include "Engine/DamageEvents.h"
+#include "DrawDebugHelpers.h"
+#include "Kismet/GameplayStatics.h"
+
+// Enhanced Input
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+
+// DataTable and AnimInstance
+#include "Engine/DataTable.h"
+#include "PS_CharacterStats.h"
 #include "PS_AnimInstance.h"
+
+// Weapon
+#include "PS_Weapon.h"
+
+// Damage
+#include "Engine/DamageEvents.h"
 
 // Sets default values
 APS_Character::APS_Character()
@@ -26,21 +36,26 @@ APS_Character::APS_Character()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// SpringArm 컴포넌트
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 800.0f;
 	CameraBoom->bUsePawnControlRotation = true;
 
+	// Camera 컴포넌트
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
 
+	// Controller의 회전을 Character의 회전에 사용할지 유무
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
+	// CapsuleComponent 설정
 	GetCapsuleComponent()->InitCapsuleSize(45.0f, 100.0f);
 
+	// Mesh 설정
 	GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -100.0f));
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMeshAsset(TEXT("/Game/Characters/Adventurers/Knight/Knight"));
 	if (SkeletalMeshAsset.Succeeded())
@@ -48,13 +63,12 @@ APS_Character::APS_Character()
 		GetMesh()->SetSkeletalMesh(SkeletalMeshAsset.Object);
 	}
 
+	// CharacterMovement 설정
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	GetCharacterMovement()->MaxWalkSpeed = 0.0f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.0f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
-
-
 	GetCharacterMovement()->GravityScale = 4.0f;
 	GetCharacterMovement()->JumpZVelocity = 900.0f;
 	JumpMaxHoldTime = 0.1f;
@@ -66,6 +80,30 @@ void APS_Character::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// 왼손 소켓 초기화
+	FName WeaponLeftSocket(TEXT("hand_lSocket"));
+	auto CurLeftWeapon = GetWorld()->SpawnActor<APS_Weapon>(FVector::ZeroVector, FRotator::ZeroRotator);
+	if (CurLeftWeapon != nullptr)
+	{
+		CurLeftWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponLeftSocket);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CurLeftWeapon is missing"));
+	}
+
+	// 오른손 소켓 초기화
+	FName WeaponRightSocket(TEXT("hand_rSocket"));
+	auto CurRightWeapon = GetWorld()->SpawnActor<APS_Weapon>(FVector::ZeroVector, FRotator::ZeroRotator);
+	if (CurRightWeapon != nullptr)
+	{
+		CurRightWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponRightSocket);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("CurRightWeapon is missing"));
+	}
+
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -74,6 +112,7 @@ void APS_Character::BeginPlay()
 		}
 	}
 
+	// 캐릭터 Stat 초기화
 	UpdateCharacterStats();
 }
 
@@ -82,19 +121,14 @@ void APS_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (GetMovementComponent()->IsFalling())
-	{
-		GetCharacterMovement()->RotationRate = FRotator(0.0f, 150.0f, 0.0f);
-	}
-	else
-	{
-		GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
-	}
+	// 캐릭터가 공중에 떠 있으면 CharacterMovement의 RotationRate를 줄임
+	GetCharacterMovement()->RotationRate = (GetMovementComponent()->IsFalling() ? FRotator(0.0f, 150.0f, 0.0f) : FRotator(0.0f, 500.0f, 0.0f));
 }
 
 void APS_Character::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+
 	// 델리게이트 등록
 	
 }
@@ -104,6 +138,7 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+	// 특정 액션에 함수 바인딩
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APS_Character::Move);
@@ -137,7 +172,6 @@ void APS_Character::UpdateCharacterStats()
 
 void APS_Character::Move(const FInputActionValue& Value)
 {
-	//UE_LOG(LogTemp, Warning, TEXT("Name:\t%s\tVEL:\t%f\tMaxWalkSpeed:\t%f"), *GetName(), FVector(GetCharacterMovement()->Velocity.X, GetCharacterMovement()->Velocity.Y, 0.0f).Length(), GetCharacterMovement()->MaxWalkSpeed);
 	const auto MovementVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
@@ -166,16 +200,19 @@ void APS_Character::Look(const FInputActionValue& Value)
 
 void APS_Character::SprintStart(const FInputActionValue& Value)
 {
+	// 클라이언트에서 실행하는 함수
 	SprintStart_Server();
 }
 
 void APS_Character::SprintStart_Server_Implementation()
 {
+	// 서버에서 호출하는 함수
 	SprintStart_Client();
 }
 
 void APS_Character::SprintStart_Client_Implementation()
 {
+	// 서버에서 호출하고 각 인스턴스마다 실행하는 함수
 	if (GetCharacterStats())
 	{
 		GetCharacterMovement()->MaxWalkSpeed = GetCharacterStats()->SprintSpeed;
@@ -184,16 +221,19 @@ void APS_Character::SprintStart_Client_Implementation()
 
 void APS_Character::SprintEnd(const FInputActionValue& Value)
 {
+	// 클라이언트에서 실행하는 함수
 	SprintEnd_Server();
 }
 
 void APS_Character::SprintEnd_Server_Implementation()
 {
+	// 서버에서 호출하는 함수
 	SprintEnd_Client();
 }
 
 void APS_Character::SprintEnd_Client_Implementation()
 {
+	// 서버에서 호출하고 각 인스턴스마다 실행하는 함수
 	if (GetCharacterStats())
 	{
 		GetCharacterMovement()->MaxWalkSpeed = GetCharacterStats()->WalkSpeed;
@@ -207,15 +247,11 @@ void APS_Character::Interact(const FInputActionValue& Value)
 
 void APS_Character::JumpStart(const FInputActionValue& Value)
 {
-	//GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::Green, TEXT("JumpStart"));
-	//GetCharacterMovement()->RotationRate = FRotator(0.0f, 50.0f, 0.0f);
 	bPressedJump = true;
 }
 
 void APS_Character::JumpEnd(const FInputActionValue& Value)
 {
-	//GEngine->AddOnScreenDebugMessage(4, 5.f, FColor::Green, TEXT("JumpEnd"));
-	//GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	bPressedJump = false;
 }
 

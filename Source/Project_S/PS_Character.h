@@ -12,10 +12,11 @@ class PROJECT_S_API APS_Character : public ACharacter
 {
 	GENERATED_BODY()
 
-	// 카메라
+	// SpringArm 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class USpringArmComponent> CameraBoom;
 
+	// Camera 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCameraComponent> FollowCamera;
 
@@ -42,20 +43,17 @@ class PROJECT_S_API APS_Character : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> AttackAction;
 
+	// DataTable 포인터
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CharacterData, meta = (AllowPrivateAccess = "true"))
 	class UDataTable* CharacterDataTable;
 
+	// PS_CharacterStats 포인터
 	struct FPS_CharacterStats* CharacterStats;
-
-
-public:
-	APS_Character();
-	// Attack 상태 변수
-	bool bIsAttacking;
 
 protected:
 	virtual void BeginPlay() override;
 
+	// 특정 액션에 바인딩 된 함수
 	void Move(const struct FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void SprintStart(const FInputActionValue& Value);
@@ -64,22 +62,22 @@ protected:
 	void JumpStart(const FInputActionValue& Value);
 	void JumpEnd(const FInputActionValue& Value);
 	void AttackStart(const FInputActionValue& Value);
-	void EndAttack();	
+	void EndAttack();
 
-	// Sprint Server functions
+	// RPC 함수
 	UFUNCTION(Server, Reliable)
 	void SprintStart_Server();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SprintStart_Client();
 
 	UFUNCTION(Server, Reliable)
 	void SprintEnd_Server();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void SprintStart_Client();
-
-	UFUNCTION(NetMulticast, Reliable)
 	void SprintEnd_Client();
 
-	// Trace에 사용할 변수
+	// 공격 범위
 	UPROPERTY(EditAnywhere, Category = "Attack")
 	float AttackRange = 200.0f;
 
@@ -88,13 +86,21 @@ protected:
 	float AttackDuration = 0.5f;
 
 public:
+	APS_Character();
+	
+	// Override functions
 	virtual void Tick(float DeltaTime) override;
 	virtual void PostInitializeComponents() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
+	// User functions
 	void UpdateCharacterStats();
 
+	// Attack 상태 변수
+	bool bIsAttacking;
+
+	// Getter functions
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE FPS_CharacterStats* GetCharacterStats() const { return CharacterStats; }

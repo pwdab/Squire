@@ -16,6 +16,8 @@ class PROJECT_S_API UPS_AnimInstance : public UAnimInstance
 	
 public:
 	UPS_AnimInstance();
+
+	// Override functions
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
