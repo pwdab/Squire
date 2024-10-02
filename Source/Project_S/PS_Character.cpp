@@ -279,7 +279,7 @@ void APS_Character::AttackStart(const FInputActionValue& Value)
 		HitResult,
 		Start,
 		End,
-		ECollisionChannel::ECC_Visibility,
+		ECollisionChannel::ECC_Pawn,
 		TraceParams
 	);
 

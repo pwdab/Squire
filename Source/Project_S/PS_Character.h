@@ -50,6 +50,7 @@ class PROJECT_S_API APS_Character : public ACharacter
 	// PS_CharacterStats 포인터
 	struct FPS_CharacterStats* CharacterStats;
 
+	// Weapon 포인터
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	class APS_Weapon* CurrentLeftWeapon;
 
