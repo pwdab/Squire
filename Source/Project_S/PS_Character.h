@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PS_BasePickup.h"
 #include "GameFramework/Character.h"
 #include "PS_Character.generated.h"
 
@@ -57,6 +58,9 @@ class PROJECT_S_API APS_Character : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	class APS_Weapon* CurrentRightWeapon;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
+	EHand CurrentHand;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -103,17 +107,18 @@ public:
 
 	// User functions
 	void UpdateCharacterStats();
-	bool CanSetLeftWeapon();
-	bool CanSetRightWeapon();
-	void SetWeapon(class APS_Weapon* NewWeapon);
+	bool CanSetWeapon(EHand Hand);
+	void SetWeapon(class APS_Weapon* NewWeapon, EHand NewHand);
 
 	// Attack 상태 변수
 	bool bIsAttacking;
 
+	/*
 	// 이 값을 변경하면 생성되는 무기가 바뀜
 	UPROPERTY(EditInstanceOnly, Category = Weapon)
 	TSubclassOf<class APS_Weapon> WeaponItemClass;
-
+	*/
+	
 	// Getter functions
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }

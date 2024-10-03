@@ -8,22 +8,17 @@ APS_Weapon::APS_Weapon()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-	Weapon = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WEAPON"));
-	RootComponent = Weapon;
+	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WEAPON"));
+	RootComponent = Mesh;
 
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMeshAsset(TEXT("/Game/Characters/Adventurers/Assets/sword_1handed.sword_1handed"));
-	if (SkeletalMeshAsset.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> StaticMesh(TEXT("/Game/Characters/Adventurers/Assets/sword_1handed.sword_1handed"));
+	if (StaticMesh.Succeeded())
 	{
-		Weapon->SetSkeletalMesh(SkeletalMeshAsset.Object);
+		Mesh->SetStaticMesh(StaticMesh.Object);
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("PS_Weapon SkeletalMesh missing"));
-	}
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	Weapon->SetCollisionProfileName(TEXT("NoCollision"));
-
-	Hand = EHand::Right;
+	//Hand = EHand::Right;
 }
 
 // Called when the game starts or when spawned

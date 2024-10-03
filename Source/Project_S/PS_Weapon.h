@@ -5,13 +5,15 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "PS_Weapon.generated.h"
-
+/*
 UENUM(BlueprintType)
 enum class EHand : uint8
 {
 	Left = 0 UMETA(DisplayName = "Left"),
-	Right = 1 UMETA(DisplayName = "Right")
+	Right = 1 UMETA(DisplayName = "Right"),
+	Two_Handed = 2 UMETA(DisplayName = "Two_Handed")
 };
+*/
 
 UCLASS()
 class PROJECT_S_API APS_Weapon : public AActor
@@ -19,10 +21,12 @@ class PROJECT_S_API APS_Weapon : public AActor
 	GENERATED_BODY()
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
-	USkeletalMeshComponent* Weapon;
+	TObjectPtr<class UStaticMeshComponent> Mesh;
 
+	/*
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	EHand Hand;
+	*/
 
 public:	
 	// Sets default values for this actor's properties
@@ -36,6 +40,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	/*
 	// Getter functions
 	FORCEINLINE EHand GetHand() const { return Hand; }
+	*/
 };

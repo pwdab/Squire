@@ -25,6 +25,7 @@
 #include "PS_AnimInstance.h"
 
 // Weapon
+#include "PS_BasePickup.h"
 #include "PS_Weapon.h"
 
 // Damage
@@ -75,7 +76,8 @@ APS_Character::APS_Character()
 	JumpMaxCount = 1;
 
 	// Weapon 설정
-	WeaponItemClass = APS_Weapon::StaticClass();
+	CurrentHand = EHand::Bare_Handed;
+	//WeaponItemClass = APS_Weapon::StaticClass();
 }
 
 // Called when the game starts or when spawned
@@ -83,10 +85,12 @@ void APS_Character::BeginPlay()
 {
 	Super::BeginPlay();
 
+	/*
 	// Weapon 설정
 	auto NewWeapon = GetWorld()->SpawnActor<APS_Weapon>(WeaponItemClass, FVector::ZeroVector, FRotator::ZeroRotator);
 	SetWeapon(NewWeapon);
-	
+	*/
+
 	/*
 	FName WeaponLeftSocket(TEXT("hand_lSocket"));
 	auto CurLeftWeapon = GetWorld()->SpawnActor<APS_Weapon>(FVector::ZeroVector, FRotator::ZeroRotator);
@@ -320,45 +324,187 @@ float APS_Character::TakeDamage(float DamageAmount, struct FDamageEvent const& D
 	return FinalDamage;
 }
 
-bool APS_Character::CanSetLeftWeapon()
+bool APS_Character::CanSetWeapon(EHand Hand)
 {
-	return (nullptr == CurrentLeftWeapon);
+	switch (Hand)
+	{
+	case EHand::Bare_Handed:
+		{
+			return true;
+		}
+	case EHand::Left_Handed:
+		{
+			return true;
+		}
+	case EHand::Right_Handed:
+		{
+			return true;
+		}
+	case EHand::Two_Handed:
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
-bool APS_Character::CanSetRightWeapon()
-{
-	return (nullptr == CurrentRightWeapon);
-}
-
-void APS_Character::SetWeapon(APS_Weapon* NewWeapon)
+void APS_Character::SetWeapon(APS_Weapon* NewWeapon, EHand NewHand)
 {
 	if (NewWeapon != nullptr)
 	{
 		FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, false);
-		switch (NewWeapon->GetHand())
+
+		switch (NewHand)
 		{
-		case EHand::Left:
+		case EHand::Bare_Handed:
 			{
-				if (CurrentLeftWeapon == nullptr)
+				if (CurrentLeftWeapon != nullptr)
 				{
-					CurrentLeftWeapon = nullptr;
+					CurrentLeftWeapon->Destroy();
 				}
-				FName WeaponLeftSocket(TEXT("hand_lSocket"));
-				NewWeapon->AttachToComponent(this->GetMesh(), AttachmentRules, WeaponLeftSocket);
-				NewWeapon->SetOwner(this);
-				CurrentLeftWeapon = NewWeapon;
-				break;
-			}
-		case EHand::Right:
-			{
 				if (CurrentRightWeapon != nullptr)
 				{
+					CurrentRightWeapon->Destroy();
+				}
+				CurrentLeftWeapon = nullptr;
+				CurrentRightWeapon = nullptr;
+				CurrentHand = EHand::Bare_Handed;
+				break;
+			}
+		case EHand::Left_Handed:
+			{
+				if (CurrentHand == EHand::Left_Handed)
+				{
+					CurrentLeftWeapon->Destroy();
+					CurrentLeftWeapon = nullptr;
+				}
+				else if (CurrentHand == EHand::Two_Handed)
+				{
+					CurrentRightWeapon->Destroy();
+					CurrentLeftWeapon = nullptr;
 					CurrentRightWeapon = nullptr;
 				}
+
+				FName WeaponLeftSocket(TEXT("hand_lSocket"));
+				bool bTemp = NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponLeftSocket);
+				UE_LOG(LogTemp, Warning, TEXT("Left Handed"));
+				if (bTemp)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is successful"));
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is un-successful"));
+				}
+				NewWeapon->SetOwner(this);
+				CurrentLeftWeapon = NewWeapon;
+				CurrentHand = EHand::Left_Handed;
+				break;
+			}
+		case EHand::Right_Handed:
+			{
+				if (CurrentHand == EHand::Right_Handed)
+				{
+					bool bTemp = CurrentRightWeapon->Destroy();
+					if (bTemp)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon destroyed"));
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon is not destroyed"));
+					}
+					CurrentRightWeapon = nullptr;
+				}
+				else if (CurrentHand == EHand::Two_Handed)
+				{
+					bool bTemp = CurrentRightWeapon->Destroy();
+					if (bTemp)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon destroyed"));
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon is not destroyed"));
+					}
+					CurrentLeftWeapon = nullptr;
+					CurrentRightWeapon = nullptr;
+				}
+
 				FName WeaponRightSocket(TEXT("hand_rSocket"));
-				NewWeapon->AttachToComponent(this->GetMesh(), AttachmentRules, WeaponRightSocket);
+				bool bTemp = NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponRightSocket);
+				UE_LOG(LogTemp, Warning, TEXT("Right Handed"));
+				if (bTemp)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is successful"));
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is un-successful"));
+				}
 				NewWeapon->SetOwner(this);
 				CurrentRightWeapon = NewWeapon;
+				CurrentHand = EHand::Right_Handed;
+				break;
+			}
+		case EHand::Two_Handed:
+			{
+				if (CurrentHand == EHand::Left_Handed)
+				{
+					bool bTemp = CurrentLeftWeapon->Destroy();
+					if (bTemp)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("CurrentLeftWeapon destroyed"));
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("CurrentLeftWeapon is not destroyed"));
+					}
+					CurrentLeftWeapon = nullptr;
+				}
+				else if (CurrentHand == EHand::Right_Handed)
+				{
+					bool bTemp = CurrentRightWeapon->Destroy();
+					if (bTemp)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon destroyed"));
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon is not destroyed"));
+					}
+					CurrentRightWeapon = nullptr;
+				}
+				else if (CurrentHand == EHand::Two_Handed)
+				{
+					bool bTemp = CurrentRightWeapon->Destroy();
+					if (bTemp)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon destroyed"));
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon is not destroyed"));
+					}
+					CurrentLeftWeapon = nullptr;
+					CurrentRightWeapon = nullptr;
+				}
+
+				FName WeaponRightSocket(TEXT("hand_rSocket"));
+				bool bTemp = NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponRightSocket);
+				UE_LOG(LogTemp, Warning, TEXT("Two Handed"));
+				if (bTemp)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is successful"));
+				}
+				else
+				{
+					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is un-successful"));
+				}
+				NewWeapon->SetOwner(this);
+				CurrentLeftWeapon = NewWeapon;
+				CurrentRightWeapon = NewWeapon;
+				CurrentHand = EHand::Two_Handed;
 				break;
 			}
 		}
