@@ -61,6 +61,21 @@ class PROJECT_S_API APS_Character : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	EHand CurrentHand;
 
+	// Attack
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	bool bIsAttacking;
+
+	// 공격 범위
+	UPROPERTY(EditAnywhere, Category = Attack)
+	float AttackRange = 200.0f;
+
+	// 공격 판정이 유지되는 시간
+	UPROPERTY(EditAnywhere, Category = Attack)
+	float AttackDuration = 0.5f;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -88,14 +103,6 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void SprintEnd_Client();
 
-	// 공격 범위
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	float AttackRange = 200.0f;
-
-	// 공격 판정이 유지되는 시간
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	float AttackDuration = 0.5f;
-
 public:
 	APS_Character();
 	
@@ -109,9 +116,6 @@ public:
 	void UpdateCharacterStats();
 	bool CanSetWeapon(EHand Hand);
 	void SetWeapon(class APS_Weapon* NewWeapon, EHand NewHand);
-
-	// Attack 상태 변수
-	bool bIsAttacking;
 
 	/*
 	// 이 값을 변경하면 생성되는 무기가 바뀜

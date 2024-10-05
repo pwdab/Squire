@@ -78,6 +78,8 @@ APS_Character::APS_Character()
 	// Weapon 설정
 	CurrentHand = EHand::Bare_Handed;
 	//WeaponItemClass = APS_Weapon::StaticClass();
+
+	bIsAttacking = false;
 }
 
 // Called when the game starts or when spawned
@@ -136,7 +138,11 @@ void APS_Character::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	// 델리게이트 등록
-	
+	auto AnimInstance = Cast<UPS_AnimInstance>(GetMesh()->GetAnimInstance());
+	if (AnimInstance != nullptr)
+	{
+		AnimInstance->OnMontageEnded.AddDynamic(this, &APS_Character::OnAttackMontageEnded);
+	}
 }
 
 // Called to bind functionality to input
@@ -260,6 +266,8 @@ void APS_Character::JumpEnd(const FInputActionValue& Value)
 {
 	bPressedJump = false;
 }
+
+
 
 
 void APS_Character::AttackStart(const FInputActionValue& Value)
