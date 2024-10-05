@@ -262,19 +262,43 @@ void APS_Character::JumpEnd(const FInputActionValue& Value)
 }
 
 
+
+// AttackStart 함수를 서버로 보내기 위한 함수
 void APS_Character::AttackStart(const FInputActionValue& Value)
 {
-	//GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Yellow, FString::Printf(TEXT("Name:\t%s"), *GetName()));
+	if (HasAuthority())  // 서버에서 바로 처리
+	{
+		HandleAttack();
+	}
+	else  // 클라이언트에서 호출한 경우 서버로 요청 전송
+	{
+		ServerAttack();
+	}
+}
+
+// 서버에서 공격 처리하는 함수
+void APS_Character::ServerAttack_Implementation()
+{
+	HandleAttack();
+}
+
+// 서버 호출을 선언
+bool APS_Character::ServerAttack_Validate()
+{
+	return true;
+}
+
+// 공격을 처리하는 함수 (트레이스와 데미지 계산)
+void APS_Character::HandleAttack()
+{
 	// 공격 중으로 설정
 	bIsAttacking = true;
 
-	// 캐릭터의 컨트롤 회전 (바라보는 방향)
 	FRotator ControlRotation = GetControlRotation();
 	FVector Start = GetActorLocation();
 	FVector ForwardVector = GetActorForwardVector();
 	FVector End = Start + (ForwardVector * AttackRange);
 
-	// 라인 트레이스 (RayCast)
 	FHitResult HitResult;
 	FCollisionQueryParams TraceParams(FName(TEXT("AttackTrace")), true, this);
 	TraceParams.bReturnPhysicalMaterial = false;
@@ -287,11 +311,9 @@ void APS_Character::AttackStart(const FInputActionValue& Value)
 		TraceParams
 	);
 
-	// 디버그 라인 그리기 (게임에서 공격 범위 시각화)
 	FColor DrawColor = bHit ? FColor::Green : FColor::Red;
 	DrawDebugLine(GetWorld(), Start, End, DrawColor, false, 1, 0, 5);
 
-	// 히트 여부 확인
 	if (bHit)
 	{
 		AActor* HitActor = HitResult.GetActor();
@@ -299,15 +321,13 @@ void APS_Character::AttackStart(const FInputActionValue& Value)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit: %s"), *HitActor->GetName()));
 
-			// 여기서 히트된 액터에 대한 추가 로직 (데미지 처리 등) 구현 가능
 			FDamageEvent DamageEvent;
-			// arg_1 : 전달할 대미지의 세기, arg_2 : 대미지의 종류, arg_3 : 가해자, arg_4 : 
-			HitResult.GetActor()->TakeDamage(50.0f, DamageEvent, GetController(), this);
+			HitActor->TakeDamage(50.0f, DamageEvent, GetController(), this);
 		}
 	}
 
 	// 공격 종료 처리
-	FTimerHandle UnusedHandle;  // FTimerHandle 변수 선언
+	FTimerHandle UnusedHandle;
 	GetWorldTimerManager().SetTimer(UnusedHandle, this, &APS_Character::EndAttack, AttackDuration, false);
 }
 

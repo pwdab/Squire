@@ -72,8 +72,6 @@ protected:
 	void Interact(const FInputActionValue& Value);
 	void JumpStart(const FInputActionValue& Value);
 	void JumpEnd(const FInputActionValue& Value);
-	void AttackStart(const FInputActionValue& Value);
-	void EndAttack();
 
 	// RPC 함수
 	UFUNCTION(Server, Reliable)
@@ -88,13 +86,27 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void SprintEnd_Client();
 
-	// 공격 범위
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	float AttackRange = 200.0f;
+	// 공격 처리 함수 (클라이언트에서 호출)
+	void AttackStart(const FInputActionValue& Value);
 
-	// 공격 판정이 유지되는 시간
-	UPROPERTY(EditAnywhere, Category = "Attack")
-	float AttackDuration = 0.5f;
+	// 서버에서 공격 처리
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerAttack();
+
+	// 실제 공격 처리 (서버에서만 실행)
+	void HandleAttack();
+
+	// 공격 종료 처리 함수
+	void EndAttack();
+
+	// --- 추가할 변수들 --- //
+
+	// 공격 범위와 공격 지속 시간
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackRange = 500.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackDuration = 1.0f;
 
 public:
 	APS_Character();
