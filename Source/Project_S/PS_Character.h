@@ -117,6 +117,15 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayAttackMontage_Client();
 
+	UFUNCTION()
+	void JumpToAttackMontageSection(int NewSection);
+
+	UFUNCTION(Server, Reliable)
+	void JumpToAttackMontageSection_Server(int NewSection);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void JumpToAttackMontageSection_Client(int NewSection);
+
 	void AttackStartComboState();
 	void AttackEndComboState();
 

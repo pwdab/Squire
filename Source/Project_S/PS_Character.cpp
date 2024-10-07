@@ -157,7 +157,7 @@ void APS_Character::PostInitializeComponents()
 		if (bIsComboInputOn)
 		{
 			AttackStartComboState();
-			PS_AnimInstance->JumpToAttackMontageSection(CurrentCombo);
+			JumpToAttackMontageSection(CurrentCombo);
 		}
 	});
 }
@@ -403,6 +403,28 @@ void APS_Character::PlayAttackMontage_Server_Implementation()
 void APS_Character::PlayAttackMontage_Client_Implementation()
 {
 	PS_AnimInstance->Montage_Play(PS_AnimInstance->AttackMontage, 1.0f);
+}
+
+void APS_Character::JumpToAttackMontageSection(int NewSection)
+{
+	if (HasAuthority())  // 서버에서 바로 처리
+	{
+		JumpToAttackMontageSection_Client(NewSection);
+	}
+	else  // 클라이언트에서 호출한 경우 서버로 요청 전송
+	{
+		JumpToAttackMontageSection_Server(NewSection);
+	}
+}
+
+void APS_Character::JumpToAttackMontageSection_Server_Implementation(int NewSection)
+{
+	JumpToAttackMontageSection_Client(NewSection);
+}
+
+void APS_Character::JumpToAttackMontageSection_Client_Implementation(int NewSection)
+{
+	PS_AnimInstance->JumpToAttackMontageSection(NewSection);
 }
 
 void APS_Character::EndAttack()
