@@ -12,6 +12,12 @@ UPS_AnimInstance::UPS_AnimInstance()
 	CurrentPawnSpeed = FVector2D::ZeroVector;
 	IsInAir = false;
 	IsSprinting = false;
+
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ATTACK_MONTAGE(TEXT("/Game/Blueprints/BP_Character_AnimMontage.BP_Character_AnimMontage"));
+	if (ATTACK_MONTAGE.Succeeded())
+	{
+		AttackMontage = ATTACK_MONTAGE.Object;
+	}
 }
 
 // BeginPlay()¿Í À¯»ç
@@ -36,4 +42,32 @@ void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			MaxWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
 		}
 	}
+}
+
+void UPS_AnimInstance::PlayAttackMontage()
+{
+	Montage_Play(AttackMontage, 1.0f);
+}
+
+void UPS_AnimInstance::JumpToAttackMontageSection(int NewSection)
+{
+	PS_CHECK(Montage_IsPlaying(AttackMontage));
+	Montage_JumpToSection(GetAttackMontageSectionName(NewSection), AttackMontage);
+}
+
+void UPS_AnimInstance::AnimNotify_AttackHitCheck()
+{
+	PS_LOG_S(Log);
+	OnAttackHitCheck.Broadcast();
+}
+
+void UPS_AnimInstance::AnimNotify_NextAttackCheck()
+{
+	OnNextAttackCheck.Broadcast();
+}
+
+FName UPS_AnimInstance::GetAttackMontageSectionName(int Section)
+{
+	PS_CHECK(FMath::IsWithinInclusive<int>(Section, 1, 2), NAME_None);
+	return FName(*FString::Printf(TEXT("Attack%d"), Section));
 }

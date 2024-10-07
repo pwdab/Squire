@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Project_S.h"
 #include "Engine/DataTable.h"
 #include "PS_CharacterStats.generated.h"
 

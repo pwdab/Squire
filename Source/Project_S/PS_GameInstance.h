@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Project_S.h"
 #include "Engine/GameInstance.h"
 #include "PS_GameInstance.generated.h"
 

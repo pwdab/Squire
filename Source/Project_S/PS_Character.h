@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Project_S.h"
 #include "PS_BasePickup.h"
 #include "GameFramework/Character.h"
 #include "PS_Character.generated.h"
@@ -65,8 +65,27 @@ class PROJECT_S_API APS_Character : public ACharacter
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
+	void AttackStartComboState();
+	void AttackEndComboState();
+
+	UPROPERTY()
+	class UPS_AnimInstance* PS_AnimInstance;
+
+
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
 	bool bIsAttacking;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	bool bCanNextCombo;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	bool bIsComboInputOn;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	int CurrentCombo;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
+	int MaxCombo;
 
 	// 공격 범위
 	UPROPERTY(EditAnywhere, Category = Attack)

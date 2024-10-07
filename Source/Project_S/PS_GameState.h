@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Project_S.h"
 #include "GameFramework/GameState.h"
 #include "PS_GameState.generated.h"
 

@@ -2,9 +2,12 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Project_S.h"
 #include "Animation/AnimInstance.h"
 #include "PS_AnimInstance.generated.h"
+
+DECLARE_MULTICAST_DELEGATE(FOnNextAttackCheckDelegate);
+DECLARE_MULTICAST_DELEGATE(FOnAttackHitCheckDelegate);
 
 /**
  * 
@@ -21,7 +24,21 @@ public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
+	void PlayAttackMontage();
+	void JumpToAttackMontageSection(int NewSection);
+
+	FOnNextAttackCheckDelegate OnNextAttackCheck;
+	FOnAttackHitCheckDelegate OnAttackHitCheck;
+
 private:
+	UFUNCTION()
+	void AnimNotify_AttackHitCheck();
+
+	UFUNCTION()
+	void AnimNotify_NextAttackCheck();
+
+	FName GetAttackMontageSectionName(int Section);
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	float MaxWalkSpeed;
 
@@ -34,4 +51,6 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	bool IsSprinting;
 
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* AttackMontage;
 };

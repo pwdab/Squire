@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Project_S.h"
 #include "GameFramework/Actor.h"
 #include "PS_BasePickup.generated.h"
 
