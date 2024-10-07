@@ -24,8 +24,17 @@ public:
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
-	void PlayAttackMontage();
+	//void PlayAttackMontage();
 	void JumpToAttackMontageSection(int NewSection);
+
+	UFUNCTION()
+	void PlayAttackMontage();
+
+	UFUNCTION(Server, Reliable)
+	void PlayAttackMontage_Server();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayAttackMontage_Client();
 
 	FOnNextAttackCheckDelegate OnNextAttackCheck;
 	FOnAttackHitCheckDelegate OnAttackHitCheck;

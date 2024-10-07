@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "Project_S.h"
 #include "PS_BasePickup.h"
 #include "GameFramework/Character.h"
 #include "PS_Character.generated.h"
@@ -99,6 +99,30 @@ protected:
 	// 공격 종료 처리 함수
 	void EndAttack();
 
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION(Server, Reliable)
+	void OnAttackMontageEnded_Server(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void OnAttackMontageEnded_Client(UAnimMontage* Montage, bool bInterrupted);
+
+	void AttackStartComboState();
+	void AttackEndComboState();
+
+	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
+	bool bCanNextCombo;
+
+	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
+	bool bIsComboInputOn;
+
+	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
+	int CurrentCombo;
+
+	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
+	int MaxCombo;
+
 	// --- 추가할 변수들 --- //
 
 	// 공격 범위와 공격 지속 시간
@@ -107,6 +131,14 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
 	float AttackDuration = 1.0f;
+	
+	/*
+	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Combat", Meta = (AllowPrivateAccess = "true"))
+	bool bIsAttacking;
+	*/
+
+	UPROPERTY()
+	class UPS_AnimInstance* PS_AnimInstance;
 
 public:
 	APS_Character();
@@ -114,6 +146,7 @@ public:
 	// Override functions
 	virtual void Tick(float DeltaTime) override;
 	virtual void PostInitializeComponents() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
@@ -122,7 +155,7 @@ public:
 	bool CanSetWeapon(EHand Hand);
 	void SetWeapon(class APS_Weapon* NewWeapon, EHand NewHand);
 
-	// Attack 상태 변수
+	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Combat", Meta = (AllowPrivateAccess = "true"))
 	bool bIsAttacking;
 
 	/*

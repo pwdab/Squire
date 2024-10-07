@@ -5,7 +5,6 @@
 #include "GameFramework/PawnMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
-
 UPS_AnimInstance::UPS_AnimInstance()
 {
 	MaxWalkSpeed = 0.0f;
@@ -46,6 +45,33 @@ void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 void UPS_AnimInstance::PlayAttackMontage()
 {
+	
+	auto Controller = TryGetPawnOwner()->GetController();
+	if (::IsValid(Controller))
+	{		
+		if (Controller->GetLocalRole() == ROLE_Authority && Controller->GetRemoteRole() == ROLE_SimulatedProxy)  // 서버에서 바로 처리
+		{
+			PS_LOG_S(Log);
+			PlayAttackMontage_Client();
+		}
+		else  // 클라이언트에서 호출한 경우 서버로 요청 전송
+		{
+			PS_LOG_S(Log);
+			PlayAttackMontage_Server();
+		}
+	}
+}
+
+void UPS_AnimInstance::PlayAttackMontage_Server_Implementation()
+{
+	PS_LOG_S(Log);
+	PlayAttackMontage_Client();
+}
+
+void UPS_AnimInstance::PlayAttackMontage_Client_Implementation()
+{
+	PS_LOG_S(Log);
+	//Cast<ACharacter>(TryGetPawnOwner())->GetMesh()->GetAnimInstance()->Montage_Play(AttackMontage, 1.0f);
 	Montage_Play(AttackMontage, 1.0f);
 }
 
@@ -57,7 +83,6 @@ void UPS_AnimInstance::JumpToAttackMontageSection(int NewSection)
 
 void UPS_AnimInstance::AnimNotify_AttackHitCheck()
 {
-	PS_LOG_S(Log);
 	OnAttackHitCheck.Broadcast();
 }
 

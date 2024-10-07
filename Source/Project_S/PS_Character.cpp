@@ -28,6 +28,10 @@
 #include "PS_BasePickup.h"
 #include "PS_Weapon.h"
 
+// Attack
+#include "PS_AnimInstance.h"
+#include "Net/UnrealNetwork.h"
+
 // Damage
 #include "Engine/DamageEvents.h"
 
@@ -78,6 +82,13 @@ APS_Character::APS_Character()
 	// Weapon 설정
 	CurrentHand = EHand::Bare_Handed;
 	//WeaponItemClass = APS_Weapon::StaticClass();
+
+	// Attack 설정
+	bIsAttacking = false;
+	MaxCombo = 2;
+	AttackEndComboState();
+
+	bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -136,7 +147,30 @@ void APS_Character::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	// 델리게이트 등록
-	
+	PS_AnimInstance = Cast<UPS_AnimInstance>(GetMesh()->GetAnimInstance());
+	PS_CHECK(PS_AnimInstance != nullptr);
+
+	PS_AnimInstance->OnMontageEnded.AddDynamic(this, &APS_Character::OnAttackMontageEnded);
+	PS_AnimInstance->OnNextAttackCheck.AddLambda([this]() -> void {
+		bCanNextCombo = false;
+
+		if (bIsComboInputOn)
+		{
+			AttackStartComboState();
+			PS_AnimInstance->JumpToAttackMontageSection(CurrentCombo);
+		}
+	});
+}
+
+void APS_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(APS_Character, bIsAttacking, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(APS_Character, bCanNextCombo, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(APS_Character, bIsComboInputOn, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(APS_Character, CurrentCombo, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(APS_Character, MaxCombo, COND_OwnerOnly);
 }
 
 // Called to bind functionality to input
@@ -178,18 +212,21 @@ void APS_Character::UpdateCharacterStats()
 
 void APS_Character::Move(const FInputActionValue& Value)
 {
-	const auto MovementVector = Value.Get<FVector2D>();
-
-	if (Controller != nullptr)
+	if (!bIsAttacking)
 	{
-		const auto Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
+		const auto MovementVector = Value.Get<FVector2D>();
 
-		const auto ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		const auto RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+		if (Controller != nullptr)
+		{
+			const auto Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		AddMovementInput(ForwardDirection, MovementVector.Y);
-		AddMovementInput(RightDirection, MovementVector.X);
+			const auto ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+			const auto RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+			AddMovementInput(ForwardDirection, MovementVector.Y);
+			AddMovementInput(RightDirection, MovementVector.X);
+		}
 	}
 }
 
@@ -291,8 +328,23 @@ bool APS_Character::ServerAttack_Validate()
 // 공격을 처리하는 함수 (트레이스와 데미지 계산)
 void APS_Character::HandleAttack()
 {
-	// 공격 중으로 설정
-	bIsAttacking = true;
+	if (bIsAttacking)
+	{
+		PS_CHECK(FMath::IsWithinInclusive<int>(CurrentCombo, 1, MaxCombo));
+		if (bCanNextCombo)
+		{
+			bIsComboInputOn = true;
+		}
+	}
+	else
+	{
+		// 공격 중으로 설정
+		PS_CHECK(CurrentCombo == 0);
+		AttackStartComboState();
+		PS_AnimInstance->PlayAttackMontage();
+		PS_AnimInstance->JumpToAttackMontageSection(CurrentCombo);
+		bIsAttacking = true;
+	}
 
 	FRotator ControlRotation = GetControlRotation();
 	FVector Start = GetActorLocation();
@@ -334,7 +386,49 @@ void APS_Character::HandleAttack()
 void APS_Character::EndAttack()
 {
 	// 공격이 끝났음을 표시
+	//bIsAttacking = false;
+}
+
+void APS_Character::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	//PS_CHECK(bIsAttacking);
+	//bIsAttacking = false;
+
+	if (HasAuthority())  // 서버에서 바로 처리
+	{
+		OnAttackMontageEnded_Client(Montage, bInterrupted);
+	}
+	else  // 클라이언트에서 호출한 경우 서버로 요청 전송
+	{
+		OnAttackMontageEnded_Server(Montage, bInterrupted);
+	}
+}
+
+void APS_Character::OnAttackMontageEnded_Server_Implementation(UAnimMontage* Montage, bool bInterrupted)
+{
+	OnAttackMontageEnded_Client(Montage, bInterrupted);
+}
+
+void APS_Character::OnAttackMontageEnded_Client_Implementation(UAnimMontage* Montage, bool bInterrupted)
+{
+	PS_CHECK(bIsAttacking);
+	PS_CHECK(CurrentCombo > 0);
 	bIsAttacking = false;
+	AttackEndComboState();
+}
+
+void APS_Character::AttackStartComboState()
+{
+	bCanNextCombo = true;
+	bIsComboInputOn = false;
+	PS_CHECK(FMath::IsWithinInclusive<int>(CurrentCombo, 0, MaxCombo - 1));
+	CurrentCombo = FMath::Clamp<int>(CurrentCombo + 1, 1, MaxCombo);
+}
+void APS_Character::AttackEndComboState()
+{
+	bIsComboInputOn = false;
+	bCanNextCombo = false;
+	CurrentCombo = 0;
 }
 
 float APS_Character::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
