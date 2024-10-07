@@ -78,11 +78,6 @@ APS_Character::APS_Character()
 	// Weapon 설정
 	CurrentHand = EHand::Bare_Handed;
 	//WeaponItemClass = APS_Weapon::StaticClass();
-
-	// Attack 설정
-	bIsAttacking = false;
-	MaxCombo = 2;
-	AttackEndComboState();
 }
 
 // Called when the game starts or when spawned
@@ -141,17 +136,7 @@ void APS_Character::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	// 델리게이트 등록
-	PS_AnimInstance = Cast<UPS_AnimInstance>(GetMesh()->GetAnimInstance());
-	PS_CHECK(nullptr != PS_AnimInstance)
-	PS_AnimInstance->OnMontageEnded.AddDynamic(this, &APS_Character::OnAttackMontageEnded);
-	PS_AnimInstance->OnNextAttackCheck.AddLambda([this]() -> void {
-		bCanNextCombo = false;
-		if (bIsComboInputOn)
-		{
-			AttackStartComboState();
-			PS_AnimInstance->JumpToAttackMontageSection(CurrentCombo);
-		}
-		});
+	
 }
 
 // Called to bind functionality to input
@@ -193,21 +178,18 @@ void APS_Character::UpdateCharacterStats()
 
 void APS_Character::Move(const FInputActionValue& Value)
 {
-	if (!bIsAttacking)
+	const auto MovementVector = Value.Get<FVector2D>();
+
+	if (Controller != nullptr)
 	{
-		const auto MovementVector = Value.Get<FVector2D>();
+		const auto Rotation = Controller->GetControlRotation();
+		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		if (Controller != nullptr)
-		{
-			const auto Rotation = Controller->GetControlRotation();
-			const FRotator YawRotation(0, Rotation.Yaw, 0);
+		const auto ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		const auto RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
-			const auto ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-			const auto RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-			AddMovementInput(ForwardDirection, MovementVector.Y);
-			AddMovementInput(RightDirection, MovementVector.X);
-		}
+		AddMovementInput(ForwardDirection, MovementVector.Y);
+		AddMovementInput(RightDirection, MovementVector.X);
 	}
 }
 
@@ -281,39 +263,42 @@ void APS_Character::JumpEnd(const FInputActionValue& Value)
 
 
 
-
+// AttackStart 함수를 서버로 보내기 위한 함수
 void APS_Character::AttackStart(const FInputActionValue& Value)
 {
-	//GEngine->AddOnScreenDebugMessage(5, 5.f, FColor::Yellow, FString::Printf(TEXT("Name:\t%s"), *GetName()));
+	if (HasAuthority())  // 서버에서 바로 처리
+	{
+		HandleAttack();
+	}
+	else  // 클라이언트에서 호출한 경우 서버로 요청 전송
+	{
+		ServerAttack();
+	}
+}
+
+// 서버에서 공격 처리하는 함수
+void APS_Character::ServerAttack_Implementation()
+{
+	HandleAttack();
+}
+
+// 서버 호출을 선언
+bool APS_Character::ServerAttack_Validate()
+{
+	return true;
+}
+
+// 공격을 처리하는 함수 (트레이스와 데미지 계산)
+void APS_Character::HandleAttack()
+{
 	// 공격 중으로 설정
-	if (bIsAttacking)
-	{
-		PS_CHECK(FMath::IsWithinInclusive<int>(CurrentCombo, 1, MaxCombo));
-		if (bCanNextCombo)
-		{
-			bIsComboInputOn = true;
-		}
-	}
-	else
-	{
-		UE_LOG(Project_S, Log, TEXT("CurrentCombo = %d"), CurrentCombo);
-		PS_CHECK(CurrentCombo == 0);
-		AttackStartComboState();
-		PS_AnimInstance->PlayAttackMontage();
-		PS_AnimInstance->JumpToAttackMontageSection(CurrentCombo);
-		bIsAttacking = true;
-		PS_LOG_S(Log);
-	}
-	PS_AnimInstance->PlayAttackMontage();
 	bIsAttacking = true;
 
-	// 캐릭터의 컨트롤 회전 (바라보는 방향)
 	FRotator ControlRotation = GetControlRotation();
 	FVector Start = GetActorLocation();
 	FVector ForwardVector = GetActorForwardVector();
 	FVector End = Start + (ForwardVector * AttackRange);
 
-	// 라인 트레이스 (RayCast)
 	FHitResult HitResult;
 	FCollisionQueryParams TraceParams(FName(TEXT("AttackTrace")), true, this);
 	TraceParams.bReturnPhysicalMaterial = false;
@@ -326,11 +311,9 @@ void APS_Character::AttackStart(const FInputActionValue& Value)
 		TraceParams
 	);
 
-	// 디버그 라인 그리기 (게임에서 공격 범위 시각화)
 	FColor DrawColor = bHit ? FColor::Green : FColor::Red;
 	DrawDebugLine(GetWorld(), Start, End, DrawColor, false, 1, 0, 5);
 
-	// 히트 여부 확인
 	if (bHit)
 	{
 		AActor* HitActor = HitResult.GetActor();
@@ -338,47 +321,20 @@ void APS_Character::AttackStart(const FInputActionValue& Value)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Hit: %s"), *HitActor->GetName()));
 
-			// 여기서 히트된 액터에 대한 추가 로직 (데미지 처리 등) 구현 가능
 			FDamageEvent DamageEvent;
-			// arg_1 : 전달할 대미지의 세기, arg_2 : 대미지의 종류, arg_3 : 가해자, arg_4 : 
-			HitResult.GetActor()->TakeDamage(50.0f, DamageEvent, GetController(), this);
+			HitActor->TakeDamage(50.0f, DamageEvent, GetController(), this);
 		}
 	}
 
 	// 공격 종료 처리
-	FTimerHandle UnusedHandle;  // FTimerHandle 변수 선언
+	FTimerHandle UnusedHandle;
 	GetWorldTimerManager().SetTimer(UnusedHandle, this, &APS_Character::EndAttack, AttackDuration, false);
 }
 
 void APS_Character::EndAttack()
 {
 	// 공격이 끝났음을 표시
-	//bIsAttacking = false;
-}
-
-void APS_Character::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-	PS_CHECK(bIsAttacking);
-	PS_CHECK(CurrentCombo > 0);
 	bIsAttacking = false;
-	AttackEndComboState();
-}
-
-void APS_Character::AttackStartComboState()
-{
-	PS_LOG_S(Log);
-	bCanNextCombo = true;
-	bIsComboInputOn = false;
-	PS_CHECK(FMath::IsWithinInclusive<int>(CurrentCombo, 0, MaxCombo - 1));
-	CurrentCombo = FMath::Clamp<int>(CurrentCombo + 1, 1, MaxCombo);
-	PS_LOG_S(Log);
-}
-
-void APS_Character::AttackEndComboState()
-{
-	bIsComboInputOn = false;
-	bCanNextCombo = false;
-	CurrentCombo = 0;
 }
 
 float APS_Character::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)

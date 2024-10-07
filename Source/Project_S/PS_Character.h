@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Project_S.h"
+#include "CoreMinimal.h"
 #include "PS_BasePickup.h"
 #include "GameFramework/Character.h"
 #include "PS_Character.generated.h"
@@ -61,40 +61,6 @@ class PROJECT_S_API APS_Character : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
 	EHand CurrentHand;
 
-	// Attack
-	UFUNCTION()
-	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
-
-	void AttackStartComboState();
-	void AttackEndComboState();
-
-	UPROPERTY()
-	class UPS_AnimInstance* PS_AnimInstance;
-
-
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
-	bool bIsAttacking;
-
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
-	bool bCanNextCombo;
-
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
-	bool bIsComboInputOn;
-
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
-	int CurrentCombo;
-
-	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, meta = (AllowPrivateAccess = "true"))
-	int MaxCombo;
-
-	// 공격 범위
-	UPROPERTY(EditAnywhere, Category = Attack)
-	float AttackRange = 200.0f;
-
-	// 공격 판정이 유지되는 시간
-	UPROPERTY(EditAnywhere, Category = Attack)
-	float AttackDuration = 0.5f;
-
 protected:
 	virtual void BeginPlay() override;
 
@@ -106,8 +72,6 @@ protected:
 	void Interact(const FInputActionValue& Value);
 	void JumpStart(const FInputActionValue& Value);
 	void JumpEnd(const FInputActionValue& Value);
-	void AttackStart(const FInputActionValue& Value);
-	void EndAttack();
 
 	// RPC 함수
 	UFUNCTION(Server, Reliable)
@@ -122,6 +86,28 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void SprintEnd_Client();
 
+	// 공격 처리 함수 (클라이언트에서 호출)
+	void AttackStart(const FInputActionValue& Value);
+
+	// 서버에서 공격 처리
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerAttack();
+
+	// 실제 공격 처리 (서버에서만 실행)
+	void HandleAttack();
+
+	// 공격 종료 처리 함수
+	void EndAttack();
+
+	// --- 추가할 변수들 --- //
+
+	// 공격 범위와 공격 지속 시간
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackRange = 500.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat")
+	float AttackDuration = 1.0f;
+
 public:
 	APS_Character();
 	
@@ -135,6 +121,9 @@ public:
 	void UpdateCharacterStats();
 	bool CanSetWeapon(EHand Hand);
 	void SetWeapon(class APS_Weapon* NewWeapon, EHand NewHand);
+
+	// Attack 상태 변수
+	bool bIsAttacking;
 
 	/*
 	// 이 값을 변경하면 생성되는 무기가 바뀜
