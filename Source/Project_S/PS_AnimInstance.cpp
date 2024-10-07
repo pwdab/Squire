@@ -42,7 +42,7 @@ void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		}
 	}
 }
-
+/*
 void UPS_AnimInstance::PlayAttackMontage()
 {
 	
@@ -74,6 +74,7 @@ void UPS_AnimInstance::PlayAttackMontage_Client_Implementation()
 	//Cast<ACharacter>(TryGetPawnOwner())->GetMesh()->GetAnimInstance()->Montage_Play(AttackMontage, 1.0f);
 	Montage_Play(AttackMontage, 1.0f);
 }
+*/
 
 void UPS_AnimInstance::JumpToAttackMontageSection(int NewSection)
 {

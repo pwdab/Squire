@@ -27,6 +27,7 @@ public:
 	//void PlayAttackMontage();
 	void JumpToAttackMontageSection(int NewSection);
 
+	/*
 	UFUNCTION()
 	void PlayAttackMontage();
 
@@ -35,9 +36,13 @@ public:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayAttackMontage_Client();
+	*/
 
 	FOnNextAttackCheckDelegate OnNextAttackCheck;
 	FOnAttackHitCheckDelegate OnAttackHitCheck;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* AttackMontage;
 
 private:
 	UFUNCTION()
@@ -59,7 +64,4 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	bool IsSprinting;
-
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* AttackMontage;
 };

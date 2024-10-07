@@ -108,6 +108,15 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void OnAttackMontageEnded_Client(UAnimMontage* Montage, bool bInterrupted);
 
+	UFUNCTION()
+	void PlayAttackMontage();
+
+	UFUNCTION(Server, Reliable)
+	void PlayAttackMontage_Server();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void PlayAttackMontage_Client();
+
 	void AttackStartComboState();
 	void AttackEndComboState();
 

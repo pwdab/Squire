@@ -341,7 +341,7 @@ void APS_Character::HandleAttack()
 		// 공격 중으로 설정
 		PS_CHECK(CurrentCombo == 0);
 		AttackStartComboState();
-		PS_AnimInstance->PlayAttackMontage();
+		PlayAttackMontage();
 		PS_AnimInstance->JumpToAttackMontageSection(CurrentCombo);
 		bIsAttacking = true;
 	}
@@ -381,6 +381,28 @@ void APS_Character::HandleAttack()
 	// 공격 종료 처리
 	FTimerHandle UnusedHandle;
 	GetWorldTimerManager().SetTimer(UnusedHandle, this, &APS_Character::EndAttack, AttackDuration, false);
+}
+
+void APS_Character::PlayAttackMontage()
+{
+	if (HasAuthority())  // 서버에서 바로 처리
+	{
+		PlayAttackMontage_Client();
+	}
+	else  // 클라이언트에서 호출한 경우 서버로 요청 전송
+	{
+		PlayAttackMontage_Server();
+	}
+}
+
+void APS_Character::PlayAttackMontage_Server_Implementation()
+{
+	PlayAttackMontage_Client();
+}
+
+void APS_Character::PlayAttackMontage_Client_Implementation()
+{
+	PS_AnimInstance->Montage_Play(PS_AnimInstance->AttackMontage, 1.0f);
 }
 
 void APS_Character::EndAttack()
