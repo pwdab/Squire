@@ -12,7 +12,7 @@ UPS_AnimInstance::UPS_AnimInstance()
 	IsInAir = false;
 	IsSprinting = false;
 
-	static ConstructorHelpers::FObjectFinder<UAnimMontage> ATTACK_MONTAGE(TEXT("/Game/Blueprints/BP_Character_AnimMontage.BP_Character_AnimMontage"));
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> ATTACK_MONTAGE(TEXT("/Game/Blueprints/BP_Character_Attack_AnimMontage.BP_Character_Attack_AnimMontage"));
 	if (ATTACK_MONTAGE.Succeeded())
 	{
 		AttackMontage = ATTACK_MONTAGE.Object;
@@ -22,7 +22,7 @@ UPS_AnimInstance::UPS_AnimInstance()
 // BeginPlay()와 유사
 void UPS_AnimInstance::NativeInitializeAnimation()
 {
-
+	Super::NativeInitializeAnimation();
 }
 
 // Tick()과 유사
@@ -42,39 +42,6 @@ void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		}
 	}
 }
-/*
-void UPS_AnimInstance::PlayAttackMontage()
-{
-	
-	auto Controller = TryGetPawnOwner()->GetController();
-	if (::IsValid(Controller))
-	{		
-		if (Controller->GetLocalRole() == ROLE_Authority && Controller->GetRemoteRole() == ROLE_SimulatedProxy)  // 서버에서 바로 처리
-		{
-			PS_LOG_S(Log);
-			PlayAttackMontage_Client();
-		}
-		else  // 클라이언트에서 호출한 경우 서버로 요청 전송
-		{
-			PS_LOG_S(Log);
-			PlayAttackMontage_Server();
-		}
-	}
-}
-
-void UPS_AnimInstance::PlayAttackMontage_Server_Implementation()
-{
-	PS_LOG_S(Log);
-	PlayAttackMontage_Client();
-}
-
-void UPS_AnimInstance::PlayAttackMontage_Client_Implementation()
-{
-	PS_LOG_S(Log);
-	//Cast<ACharacter>(TryGetPawnOwner())->GetMesh()->GetAnimInstance()->Montage_Play(AttackMontage, 1.0f);
-	Montage_Play(AttackMontage, 1.0f);
-}
-*/
 
 void UPS_AnimInstance::JumpToAttackMontageSection(int NewSection)
 {

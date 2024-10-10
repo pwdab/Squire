@@ -298,8 +298,6 @@ void APS_Character::JumpEnd(const FInputActionValue& Value)
 	bPressedJump = false;
 }
 
-
-
 // AttackStart 함수를 서버로 보내기 위한 함수
 void APS_Character::AttackStart(const FInputActionValue& Value)
 {
@@ -340,6 +338,7 @@ void APS_Character::HandleAttack()
 	{
 		// 공격 중으로 설정
 		PS_CHECK(CurrentCombo == 0);
+		PS_LOG_S(Log);
 		AttackStartComboState();
 		PlayAttackMontage();
 		PS_AnimInstance->JumpToAttackMontageSection(CurrentCombo);
@@ -379,81 +378,21 @@ void APS_Character::HandleAttack()
 	}
 
 	// 공격 종료 처리
-	FTimerHandle UnusedHandle;
-	GetWorldTimerManager().SetTimer(UnusedHandle, this, &APS_Character::EndAttack, AttackDuration, false);
+	//FTimerHandle UnusedHandle;
+	//GetWorldTimerManager().SetTimer(UnusedHandle, this, &APS_Character::EndAttack, AttackDuration, false);
 }
 
-void APS_Character::PlayAttackMontage()
-{
-	if (HasAuthority())  // 서버에서 바로 처리
-	{
-		PlayAttackMontage_Client();
-	}
-	else  // 클라이언트에서 호출한 경우 서버로 요청 전송
-	{
-		PlayAttackMontage_Server();
-	}
-}
-
-void APS_Character::PlayAttackMontage_Server_Implementation()
-{
-	PlayAttackMontage_Client();
-}
-
-void APS_Character::PlayAttackMontage_Client_Implementation()
+void APS_Character::PlayAttackMontage_Implementation()
 {
 	PS_AnimInstance->Montage_Play(PS_AnimInstance->AttackMontage, 1.0f);
 }
 
-void APS_Character::JumpToAttackMontageSection(int NewSection)
-{
-	if (HasAuthority())  // 서버에서 바로 처리
-	{
-		JumpToAttackMontageSection_Client(NewSection);
-	}
-	else  // 클라이언트에서 호출한 경우 서버로 요청 전송
-	{
-		JumpToAttackMontageSection_Server(NewSection);
-	}
-}
-
-void APS_Character::JumpToAttackMontageSection_Server_Implementation(int NewSection)
-{
-	JumpToAttackMontageSection_Client(NewSection);
-}
-
-void APS_Character::JumpToAttackMontageSection_Client_Implementation(int NewSection)
+void APS_Character::JumpToAttackMontageSection_Implementation(int NewSection)
 {
 	PS_AnimInstance->JumpToAttackMontageSection(NewSection);
 }
 
-void APS_Character::EndAttack()
-{
-	// 공격이 끝났음을 표시
-	//bIsAttacking = false;
-}
-
-void APS_Character::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
-{
-	//PS_CHECK(bIsAttacking);
-	//bIsAttacking = false;
-
-	if (HasAuthority())  // 서버에서 바로 처리
-	{
-		OnAttackMontageEnded_Client(Montage, bInterrupted);
-	}
-	else  // 클라이언트에서 호출한 경우 서버로 요청 전송
-	{
-		OnAttackMontageEnded_Server(Montage, bInterrupted);
-	}
-}
-
-void APS_Character::OnAttackMontageEnded_Server_Implementation(UAnimMontage* Montage, bool bInterrupted)
-{
-	OnAttackMontageEnded_Client(Montage, bInterrupted);
-}
-
-void APS_Character::OnAttackMontageEnded_Client_Implementation(UAnimMontage* Montage, bool bInterrupted)
+void APS_Character::OnAttackMontageEnded_Implementation(UAnimMontage* Montage, bool bInterrupted)
 {
 	PS_CHECK(bIsAttacking);
 	PS_CHECK(CurrentCombo > 0);

@@ -16,33 +16,6 @@ UCLASS()
 class PROJECT_S_API UPS_AnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
-	
-public:
-	UPS_AnimInstance();
-
-	// Override functions
-	virtual void NativeInitializeAnimation() override;
-	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
-
-	//void PlayAttackMontage();
-	void JumpToAttackMontageSection(int NewSection);
-
-	/*
-	UFUNCTION()
-	void PlayAttackMontage();
-
-	UFUNCTION(Server, Reliable)
-	void PlayAttackMontage_Server();
-
-	UFUNCTION(NetMulticast, Reliable)
-	void PlayAttackMontage_Client();
-	*/
-
-	FOnNextAttackCheckDelegate OnNextAttackCheck;
-	FOnAttackHitCheckDelegate OnAttackHitCheck;
-
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* AttackMontage;
 
 private:
 	UFUNCTION()
@@ -53,6 +26,17 @@ private:
 
 	FName GetAttackMontageSectionName(int Section);
 
+public:
+	UPS_AnimInstance();
+
+	// Override functions
+	virtual void NativeInitializeAnimation() override;
+	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+
+	// User functions
+	void JumpToAttackMontageSection(int NewSection);
+
+private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	float MaxWalkSpeed;
 
@@ -64,4 +48,11 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	bool IsSprinting;
+
+public:
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* AttackMontage;
+
+	FOnNextAttackCheckDelegate OnNextAttackCheck;
+	FOnAttackHitCheckDelegate OnAttackHitCheck;
 };

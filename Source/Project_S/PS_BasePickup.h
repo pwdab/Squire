@@ -33,6 +33,14 @@ public:
 	// Sets default values for this actor's properties
 	APS_BasePickup();
 
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
+
+	// Getter functions
+	FORCEINLINE UCapsuleComponent* GetCapsuleCollision() const { return CapsuleCollision; }
+	FORCEINLINE UStaticMeshComponent* GetMesh() const { return Mesh; }
+	FORCEINLINE EHand GetHand() const { return Hand; }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -45,15 +53,11 @@ protected:
 
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	
 
 	//UPROPERTY(EditInstanceOnly, Category = Weapon)
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components)
 	TSubclassOf<class APS_Weapon> WeaponItemClass;
 
-	// Getter functions
-	FORCEINLINE UCapsuleComponent* GetCapsuleCollision() const { return CapsuleCollision; }
-	FORCEINLINE UStaticMeshComponent* GetMesh() const { return Mesh; }
-	FORCEINLINE EHand GetHand() const { return Hand; }
+	
 };

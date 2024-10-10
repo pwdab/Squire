@@ -96,35 +96,16 @@ protected:
 	// 실제 공격 처리 (서버에서만 실행)
 	void HandleAttack();
 
-	// 공격 종료 처리 함수
-	void EndAttack();
-
-	UFUNCTION()
+	UFUNCTION(NetMulticast, Reliable)
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	UFUNCTION(Server, Reliable)
-	void OnAttackMontageEnded_Server(UAnimMontage* Montage, bool bInterrupted);
-
+	//UFUNCTION(NetMulticast, Reliable)
 	UFUNCTION(NetMulticast, Reliable)
-	void OnAttackMontageEnded_Client(UAnimMontage* Montage, bool bInterrupted);
-
-	UFUNCTION()
 	void PlayAttackMontage();
 
-	UFUNCTION(Server, Reliable)
-	void PlayAttackMontage_Server();
-
+	//UFUNCTION(NetMulticast, Reliable)
 	UFUNCTION(NetMulticast, Reliable)
-	void PlayAttackMontage_Client();
-
-	UFUNCTION()
 	void JumpToAttackMontageSection(int NewSection);
-
-	UFUNCTION(Server, Reliable)
-	void JumpToAttackMontageSection_Server(int NewSection);
-
-	UFUNCTION(NetMulticast, Reliable)
-	void JumpToAttackMontageSection_Client(int NewSection);
 
 	void AttackStartComboState();
 	void AttackEndComboState();
