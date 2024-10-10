@@ -188,7 +188,7 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APS_Character::SprintEnd);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &APS_Character::JumpStart);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &APS_Character::JumpEnd);
-		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APS_Character::AttackStart);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APS_Character::Attack);
 	}
 }
 
@@ -299,7 +299,7 @@ void APS_Character::JumpEnd(const FInputActionValue& Value)
 }
 
 // AttackStart 함수를 서버로 보내기 위한 함수
-void APS_Character::AttackStart(const FInputActionValue& Value)
+void APS_Character::Attack(const FInputActionValue& Value)
 {
 	if (HasAuthority())  // 서버에서 바로 처리
 	{
@@ -307,7 +307,7 @@ void APS_Character::AttackStart(const FInputActionValue& Value)
 	}
 	else  // 클라이언트에서 호출한 경우 서버로 요청 전송
 	{
-		ServerAttack();
+		Attack_Server();
 	}
 }
 
@@ -326,6 +326,7 @@ bool APS_Character::ServerAttack_Validate()
 // 공격을 처리하는 함수 (트레이스와 데미지 계산)
 void APS_Character::HandleAttack()
 {
+	PS_LOG_S(Log);
 	if (bIsAttacking)
 	{
 		PS_CHECK(FMath::IsWithinInclusive<int>(CurrentCombo, 1, MaxCombo));
@@ -338,7 +339,6 @@ void APS_Character::HandleAttack()
 	{
 		// 공격 중으로 설정
 		PS_CHECK(CurrentCombo == 0);
-		PS_LOG_S(Log);
 		AttackStartComboState();
 		PlayAttackMontage();
 		PS_AnimInstance->JumpToAttackMontageSection(CurrentCombo);
@@ -382,17 +382,65 @@ void APS_Character::HandleAttack()
 	//GetWorldTimerManager().SetTimer(UnusedHandle, this, &APS_Character::EndAttack, AttackDuration, false);
 }
 
-void APS_Character::PlayAttackMontage_Implementation()
+void APS_Character::PlayAttackMontage()
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		if (IsLocallyControlled())  // 서버에서 플레이
+		{
+			PS_AnimInstance->Montage_Play(PS_AnimInstance->AttackMontage, 1.0f);
+		}
+		else
+		{
+			PlayAttackMontage_Client();  // 원격 클라이언트에서 플레이
+		}
+	}
+}
+
+void APS_Character::PlayAttackMontage_Client_Implementation()
 {
 	PS_AnimInstance->Montage_Play(PS_AnimInstance->AttackMontage, 1.0f);
 }
 
-void APS_Character::JumpToAttackMontageSection_Implementation(int NewSection)
+void APS_Character::JumpToAttackMontageSection(int NewSection)
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		if (IsLocallyControlled())  // 서버에서 플레이
+		{
+			PS_AnimInstance->JumpToAttackMontageSection(NewSection);
+		}
+		else  // 원격 클라이언트에서 플레이
+		{
+			JumpToAttackMontageSection_Client(NewSection);
+		}
+	}
+}
+
+void APS_Character::JumpToAttackMontageSection_Client_Implementation(int NewSection)
 {
 	PS_AnimInstance->JumpToAttackMontageSection(NewSection);
 }
 
-void APS_Character::OnAttackMontageEnded_Implementation(UAnimMontage* Montage, bool bInterrupted)
+void APS_Character::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		if (IsLocallyControlled())  // 서버에서 플레이
+		{
+			PS_CHECK(bIsAttacking);
+			PS_CHECK(CurrentCombo > 0);
+			bIsAttacking = false;
+			AttackEndComboState();
+		}
+		else  // 원격 클라이언트에서 플레이
+		{
+			OnAttackMontageEnded_Client(Montage, bInterrupted);
+		}
+	}
+}
+
+void APS_Character::OnAttackMontageEnded_Client_Implementation(UAnimMontage* Montage, bool bInterrupted)
 {
 	PS_CHECK(bIsAttacking);
 	PS_CHECK(CurrentCombo > 0);

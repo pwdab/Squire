@@ -87,25 +87,32 @@ protected:
 	void SprintEnd_Client();
 
 	// 공격 처리 함수 (클라이언트에서 호출)
-	void AttackStart(const FInputActionValue& Value);
+	void Attack(const FInputActionValue& Value);
 
 	// 서버에서 공격 처리
 	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerAttack();
+	void Attack_Server();
 
 	// 실제 공격 처리 (서버에서만 실행)
 	void HandleAttack();
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	//UFUNCTION(NetMulticast, Reliable)
 	UFUNCTION(NetMulticast, Reliable)
+	void OnAttackMontageEnded_Client(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION()
 	void PlayAttackMontage();
 
-	//UFUNCTION(NetMulticast, Reliable)
 	UFUNCTION(NetMulticast, Reliable)
+	void PlayAttackMontage_Client();
+
+	UFUNCTION()
 	void JumpToAttackMontageSection(int NewSection);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void JumpToAttackMontageSection_Client(int NewSection);
 
 	void AttackStartComboState();
 	void AttackEndComboState();
