@@ -311,22 +311,21 @@ void APS_Character::Attack(const FInputActionValue& Value)
 	}
 }
 
-// 서버에서 공격 처리하는 함수
-void APS_Character::ServerAttack_Implementation()
-{
-	HandleAttack();
-}
-
 // 서버 호출을 선언
-bool APS_Character::ServerAttack_Validate()
+bool APS_Character::Attack_Server_Validate()
 {
 	return true;
+}
+
+// 서버에서 공격 처리하는 함수
+void APS_Character::Attack_Server_Implementation()
+{
+	HandleAttack();
 }
 
 // 공격을 처리하는 함수 (트레이스와 데미지 계산)
 void APS_Character::HandleAttack()
 {
-	PS_LOG_S(Log);
 	if (bIsAttacking)
 	{
 		PS_CHECK(FMath::IsWithinInclusive<int>(CurrentCombo, 1, MaxCombo));
