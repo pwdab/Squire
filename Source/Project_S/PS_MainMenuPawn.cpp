@@ -17,12 +17,13 @@ APS_MainMenuPawn::APS_MainMenuPawn()
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(RootComponent);
-	Camera->SetRelativeLocation(FVector(550.0f, 90.0f, 180.0f));
-	Camera->SetRelativeRotation(FRotator(-10.0f, 180.0f, 0.0f));
+	Camera->SetRelativeLocation(FVector(0.0f, 0.0f, 1000.0f));
+	Camera->SetRelativeRotation(FRotator(-90.0f, 180.0f, 0.0f));
 
 	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Mesh"));
 	SkeletalMesh->SetupAttachment(RootComponent);
-	SkeletalMesh->SetRelativeLocation(FVector(0.0f, -30.0f, 90.0f));
+	SkeletalMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+	SkeletalMesh->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f));
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMeshAsset(TEXT("/Game/Characters/Adventurers/Knight/Knight.Knight"));
 	if (SkeletalMeshAsset.Succeeded())
 	{

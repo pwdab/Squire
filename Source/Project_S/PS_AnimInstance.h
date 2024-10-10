@@ -24,6 +24,7 @@ private:
 	UFUNCTION()
 	void AnimNotify_NextAttackCheck();
 
+	void LoadAnimMontage(UAnimMontage*& Montage, const TCHAR* Path);
 	FName GetAttackMontageSectionName(int Section);
 
 public:
@@ -52,6 +53,9 @@ private:
 public:
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* AttackMontage;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* DodgeMontage;
 
 	FOnNextAttackCheckDelegate OnNextAttackCheck;
 	FOnAttackHitCheckDelegate OnAttackHitCheck;

@@ -6,22 +6,24 @@
 #include "PS_Weapon.h"
 #include "Components/CapsuleComponent.h"
 
-// Sets default values
 APS_BasePickup::APS_BasePickup()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Setup Capsule Collision
 	CapsuleCollision = CreateDefaultSubobject<UCapsuleComponent>("Collision");
 	RootComponent = CapsuleCollision;
 	CapsuleCollision->SetGenerateOverlapEvents(true);
 	CapsuleCollision->bHiddenInGame = false;
 	
+	// Setup Mesh Component
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
 	Mesh->SetupAttachment(CapsuleCollision);
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetRelativeRotation(FRotator(0.0f, 0.0f, -10.0f));
 
+	// Replication
 	bReplicates = true;
 }
 
@@ -30,11 +32,8 @@ void APS_BasePickup::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	// Dynamic Multi-cast Delegate
+	// Register Delegate
 	CapsuleCollision->OnComponentBeginOverlap.AddDynamic(this, &APS_BasePickup::OnBeginOverlap);
-
-	// Weapon ¼³Á¤
-	//WeaponItemClass = APS_Weapon::StaticClass();
 }
 
 // Called every frame
@@ -54,19 +53,9 @@ void APS_BasePickup::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AA
 
 void APS_BasePickup::Pickup_Implementation(class APS_Character* OwningCharacter)
 {
-	if (WeaponItemClass != nullptr)
+	if (WeaponItemClass && OwningCharacter->CanSetWeapon(Hand))
 	{
-		if (OwningCharacter->CanSetWeapon(Hand))
-		{
-			auto NewWeapon = GetWorld()->SpawnActor<APS_Weapon>(WeaponItemClass, FVector::ZeroVector, FRotator::ZeroRotator);
-			OwningCharacter->SetWeapon(NewWeapon, Hand);
-		}
+		auto NewWeapon = GetWorld()->SpawnActor<APS_Weapon>(WeaponItemClass, FVector::ZeroVector, FRotator::ZeroRotator);
+		OwningCharacter->SetWeapon(NewWeapon, Hand);
 	}
-	
-	//SetOwner(OwningCharacter);
-	/*
-	auto NewWeapon = GetWorld()->SpawnActor<APS_Weapon>(WeaponItemClass, FVector::ZeroVector, FRotator::ZeroRotator);
-	SetWeapon(NewWeapon);
-	OwningCharacter
-	*/
 }

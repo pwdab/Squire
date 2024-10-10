@@ -10,12 +10,19 @@ UPS_AnimInstance::UPS_AnimInstance()
 	MaxWalkSpeed = 0.0f;
 	CurrentPawnSpeed = FVector2D::ZeroVector;
 	IsInAir = false;
-	IsSprinting = false;
 
-	static ConstructorHelpers::FObjectFinder<UAnimMontage> ATTACK_MONTAGE(TEXT("/Game/Blueprints/BP_Character_Attack_AnimMontage.BP_Character_Attack_AnimMontage"));
-	if (ATTACK_MONTAGE.Succeeded())
+	// Load AnimMontages
+	LoadAnimMontage(AttackMontage, TEXT("/Game/Blueprints/BP_Character_Attack_AnimMontage.BP_Character_Attack_AnimMontage"));
+	LoadAnimMontage(DodgeMontage, TEXT("/Game/Blueprints/BP_Character_Dodge_AnimMontage.BP_Character_Dodge_AnimMontage"));
+}
+
+// Helper function to load AnimMontages
+void UPS_AnimInstance::LoadAnimMontage(UAnimMontage*& Montage, const TCHAR* Path)
+{
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> MontageFinder(Path);
+	if (MontageFinder.Succeeded())
 	{
-		AttackMontage = ATTACK_MONTAGE.Object;
+		Montage = MontageFinder.Object;
 	}
 }
 
@@ -30,12 +37,10 @@ void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	auto Pawn = TryGetPawnOwner();
-	if (::IsValid(Pawn))
+	if (auto Pawn = TryGetPawnOwner())
 	{
 		CurrentPawnSpeed = FVector2D(Pawn->GetVelocity().X, Pawn->GetVelocity().Y);
-		auto Character = Cast<ACharacter>(Pawn);
-		if (Character)
+		if (auto Character = Cast<ACharacter>(Pawn))
 		{
 			IsInAir = Character->GetMovementComponent()->IsFalling();
 			MaxWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;

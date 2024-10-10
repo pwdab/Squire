@@ -162,6 +162,7 @@ void APS_Character::PostInitializeComponents()
 	});
 }
 
+// 레플리케이션 변수 설정
 void APS_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

@@ -55,6 +55,11 @@ void APS_Enemy::Tick(float DeltaTime)
 
 }
 
+void APS_Enemy::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+}
+
 // Called to bind functionality to input
 void APS_Enemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {

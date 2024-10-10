@@ -2,7 +2,6 @@
 
 #include "PS_Weapon.h"
 
-// Sets default values
 APS_Weapon::APS_Weapon()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -17,8 +16,6 @@ APS_Weapon::APS_Weapon()
 		Mesh->SetStaticMesh(StaticMesh.Object);
 	}
 	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	//Hand = EHand::Right;
 }
 
 // Called when the game starts or when spawned
