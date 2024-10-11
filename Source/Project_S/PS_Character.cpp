@@ -35,19 +35,17 @@
 // Damage
 #include "Engine/DamageEvents.h"
 
-// Sets default values
 APS_Character::APS_Character()
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// SpringArm 컴포넌트
+	// Setup SpringArm Component
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->TargetArmLength = 800.0f;
 	CameraBoom->bUsePawnControlRotation = true;
 
-	// Camera 컴포넌트
+	// Setup Camera Component
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
@@ -57,10 +55,10 @@ APS_Character::APS_Character()
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
-	// CapsuleComponent 설정
+	// Setup Capsule Component
 	GetCapsuleComponent()->InitCapsuleSize(45.0f, 100.0f);
 
-	// Mesh 설정
+	// Setup Mesh Component
 	GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -100.0f));
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMeshAsset(TEXT("/Game/Characters/Adventurers/Knight/Knight"));
 	if (SkeletalMeshAsset.Succeeded())
@@ -68,7 +66,7 @@ APS_Character::APS_Character()
 		GetMesh()->SetSkeletalMesh(SkeletalMeshAsset.Object);
 	}
 
-	// CharacterMovement 설정
+	// Setup CharacterMovement
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	GetCharacterMovement()->MaxWalkSpeed = 0.0f;
@@ -79,47 +77,22 @@ APS_Character::APS_Character()
 	JumpMaxHoldTime = 0.1f;
 	JumpMaxCount = 1;
 
-	// Weapon 설정
+	// Setup Weapon variables
 	CurrentHand = EHand::Bare_Handed;
-	//WeaponItemClass = APS_Weapon::StaticClass();
 
-	// Attack 설정
+	// Setup Attack variables
 	bIsAttacking = false;
 	MaxCombo = 2;
 	AttackEndComboState();
 
+	// Replication
 	bReplicates = true;
 }
 
-// Called when the game starts or when spawned
 void APS_Character::BeginPlay()
 {
 	Super::BeginPlay();
 
-	/*
-	// Weapon 설정
-	auto NewWeapon = GetWorld()->SpawnActor<APS_Weapon>(WeaponItemClass, FVector::ZeroVector, FRotator::ZeroRotator);
-	SetWeapon(NewWeapon);
-	*/
-
-	/*
-	FName WeaponLeftSocket(TEXT("hand_lSocket"));
-	auto CurLeftWeapon = GetWorld()->SpawnActor<APS_Weapon>(FVector::ZeroVector, FRotator::ZeroRotator);
-	if (CurLeftWeapon != nullptr)
-	{
-		FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, false);
-		CurLeftWeapon->AttachToComponent(GetMesh(), AttachmentRules, WeaponLeftSocket);
-	}
-
-	FName WeaponRightSocket(TEXT("hand_rSocket"));
-	auto CurRightWeapon = GetWorld()->SpawnActor<APS_Weapon>(FVector::ZeroVector, FRotator::ZeroRotator);
-	if (CurRightWeapon != nullptr)
-	{
-		FAttachmentTransformRules AttachmentRules(EAttachmentRule::KeepRelative, false);
-		CurRightWeapon->AttachToComponent(GetMesh(), AttachmentRules, WeaponRightSocket);
-	}
-	*/
-	
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -127,13 +100,11 @@ void APS_Character::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-	
 
 	// 캐릭터 Stat 초기화
 	UpdateCharacterStats();
 }
 
-// Called every frame
 void APS_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -146,27 +117,27 @@ void APS_Character::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	// 델리게이트 등록
+	// Setup Delegates
 	PS_AnimInstance = Cast<UPS_AnimInstance>(GetMesh()->GetAnimInstance());
 	PS_CHECK(PS_AnimInstance != nullptr);
 
-	PS_AnimInstance->OnMontageEnded.AddDynamic(this, &APS_Character::OnAttackMontageEnded);
+	PS_AnimInstance->OnMontageEnded.AddDynamic(this, &APS_Character::OnMontageEnded);
 	PS_AnimInstance->OnNextAttackCheck.AddLambda([this]() -> void {
 		bCanNextCombo = false;
 
 		if (bIsComboInputOn)
 		{
 			AttackStartComboState();
-			JumpToAttackMontageSection(CurrentCombo);
+			JumpToMontageSection(PS_AnimInstance->AttackMontage, CurrentCombo);
 		}
 	});
 }
 
-// 레플리케이션 변수 설정
 void APS_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	// Setup Replication variables
 	DOREPLIFETIME_CONDITION(APS_Character, bIsAttacking, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(APS_Character, bCanNextCombo, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(APS_Character, bIsComboInputOn, COND_OwnerOnly);
@@ -174,7 +145,6 @@ void APS_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME_CONDITION(APS_Character, MaxCombo, COND_OwnerOnly);
 }
 
-// Called to bind functionality to input
 void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -244,19 +214,19 @@ void APS_Character::Look(const FInputActionValue& Value)
 
 void APS_Character::SprintStart(const FInputActionValue& Value)
 {
-	// 클라이언트에서 실행하는 함수
+	// 인스턴스에서 호출
 	SprintStart_Server();
 }
 
 void APS_Character::SprintStart_Server_Implementation()
 {
-	// 서버에서 호출하는 함수
+	// 서버에서 호출
 	SprintStart_Client();
 }
 
 void APS_Character::SprintStart_Client_Implementation()
 {
-	// 서버에서 호출하고 각 인스턴스마다 실행하는 함수
+	// 인스턴스마다 실행
 	if (GetCharacterStats())
 	{
 		GetCharacterMovement()->MaxWalkSpeed = GetCharacterStats()->SprintSpeed;
@@ -265,19 +235,19 @@ void APS_Character::SprintStart_Client_Implementation()
 
 void APS_Character::SprintEnd(const FInputActionValue& Value)
 {
-	// 클라이언트에서 실행하는 함수
+	// 인스턴스에서 호출
 	SprintEnd_Server();
 }
 
 void APS_Character::SprintEnd_Server_Implementation()
 {
-	// 서버에서 호출하는 함수
+	// 서버에서 호출
 	SprintEnd_Client();
 }
 
 void APS_Character::SprintEnd_Client_Implementation()
 {
-	// 서버에서 호출하고 각 인스턴스마다 실행하는 함수
+	// 인스턴스마다 실행
 	if (GetCharacterStats())
 	{
 		GetCharacterMovement()->MaxWalkSpeed = GetCharacterStats()->WalkSpeed;
@@ -286,6 +256,7 @@ void APS_Character::SprintEnd_Client_Implementation()
 
 void APS_Character::Interact(const FInputActionValue& Value)
 {
+	// 아직 미구현
 	GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Red, TEXT("Interact"));
 }
 
@@ -299,28 +270,28 @@ void APS_Character::JumpEnd(const FInputActionValue& Value)
 	bPressedJump = false;
 }
 
-// AttackStart 함수를 서버로 보내기 위한 함수
 void APS_Character::Attack(const FInputActionValue& Value)
 {
-	if (HasAuthority())  // 서버에서 바로 처리
+	if (HasAuthority())
 	{
+		// 서버에서 호출
 		HandleAttack();
 	}
-	else  // 클라이언트에서 호출한 경우 서버로 요청 전송
+	else
 	{
+		// 클라이언트에서 호출
 		Attack_Server();
 	}
 }
 
-// 서버 호출을 선언
 bool APS_Character::Attack_Server_Validate()
 {
 	return true;
 }
 
-// 서버에서 공격 처리하는 함수
 void APS_Character::Attack_Server_Implementation()
 {
+	// 서버에서 호출
 	HandleAttack();
 }
 
@@ -329,6 +300,7 @@ void APS_Character::HandleAttack()
 {
 	if (bIsAttacking)
 	{
+		// 공격 시작
 		PS_CHECK(FMath::IsWithinInclusive<int>(CurrentCombo, 1, MaxCombo));
 		if (bCanNextCombo)
 		{
@@ -337,11 +309,11 @@ void APS_Character::HandleAttack()
 	}
 	else
 	{
-		// 공격 중으로 설정
+		// 콤보 공격 시작
 		PS_CHECK(CurrentCombo == 0);
 		AttackStartComboState();
-		PlayAttackMontage();
-		PS_AnimInstance->JumpToAttackMontageSection(CurrentCombo);
+		PlayMontage(PS_AnimInstance->AttackMontage);
+		PS_AnimInstance->JumpToMontageSection(PS_AnimInstance->AttackMontage, CurrentCombo);
 		bIsAttacking = true;
 	}
 
@@ -382,66 +354,77 @@ void APS_Character::HandleAttack()
 	//GetWorldTimerManager().SetTimer(UnusedHandle, this, &APS_Character::EndAttack, AttackDuration, false);
 }
 
-void APS_Character::PlayAttackMontage()
+void APS_Character::PlayMontage(UAnimMontage* Montage)
 {
 	if (GetLocalRole() == ROLE_Authority)
 	{
-		if (IsLocallyControlled())  // 서버에서 플레이
+		if (IsLocallyControlled())
 		{
-			PS_AnimInstance->Montage_Play(PS_AnimInstance->AttackMontage, 1.0f);
+			// 서버에서 호출
+			PS_AnimInstance->Montage_Play(Montage, 1.0f);
 		}
 		else
 		{
-			PlayAttackMontage_Client();  // 원격 클라이언트에서 플레이
+			// 클라이언트에서 호출
+			PlayMontage_Client(Montage);
 		}
 	}
 }
 
-void APS_Character::PlayAttackMontage_Client_Implementation()
+void APS_Character::PlayMontage_Client_Implementation(UAnimMontage* Montage)
 {
-	PS_AnimInstance->Montage_Play(PS_AnimInstance->AttackMontage, 1.0f);
+	// 인스턴스마다 실행
+	PS_AnimInstance->Montage_Play(Montage, 1.0f);
 }
 
-void APS_Character::JumpToAttackMontageSection(int NewSection)
+void APS_Character::JumpToMontageSection(UAnimMontage* Montage, int NewSection)
 {
 	if (GetLocalRole() == ROLE_Authority)
 	{
-		if (IsLocallyControlled())  // 서버에서 플레이
+		if (IsLocallyControlled())
 		{
-			PS_AnimInstance->JumpToAttackMontageSection(NewSection);
+			// 서버에서 호출
+			PS_AnimInstance->JumpToMontageSection(Montage, NewSection);
 		}
-		else  // 원격 클라이언트에서 플레이
+		else
 		{
-			JumpToAttackMontageSection_Client(NewSection);
+			// 클라이언트에서 호출
+			JumpToMontageSection_Client(Montage, NewSection);
 		}
 	}
 }
 
-void APS_Character::JumpToAttackMontageSection_Client_Implementation(int NewSection)
+void APS_Character::JumpToMontageSection_Client_Implementation(UAnimMontage* Montage, int NewSection)
 {
-	PS_AnimInstance->JumpToAttackMontageSection(NewSection);
+	// 인스턴스마다 실행
+	PS_AnimInstance->JumpToMontageSection(Montage, NewSection);
 }
 
-void APS_Character::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+void APS_Character::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
+	// Attack Montage
 	if (GetLocalRole() == ROLE_Authority)
 	{
-		if (IsLocallyControlled())  // 서버에서 플레이
+		if (IsLocallyControlled())
 		{
+			// 서버에서 호출
 			PS_CHECK(bIsAttacking);
 			PS_CHECK(CurrentCombo > 0);
 			bIsAttacking = false;
 			AttackEndComboState();
 		}
-		else  // 원격 클라이언트에서 플레이
+		else
 		{
-			OnAttackMontageEnded_Client(Montage, bInterrupted);
+			// 클라이언트에서 호출
+			OnMontageEnded_Client(Montage, bInterrupted);
 		}
 	}
 }
 
-void APS_Character::OnAttackMontageEnded_Client_Implementation(UAnimMontage* Montage, bool bInterrupted)
+void APS_Character::OnMontageEnded_Client_Implementation(UAnimMontage* Montage, bool bInterrupted)
 {
+	// Attack Montage
+	// 인스턴스마다 실행
 	PS_CHECK(bIsAttacking);
 	PS_CHECK(CurrentCombo > 0);
 	bIsAttacking = false;
@@ -450,6 +433,7 @@ void APS_Character::OnAttackMontageEnded_Client_Implementation(UAnimMontage* Mon
 
 void APS_Character::AttackStartComboState()
 {
+	// 콤보 공격 시작
 	bCanNextCombo = true;
 	bIsComboInputOn = false;
 	PS_CHECK(FMath::IsWithinInclusive<int>(CurrentCombo, 0, MaxCombo - 1));
@@ -457,6 +441,7 @@ void APS_Character::AttackStartComboState()
 }
 void APS_Character::AttackEndComboState()
 {
+	// 콤보 공격 시작
 	bIsComboInputOn = false;
 	bCanNextCombo = false;
 	CurrentCombo = 0;
@@ -531,16 +516,7 @@ void APS_Character::SetWeapon(APS_Weapon* NewWeapon, EHand NewHand)
 				}
 
 				FName WeaponLeftSocket(TEXT("hand_lSocket"));
-				bool bTemp = NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponLeftSocket);
-				UE_LOG(LogTemp, Warning, TEXT("Left Handed"));
-				if (bTemp)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is successful"));
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is un-successful"));
-				}
+				NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponLeftSocket);
 				NewWeapon->SetOwner(this);
 				CurrentLeftWeapon = NewWeapon;
 				CurrentHand = EHand::Left_Handed;
@@ -550,43 +526,18 @@ void APS_Character::SetWeapon(APS_Weapon* NewWeapon, EHand NewHand)
 			{
 				if (CurrentHand == EHand::Right_Handed)
 				{
-					bool bTemp = CurrentRightWeapon->Destroy();
-					if (bTemp)
-					{
-						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon destroyed"));
-					}
-					else
-					{
-						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon is not destroyed"));
-					}
+					CurrentRightWeapon->Destroy();
 					CurrentRightWeapon = nullptr;
 				}
 				else if (CurrentHand == EHand::Two_Handed)
 				{
-					bool bTemp = CurrentRightWeapon->Destroy();
-					if (bTemp)
-					{
-						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon destroyed"));
-					}
-					else
-					{
-						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon is not destroyed"));
-					}
+					CurrentRightWeapon->Destroy();
 					CurrentLeftWeapon = nullptr;
 					CurrentRightWeapon = nullptr;
 				}
 
 				FName WeaponRightSocket(TEXT("hand_rSocket"));
-				bool bTemp = NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponRightSocket);
-				UE_LOG(LogTemp, Warning, TEXT("Right Handed"));
-				if (bTemp)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is successful"));
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is un-successful"));
-				}
+				NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponRightSocket);
 				NewWeapon->SetOwner(this);
 				CurrentRightWeapon = NewWeapon;
 				CurrentHand = EHand::Right_Handed;
@@ -596,56 +547,23 @@ void APS_Character::SetWeapon(APS_Weapon* NewWeapon, EHand NewHand)
 			{
 				if (CurrentHand == EHand::Left_Handed)
 				{
-					bool bTemp = CurrentLeftWeapon->Destroy();
-					if (bTemp)
-					{
-						UE_LOG(LogTemp, Warning, TEXT("CurrentLeftWeapon destroyed"));
-					}
-					else
-					{
-						UE_LOG(LogTemp, Warning, TEXT("CurrentLeftWeapon is not destroyed"));
-					}
+					CurrentLeftWeapon->Destroy();
 					CurrentLeftWeapon = nullptr;
 				}
 				else if (CurrentHand == EHand::Right_Handed)
 				{
-					bool bTemp = CurrentRightWeapon->Destroy();
-					if (bTemp)
-					{
-						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon destroyed"));
-					}
-					else
-					{
-						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon is not destroyed"));
-					}
+					CurrentRightWeapon->Destroy();
 					CurrentRightWeapon = nullptr;
 				}
 				else if (CurrentHand == EHand::Two_Handed)
 				{
-					bool bTemp = CurrentRightWeapon->Destroy();
-					if (bTemp)
-					{
-						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon destroyed"));
-					}
-					else
-					{
-						UE_LOG(LogTemp, Warning, TEXT("CurrentRightWeapon is not destroyed"));
-					}
+					CurrentRightWeapon->Destroy();
 					CurrentLeftWeapon = nullptr;
 					CurrentRightWeapon = nullptr;
 				}
 
 				FName WeaponRightSocket(TEXT("hand_rSocket"));
-				bool bTemp = NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponRightSocket);
-				UE_LOG(LogTemp, Warning, TEXT("Two Handed"));
-				if (bTemp)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is successful"));
-				}
-				else
-				{
-					UE_LOG(LogTemp, Warning, TEXT("AttachToComponent is un-successful"));
-				}
+				NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponRightSocket);
 				NewWeapon->SetOwner(this);
 				CurrentLeftWeapon = NewWeapon;
 				CurrentRightWeapon = NewWeapon;

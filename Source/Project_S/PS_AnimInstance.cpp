@@ -11,19 +11,8 @@ UPS_AnimInstance::UPS_AnimInstance()
 	CurrentPawnSpeed = FVector2D::ZeroVector;
 	IsInAir = false;
 
-	// Load AnimMontages
 	LoadAnimMontage(AttackMontage, TEXT("/Game/Blueprints/BP_Character_Attack_AnimMontage.BP_Character_Attack_AnimMontage"));
 	LoadAnimMontage(DodgeMontage, TEXT("/Game/Blueprints/BP_Character_Dodge_AnimMontage.BP_Character_Dodge_AnimMontage"));
-}
-
-// Helper function to load AnimMontages
-void UPS_AnimInstance::LoadAnimMontage(UAnimMontage*& Montage, const TCHAR* Path)
-{
-	static ConstructorHelpers::FObjectFinder<UAnimMontage> MontageFinder(Path);
-	if (MontageFinder.Succeeded())
-	{
-		Montage = MontageFinder.Object;
-	}
 }
 
 // BeginPlay()¿Í À¯»ç
@@ -48,10 +37,10 @@ void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	}
 }
 
-void UPS_AnimInstance::JumpToAttackMontageSection(int NewSection)
+void UPS_AnimInstance::JumpToMontageSection(UAnimMontage* Montage, int NewSection)
 {
-	PS_CHECK(Montage_IsPlaying(AttackMontage));
-	Montage_JumpToSection(GetAttackMontageSectionName(NewSection), AttackMontage);
+	PS_CHECK(Montage_IsPlaying(Montage));
+	Montage_JumpToSection(GetMontageSectionName(Montage, NewSection), Montage);
 }
 
 void UPS_AnimInstance::AnimNotify_AttackHitCheck()
@@ -64,8 +53,18 @@ void UPS_AnimInstance::AnimNotify_NextAttackCheck()
 	OnNextAttackCheck.Broadcast();
 }
 
-FName UPS_AnimInstance::GetAttackMontageSectionName(int Section)
+void UPS_AnimInstance::LoadAnimMontage(UAnimMontage*& Montage, const TCHAR* Path)
 {
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> MontageFinder(Path);
+	if (MontageFinder.Succeeded())
+	{
+		Montage = MontageFinder.Object;
+	}
+}
+
+FName UPS_AnimInstance::GetMontageSectionName(UAnimMontage* Montage, int Section)
+{
+	// Attack Montage
 	PS_CHECK(FMath::IsWithinInclusive<int>(Section, 1, 2), NAME_None);
 	return FName(*FString::Printf(TEXT("Attack%d"), Section));
 }

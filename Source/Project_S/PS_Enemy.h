@@ -11,31 +11,27 @@ class PROJECT_S_API APS_Enemy : public ACharacter
 {
 	GENERATED_BODY()
 
-	// DataTable 포인터
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = CharacterData, meta = (AllowPrivateAccess = "true"))
-	class UDataTable* EnemyDataTable;
-
-	// PS_CharacterStats 포인터
-	struct FPS_CharacterStats* EnemyStats;
-
 public:
-	// Sets default values for this character's properties
 	APS_Enemy();
+
+	// Override functions
+	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
+	// User functions
+	void UpdateEnemyStats();	
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Override functions
-	virtual void Tick(float DeltaTime) override;
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+private:
+	// Data table reference variables
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CharacterData", meta = (AllowPrivateAccess = "true"))
+	class UDataTable* EnemyDataTable;
 
-	// User functions
-	void UpdateEnemyStats();
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	// PS_CharacterStats pointer variables
+	struct FPS_CharacterStats* EnemyStats;
 };

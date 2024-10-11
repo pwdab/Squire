@@ -17,16 +17,6 @@ class PROJECT_S_API UPS_AnimInstance : public UAnimInstance
 {
 	GENERATED_BODY()
 
-private:
-	UFUNCTION()
-	void AnimNotify_AttackHitCheck();
-
-	UFUNCTION()
-	void AnimNotify_NextAttackCheck();
-
-	void LoadAnimMontage(UAnimMontage*& Montage, const TCHAR* Path);
-	FName GetAttackMontageSectionName(int Section);
-
 public:
 	UPS_AnimInstance();
 
@@ -35,28 +25,44 @@ public:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 	// User functions
-	void JumpToAttackMontageSection(int NewSection);
+	void JumpToMontageSection(UAnimMontage* Montage, int NewSection);
 
-private:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
-	float MaxWalkSpeed;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
-	FVector2D CurrentPawnSpeed;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
-	bool IsInAir;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
-	bool IsSprinting;
-
-public:
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* AttackMontage;
-
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* DodgeMontage;
-
+	// Delegates
 	FOnNextAttackCheckDelegate OnNextAttackCheck;
 	FOnAttackHitCheckDelegate OnAttackHitCheck;
+
+	// Montage reference
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Montage", Meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* AttackMontage;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Montage", Meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* DodgeMontage;
+
+	
+private:
+	// Anim notify functions
+	UFUNCTION()
+	void AnimNotify_AttackHitCheck();
+
+	UFUNCTION()
+	void AnimNotify_NextAttackCheck();
+
+	// User functions
+	void LoadAnimMontage(UAnimMontage*& Montage, const TCHAR* Path);
+	FName GetMontageSectionName(UAnimMontage* Montage, int Section);
+
+	// Animation variables
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pawn", meta = (AllowPrivateAccess = "true"))
+	float MaxWalkSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pawn", meta = (AllowPrivateAccess = "true"))
+	FVector2D CurrentPawnSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pawn", meta = (AllowPrivateAccess = "true"))
+	bool IsInAir;
+
+	/*
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
+	bool IsSprinting;
+	*/
 };

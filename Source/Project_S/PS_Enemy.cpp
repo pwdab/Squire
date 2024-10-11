@@ -22,7 +22,7 @@ APS_Enemy::APS_Enemy()
 
 	// Mesh ¼³Á¤
 	GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -90.0f));
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMeshAsset(TEXT("/Game/Characters/Skeletons/Skeleton_Minion"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SkeletalMeshAsset(TEXT("/Game/Characters/Skeletons/Skeleton_Minion/Skeleton_Minion"));
 	if (SkeletalMeshAsset.Succeeded())
 	{
 		GetMesh()->SetSkeletalMesh(SkeletalMeshAsset.Object);

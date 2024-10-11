@@ -8,10 +8,9 @@
 
 APS_BasePickup::APS_BasePickup()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Setup Capsule Collision
+	// Setup Capsule Component
 	CapsuleCollision = CreateDefaultSubobject<UCapsuleComponent>("Collision");
 	RootComponent = CapsuleCollision;
 	CapsuleCollision->SetGenerateOverlapEvents(true);
@@ -27,7 +26,6 @@ APS_BasePickup::APS_BasePickup()
 	bReplicates = true;
 }
 
-// Called when the game starts or when spawned
 void APS_BasePickup::BeginPlay()
 {
 	Super::BeginPlay();
@@ -36,7 +34,6 @@ void APS_BasePickup::BeginPlay()
 	CapsuleCollision->OnComponentBeginOverlap.AddDynamic(this, &APS_BasePickup::OnBeginOverlap);
 }
 
-// Called every frame
 void APS_BasePickup::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
