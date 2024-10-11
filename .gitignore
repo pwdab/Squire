@@ -4,6 +4,7 @@ Intermediate
 Saved
 .vscode
 .vs
+.MyBuilds
 *.VC.db
 *.opensdf
 *.opendb
