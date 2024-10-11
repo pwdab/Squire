@@ -123,13 +123,32 @@ void APS_Character::PostInitializeComponents()
 
 	PS_AnimInstance->OnMontageEnded.AddDynamic(this, &APS_Character::OnMontageEnded);
 	PS_AnimInstance->OnNextAttackCheck.AddLambda([this]() -> void {
-		bCanNextCombo = false;
-
-		if (bIsComboInputOn)
+		if (GetLocalRole() == ROLE_Authority)
 		{
-			AttackStartComboState();
-			JumpToMontageSection(PS_AnimInstance->AttackMontage, CurrentCombo);
+			if (IsLocallyControlled())
+			{
+				// 서버에서 호출
+				bCanNextCombo = false;
+
+				if (bIsComboInputOn)
+				{
+					AttackStartComboState();
+					JumpToMontageSection(PS_AnimInstance->AttackMontage, CurrentCombo);
+				}
+			}
+			else
+			{
+				// 클라이언트에서 호출
+				bCanNextCombo = false;
+
+				if (bIsComboInputOn)
+				{
+					AttackStartComboState();
+					JumpToMontageSection(PS_AnimInstance->AttackMontage, CurrentCombo);
+				}
+			}
 		}
+		
 	});
 }
 
@@ -137,12 +156,14 @@ void APS_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
+	/*
 	// Setup Replication variables
 	DOREPLIFETIME_CONDITION(APS_Character, bIsAttacking, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(APS_Character, bCanNextCombo, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(APS_Character, bIsComboInputOn, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(APS_Character, CurrentCombo, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(APS_Character, MaxCombo, COND_OwnerOnly);
+	*/
 }
 
 void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -309,12 +330,15 @@ void APS_Character::HandleAttack()
 	}
 	else
 	{
-		// 콤보 공격 시작
-		PS_CHECK(CurrentCombo == 0);
-		AttackStartComboState();
-		PlayMontage(PS_AnimInstance->AttackMontage);
-		PS_AnimInstance->JumpToMontageSection(PS_AnimInstance->AttackMontage, CurrentCombo);
-		bIsAttacking = true;
+		if (HasAuthority())
+		{
+			// 콤보 공격 시작
+			PS_CHECK(CurrentCombo == 0);
+			bIsAttacking = true;
+			AttackStartComboState();
+			PlayMontage(PS_AnimInstance->AttackMontage);
+			PS_AnimInstance->JumpToMontageSection(PS_AnimInstance->AttackMontage, CurrentCombo);
+		}
 	}
 
 	FRotator ControlRotation = GetControlRotation();
@@ -356,6 +380,7 @@ void APS_Character::HandleAttack()
 
 void APS_Character::PlayMontage(UAnimMontage* Montage)
 {
+	/*
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		if (IsLocallyControlled())
@@ -369,6 +394,8 @@ void APS_Character::PlayMontage(UAnimMontage* Montage)
 			PlayMontage_Client(Montage);
 		}
 	}
+	*/
+	PlayMontage_Client(Montage);
 }
 
 void APS_Character::PlayMontage_Client_Implementation(UAnimMontage* Montage)
@@ -379,6 +406,7 @@ void APS_Character::PlayMontage_Client_Implementation(UAnimMontage* Montage)
 
 void APS_Character::JumpToMontageSection(UAnimMontage* Montage, int NewSection)
 {
+	/*
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		if (IsLocallyControlled())
@@ -392,6 +420,8 @@ void APS_Character::JumpToMontageSection(UAnimMontage* Montage, int NewSection)
 			JumpToMontageSection_Client(Montage, NewSection);
 		}
 	}
+	*/
+	JumpToMontageSection_Client(Montage, NewSection);
 }
 
 void APS_Character::JumpToMontageSection_Client_Implementation(UAnimMontage* Montage, int NewSection)
@@ -416,7 +446,11 @@ void APS_Character::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 		else
 		{
 			// 클라이언트에서 호출
-			OnMontageEnded_Client(Montage, bInterrupted);
+			//OnMontageEnded_Client(Montage, bInterrupted);
+			PS_CHECK(bIsAttacking);
+			PS_CHECK(CurrentCombo > 0);
+			bIsAttacking = false;
+			AttackEndComboState();
 		}
 	}
 }
@@ -441,7 +475,7 @@ void APS_Character::AttackStartComboState()
 }
 void APS_Character::AttackEndComboState()
 {
-	// 콤보 공격 시작
+	// 콤보 공격 종료
 	bIsComboInputOn = false;
 	bCanNextCombo = false;
 	CurrentCombo = 0;

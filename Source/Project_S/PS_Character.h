@@ -143,19 +143,24 @@ private:
 	class UPS_AnimInstance* PS_AnimInstance;
 
 	// Attack variables
-	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
+	//UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
 	bool bIsAttacking;
 
-	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
+	//UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
 	bool bCanNextCombo;
 
-	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
+	//UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
 	bool bIsComboInputOn;
 
-	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
+	//UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
 	int CurrentCombo;
 
-	UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
+	//UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
 	int MaxCombo;
 
 public:
