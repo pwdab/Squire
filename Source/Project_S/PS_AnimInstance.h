@@ -26,6 +26,7 @@ public:
 
 	// User functions
 	void JumpToMontageSection(UAnimMontage* Montage, int NewSection);
+	FString MontageToString(UAnimMontage* Montage);
 
 	// Delegates
 	FOnNextAttackCheckDelegate OnNextAttackCheck;

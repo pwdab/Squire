@@ -61,6 +61,8 @@ protected:
 
 	void HandleAttack();
 
+	void Dodge(const FInputActionValue& Value);
+
 	// Montage RPC functions
 	UFUNCTION()
 	void PlayMontage(UAnimMontage* Montage);
@@ -120,6 +122,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> AttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> DodgeAction;
 
 	// Data table reference variables
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CharacterData", meta = (AllowPrivateAccess = "true"))

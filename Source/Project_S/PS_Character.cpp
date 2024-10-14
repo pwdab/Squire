@@ -181,6 +181,7 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &APS_Character::JumpStart);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &APS_Character::JumpEnd);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APS_Character::Attack);
+		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &APS_Character::Dodge);
 	}
 }
 
@@ -204,6 +205,7 @@ void APS_Character::UpdateCharacterStats()
 
 void APS_Character::Move(const FInputActionValue& Value)
 {
+	//if (!PS_AnimInstance->Montage_IsPlaying(NULL))
 	if (!bIsAttacking)
 	{
 		const auto MovementVector = Value.Get<FVector2D>();
@@ -378,8 +380,28 @@ void APS_Character::HandleAttack()
 	//GetWorldTimerManager().SetTimer(UnusedHandle, this, &APS_Character::EndAttack, AttackDuration, false);
 }
 
+void APS_Character::Dodge(const FInputActionValue& Value)
+{
+	PS_LOG_S(Log);
+	PlayMontage(PS_AnimInstance->DodgeMontage);
+}
+
 void APS_Character::PlayMontage(UAnimMontage* Montage)
 {
+	FString AnimType = PS_AnimInstance->MontageToString(Montage);
+	UE_LOG(Project_S, Log, TEXT("AnimType : %s"), *AnimType);
+
+	if (AnimType.Equals("Attack"))
+	{
+		// Attack Montage
+		PlayMontage_Client(Montage);
+	}
+	else if (AnimType.Equals("Dodge"))
+	{
+		// Dodge Montage
+		PlayMontage_Client(Montage);
+		//Montage_JumpToSection(GetMontageSectionName(Montage, NewSection), Montage);
+	}
 	/*
 	if (GetLocalRole() == ROLE_Authority)
 	{
