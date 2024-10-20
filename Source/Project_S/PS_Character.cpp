@@ -383,7 +383,7 @@ void APS_Character::HandleAttack()
 void APS_Character::Dodge(const FInputActionValue& Value)
 {
 	PS_LOG_S(Log);
-	PlayMontage(PS_AnimInstance->DodgeMontage);
+	//PlayMontage(PS_AnimInstance->DodgeMontage);
 }
 
 void APS_Character::PlayMontage(UAnimMontage* Montage)
@@ -391,12 +391,14 @@ void APS_Character::PlayMontage(UAnimMontage* Montage)
 	FString AnimType = PS_AnimInstance->MontageToString(Montage);
 	UE_LOG(Project_S, Log, TEXT("AnimType : %s"), *AnimType);
 
-	if (AnimType.Equals("Attack"))
+	//if (AnimType.Equals("Attack"))
+	if (Montage->GetPathName().Equals(PS_AnimInstance->AttackMontage->GetPathName()))
 	{
 		// Attack Montage
 		PlayMontage_Client(Montage);
 	}
-	else if (AnimType.Equals("Dodge"))
+	//else if (AnimType.Equals("Dodge"))
+	else if (Montage->GetPathName().Equals(PS_AnimInstance->DodgeMontage->GetPathName()))
 	{
 		// Dodge Montage
 		PlayMontage_Client(Montage);
@@ -417,7 +419,7 @@ void APS_Character::PlayMontage(UAnimMontage* Montage)
 		}
 	}
 	*/
-	PlayMontage_Client(Montage);
+	//PlayMontage_Client(Montage);
 }
 
 void APS_Character::PlayMontage_Client_Implementation(UAnimMontage* Montage)

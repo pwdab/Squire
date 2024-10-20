@@ -94,14 +94,16 @@ FName UPS_AnimInstance::GetMontageSectionName(UAnimMontage* Montage, int Section
 
 	UE_LOG(LogTemp, Warning, TEXT("Parsed Anim Type: %s"), *AnimType);
 
-	if (AnimType.Equals("Attack"))
+	//if (AnimType.Equals("Attack"))
+	if(Montage->GetPathName().Equals(AttackMontage->GetPathName()))
 	{
 		// Attack Montage
 		UE_LOG(LogTemp, Warning, TEXT("Animation type is Attack"));
 		PS_CHECK(FMath::IsWithinInclusive<int>(Section, 1, 2), NAME_None);
 		return FName(*FString::Printf(TEXT("Attack%d"), Section));
 	}
-	else if (AnimType.Equals("Dodge"))
+	//else if (AnimType.Equals("Dodge"))
+	else if (Montage->GetPathName().Equals(DodgeMontage->GetPathName()))
 	{
 		// Dodge Montage
 		return FName(*FString::Printf(TEXT("Dodge%d"), Section));
