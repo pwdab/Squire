@@ -63,6 +63,12 @@ protected:
 
 	void Dodge(const FInputActionValue& Value);
 
+	UFUNCTION(Server, Reliable)
+	void Dodge_Server();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Dodge_Client();
+
 	// Montage RPC functions
 	UFUNCTION()
 	void PlayMontage(UAnimMontage* Montage);

@@ -205,8 +205,8 @@ void APS_Character::UpdateCharacterStats()
 
 void APS_Character::Move(const FInputActionValue& Value)
 {
-	//if (!PS_AnimInstance->Montage_IsPlaying(NULL))
-	if (!bIsAttacking)
+	if (!PS_AnimInstance->Montage_IsPlaying(NULL))
+	//if (!bIsAttacking)
 	{
 		const auto MovementVector = Value.Get<FVector2D>();
 
@@ -382,15 +382,32 @@ void APS_Character::HandleAttack()
 
 void APS_Character::Dodge(const FInputActionValue& Value)
 {
-	PS_LOG_S(Log);
-	//PlayMontage(PS_AnimInstance->DodgeMontage);
+	if (HasAuthority())
+	{
+		// 서버에서 호출
+		Dodge_Server();
+	}
+	else
+	{
+		// 클라이언트에서 호출
+		Attack_Server();
+	}
+	Dodge_Server
+	PlayMontage(PS_AnimInstance->DodgeMontage);
+}
+
+void APS_Character::Dodge_Server()
+{
+	//Dodge
+}
+
+void APS_Character::Dodge_Client()
+{
+
 }
 
 void APS_Character::PlayMontage(UAnimMontage* Montage)
 {
-	FString AnimType = PS_AnimInstance->MontageToString(Montage);
-	UE_LOG(Project_S, Log, TEXT("AnimType : %s"), *AnimType);
-
 	//if (AnimType.Equals("Attack"))
 	if (Montage->GetPathName().Equals(PS_AnimInstance->AttackMontage->GetPathName()))
 	{
@@ -456,26 +473,33 @@ void APS_Character::JumpToMontageSection_Client_Implementation(UAnimMontage* Mon
 
 void APS_Character::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	// Attack Montage
-	if (GetLocalRole() == ROLE_Authority)
+	if (Montage->GetPathName().Equals(PS_AnimInstance->AttackMontage->GetPathName()))
 	{
-		if (IsLocallyControlled())
+		// Attack Montage
+		if (GetLocalRole() == ROLE_Authority)
 		{
-			// 서버에서 호출
-			PS_CHECK(bIsAttacking);
-			PS_CHECK(CurrentCombo > 0);
-			bIsAttacking = false;
-			AttackEndComboState();
+			if (IsLocallyControlled())
+			{
+				// 서버에서 호출
+				PS_CHECK(bIsAttacking);
+				PS_CHECK(CurrentCombo > 0);
+				bIsAttacking = false;
+				AttackEndComboState();
+			}
+			else
+			{
+				// 클라이언트에서 호출
+				//OnMontageEnded_Client(Montage, bInterrupted);
+				PS_CHECK(bIsAttacking);
+				PS_CHECK(CurrentCombo > 0);
+				bIsAttacking = false;
+				AttackEndComboState();
+			}
 		}
-		else
-		{
-			// 클라이언트에서 호출
-			//OnMontageEnded_Client(Montage, bInterrupted);
-			PS_CHECK(bIsAttacking);
-			PS_CHECK(CurrentCombo > 0);
-			bIsAttacking = false;
-			AttackEndComboState();
-		}
+	}
+	else if (Montage->GetPathName().Equals(PS_AnimInstance->DodgeMontage->GetPathName()))
+	{
+
 	}
 }
 
