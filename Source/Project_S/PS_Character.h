@@ -7,6 +7,20 @@
 #include "GameFramework/Character.h"
 #include "PS_Character.generated.h"
 
+UENUM(BlueprintType)
+enum class EDirection : uint8
+{
+	N UMETA(DisplayName = "N"),
+	W UMETA(DisplayName = "W"),
+	WA UMETA(DisplayName = "WA"),
+	A UMETA(DisplayName = "A"),
+	SA UMETA(DisplayName = "SA"),
+	S UMETA(DisplayName = "S"),
+	SD UMETA(DisplayName = "SD"),
+	D UMETA(DisplayName = "D"),
+	WD UMETA(DisplayName = "WD")
+};
+
 //DECLARE_DELEGATE_OneParam(FOnSprint, bool);
 UCLASS()
 class PROJECT_S_API APS_Character : public ACharacter
@@ -61,13 +75,20 @@ protected:
 
 	void HandleAttack();
 
+	void DodgeDirectionStart(const FInputActionValue& Value);
+
+	void DodgeDirectionEnd(const FInputActionValue& Value);
+
 	void Dodge(const FInputActionValue& Value);
 
 	UFUNCTION(Server, Reliable)
-	void Dodge_Server();
+	void Dodge_Server(const FVector Value);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Dodge_Client();
+	void Dodge_Client(const FVector Value);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "Dodge")
+	void OnDodge(const FVector& LaunchVector);
 
 	// Montage RPC functions
 	UFUNCTION()
@@ -99,6 +120,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack")
 	float AttackDuration = 1.0f;
 
+	// Dodge variables
+	EDirection Dodge_Direction;
+
 private:
 	// Component variables
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (AllowPrivateAccess = "true"))
@@ -128,6 +152,12 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> AttackAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> DodgeDirectionStartAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> DodgeDirectionEndAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> DodgeAction;
@@ -173,6 +203,10 @@ private:
 	//UPROPERTY(Replicated, VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Attack", Meta = (AllowPrivateAccess = "true"))
 	int MaxCombo;
+
+	// Dodge variables
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dodge", meta = (AllowPrivateAccess = "true"))
+	bool bIsDodging;
 
 public:
 	// Getter functions

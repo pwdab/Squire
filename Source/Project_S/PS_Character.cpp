@@ -5,6 +5,7 @@
 // Core Engine Components
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/TimeLineComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -85,6 +86,10 @@ APS_Character::APS_Character()
 	MaxCombo = 2;
 	AttackEndComboState();
 
+	// Setup Dodge variables
+	Dodge_Direction = EDirection::N;
+	bIsDodging = false;
+
 	// Replication
 	bReplicates = true;
 }
@@ -108,6 +113,14 @@ void APS_Character::BeginPlay()
 void APS_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	// Timeline
+	/*
+	if (DodgeTimeline->IsPlaying())
+	{
+		DodgeTimeline->TickTimeline(DeltaTime);
+	}
+	*/
 
 	// 캐릭터가 공중에 떠 있으면 CharacterMovement의 RotationRate를 줄임
 	GetCharacterMovement()->RotationRate = (GetMovementComponent()->IsFalling() ? FRotator(0.0f, 150.0f, 0.0f) : FRotator(0.0f, 500.0f, 0.0f));
@@ -156,8 +169,9 @@ void APS_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	/*
 	// Setup Replication variables
+	//DOREPLIFETIME_CONDITION(APS_Character, Dodge_Direction, COND_OwnerOnly);
+	/*
 	DOREPLIFETIME_CONDITION(APS_Character, bIsAttacking, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(APS_Character, bCanNextCombo, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(APS_Character, bIsComboInputOn, COND_OwnerOnly);
@@ -181,6 +195,8 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &APS_Character::JumpStart);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &APS_Character::JumpEnd);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &APS_Character::Attack);
+		EnhancedInputComponent->BindAction(DodgeDirectionStartAction, ETriggerEvent::Triggered, this, &APS_Character::DodgeDirectionStart);
+		EnhancedInputComponent->BindAction(DodgeDirectionEndAction, ETriggerEvent::Completed, this, &APS_Character::DodgeDirectionEnd);
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &APS_Character::Dodge);
 	}
 }
@@ -380,30 +396,119 @@ void APS_Character::HandleAttack()
 	//GetWorldTimerManager().SetTimer(UnusedHandle, this, &APS_Character::EndAttack, AttackDuration, false);
 }
 
+void APS_Character::DodgeDirectionStart(const FInputActionValue& Value)
+{
+	const auto MovementVector = Value.Get<FVector2D>();
+	if (MovementVector.X > 0) {
+		if (MovementVector.Y > 0) {
+			Dodge_Direction = EDirection::WD;
+		}
+		else if (MovementVector.Y < 0) {
+			Dodge_Direction = EDirection::SD;
+		}
+		else {
+			Dodge_Direction = EDirection::D;
+		}
+	}
+	else if (MovementVector.X < 0) {
+		if (MovementVector.Y > 0) {
+			Dodge_Direction = EDirection::WA;
+		}
+		else if (MovementVector.Y < 0) {
+			Dodge_Direction = EDirection::SA;
+		}
+		else {
+			Dodge_Direction = EDirection::A;
+		}
+	}
+	else {
+		if (MovementVector.Y > 0) {
+			Dodge_Direction = EDirection::W;
+		}
+		else if (MovementVector.Y < 0) {
+			Dodge_Direction = EDirection::S;
+		}
+		else {
+			Dodge_Direction = EDirection::N;
+		}
+	}
+	//UE_LOG(Project_S, Log, TEXT("Dodge_Direction = %d\n"), Dodge_Direction);
+}
+
+void APS_Character::DodgeDirectionEnd(const FInputActionValue& Value)
+{
+	Dodge_Direction = EDirection::N;
+	//UE_LOG(Project_S, Log, TEXT("Dodge_Direction = %d\n"), Dodge_Direction);
+}
+
 void APS_Character::Dodge(const FInputActionValue& Value)
 {
-	if (HasAuthority())
+	if (!bIsDodging)
 	{
-		// 서버에서 호출
-		Dodge_Server();
+		if (Controller != nullptr)
+		{
+			const auto Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+			FVector LaunchVector;
+			switch (Dodge_Direction)
+			{
+			case EDirection::N:
+			case EDirection::W:
+				LaunchVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+				break;
+			case EDirection::WA:
+				LaunchVector = (FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X) - FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y)).GetSafeNormal();
+				break;
+			case EDirection::A:
+				LaunchVector = -FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+				break;
+			case EDirection::SA:
+				LaunchVector = (-FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X) - FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y)).GetSafeNormal();
+				break;
+			case EDirection::S:
+				LaunchVector = -FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+				break;
+			case EDirection::SD:
+				LaunchVector = (-FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X) + FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y)).GetSafeNormal();
+				break;
+			case EDirection::D:
+				LaunchVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+				break;
+			case EDirection::WD:
+				LaunchVector = (FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X) + FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y)).GetSafeNormal();
+				break;
+			}
+			LaunchVector *= 250.0f;
+
+			if (HasAuthority())
+			{
+				FColor DrawColor = FColor::Green;
+				DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + (LaunchVector), DrawColor, false, 1, 0, 5);
+				// 서버에서 호출
+				Dodge_Client(LaunchVector);
+			}
+			else
+			{
+				// 클라이언트에서 호출
+				Dodge_Server(LaunchVector);
+			}
+		}
 	}
-	else
-	{
-		// 클라이언트에서 호출
-		Attack_Server();
-	}
-	Dodge_Server
+}
+
+void APS_Character::Dodge_Server_Implementation(const FVector Value)
+{
+	Dodge_Client(Value);
+}
+
+void APS_Character::Dodge_Client_Implementation(const FVector Value)
+{
+	// Blueprint 이벤트 호출
+	OnDodge(Value);
+	//LaunchCharacter(Value * 5000.0f, false, true);
+	SetActorRotation(Value.Rotation());
 	PlayMontage(PS_AnimInstance->DodgeMontage);
-}
-
-void APS_Character::Dodge_Server()
-{
-	//Dodge
-}
-
-void APS_Character::Dodge_Client()
-{
-
 }
 
 void APS_Character::PlayMontage(UAnimMontage* Montage)
