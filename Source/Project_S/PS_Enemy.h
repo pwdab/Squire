@@ -37,6 +37,9 @@ public:
 	UFUNCTION()
 	void OnBeginOverlap(AActor* OverlappedActor, AActor* OtherActor);
 
+	// variables
+	APawn* ChasingPawn;
+
 	// AI variables
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy AI")
 	float PatrolSpeed = 150.0f;
@@ -45,7 +48,7 @@ public:
 	float ChaseSpeed = 350.0f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Enemy AI")
-	float PatrolRadius = 50000.0f;
+	float PatrolRadius = 1000.0f;
 
 protected:
 	// Called when the game starts or when spawned

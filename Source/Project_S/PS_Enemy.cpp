@@ -38,7 +38,7 @@ APS_Enemy::APS_Enemy()
 	PawnSense = CreateDefaultSubobject<UPawnSensingComponent>(TEXT("PawnSense"));
 	PawnSense->SensingInterval = 0.8f;
 	PawnSense->SetPeripheralVisionAngle(45.0f);
-	PawnSense->SightRadius = 1500.0f;
+	PawnSense->SightRadius = 1000.0f;
 	PawnSense->HearingThreshold = 400.0f;
 	PawnSense->LOSHearingThreshold = 800.0f;
 
@@ -66,6 +66,8 @@ APS_Enemy::APS_Enemy()
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.0f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.0f;
 	GetCharacterMovement()->GravityScale = 4.0f;
+
+	ChasingPawn = nullptr;
 }
 
 // Called when the game starts or when spawned
@@ -85,10 +87,51 @@ void APS_Enemy::Tick(float DeltaTime)
 
 	if (GetLocalRole() != ROLE_Authority) return;
 
-	if (GetMovementComponent()->GetMaxSpeed() == ChaseSpeed) return;
-
-	if ((GetActorLocation() - PatrolLocation).Size() < 500.0f)
+	// Debug Draw PawnSense
+	if (PawnSense)
 	{
+		FVector Location = GetActorLocation();
+		FVector ForwardVector = GetActorForwardVector();
+		float SightRadius = PawnSense->SightRadius;
+		float PeripheralVisionAngle = PawnSense->GetPeripheralVisionAngle();
+
+		// 정찰 범위 시각화
+		DrawDebugSphere(GetWorld(), Location, PatrolRadius, 8, FColor::Red, false, 0);
+
+		// 시야 범위 시각화
+		DrawDebugCone(GetWorld(), Location, ForwardVector, SightRadius, FMath::DegreesToRadians(PeripheralVisionAngle), FMath::DegreesToRadians(PeripheralVisionAngle), 10, FColor::Green, false, 0);
+
+		// 청각 범위 시각화
+		DrawDebugSphere(GetWorld(), Location, PawnSense->HearingThreshold, 8, FColor::Cyan, false, 0);
+		DrawDebugSphere(GetWorld(), Location, PawnSense->LOSHearingThreshold, 8, FColor::Yellow, false, 0);
+
+	}
+
+	// 
+	if (GetMovementComponent()->GetMaxSpeed() == ChaseSpeed)
+	{
+		if (ChasingPawn)
+		{
+			//DrawDebugSphere(GetWorld(), ChasingPawn->GetActorLocation(), 1.0f, 12, FColor::Red, false, 1.0f);
+			//DrawDebugLine(GetWorld(), GetActorLocation(), ChasingPawn->GetActorLocation(), FColor::Yellow, false, 0.0f, 0, 5);
+			DrawDebugDirectionalArrow(GetWorld(), GetActorLocation() + FVector(0.f, 0.f, 100.0f), ChasingPawn->GetActorLocation() + FVector(0.f, 0.f, 100.0f), 150.0f, FColor::Red, false, 0.0f, 0, 5);
+
+			FVector ForwardVector = GetActorForwardVector();
+			float DistanceToPawn = (GetActorLocation() - ChasingPawn->GetActorLocation()).Size();
+			FVector DirectionToPawn = (ChasingPawn->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+			float DotProduct = FVector::DotProduct(ForwardVector, DirectionToPawn);
+			float AngleToPawn = FMath::RadiansToDegrees(FMath::Acos(DotProduct));
+			//if (DistanceToPawn > PawnSense->SightRadius || AngleToPawn > PawnSense->GetPeripheralVisionAngle())
+			if (DistanceToPawn > PawnSense->SightRadius)
+			{
+				ChasingPawn = nullptr;
+				SetNextPatrolLocation();
+			}
+		}
+	}
+	else if ((GetActorLocation() - PatrolLocation).Size() < 500.0f)
+	{
+		//UE_LOG(Project_S, Log, TEXT("GetActorLocation() - PatrolLocation).Size() = %d\n"), (GetActorLocation() - PatrolLocation).Size());
 		SetNextPatrolLocation();
 	}
 
@@ -157,18 +200,18 @@ void APS_Enemy::Chase(APawn* Pawn)
 
 	GetCharacterMovement()->MaxWalkSpeed = ChaseSpeed;
 	UAIBlueprintHelperLibrary::SimpleMoveToActor(GetController(), Pawn);
-
-	DrawDebugSphere(GetWorld(), Pawn->GetActorLocation(), 25.0f, 12, FColor::Red, true, 10.0f, 0, 2.0f);
+	//DrawDebugSphere(GetWorld(), Pawn->GetActorLocation(), 250.0f, 12, FColor::Red, true, 10.0f, 0, 2.0f);
 }
 
 void APS_Enemy::OnPawnDetected(APawn* Pawn)
 {
 	if (!Pawn->IsA<APS_Character>()) return;
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Character detected!"));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Character detected!"));
 
 	if (GetCharacterMovement()->MaxWalkSpeed != ChaseSpeed)
 	{
+		ChasingPawn = Pawn;
 		Chase(Pawn);
 	}
 }
@@ -177,7 +220,9 @@ void APS_Enemy::OnBeginOverlap(AActor* OverlappedActor, AActor* OtherActor)
 {
 	if (!OtherActor->IsA<APS_Character>()) return;
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Character captured!"));
+	ChasingPawn = nullptr;
+	SetNextPatrolLocation();
+	//GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Character captured!"));
 }
 
 float APS_Enemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)

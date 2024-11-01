@@ -326,6 +326,10 @@ void APS_Character::Interact_Server_Implementation()
 	{
 		IPS_Interactable::Execute_Interact(InteractableActor, this);
 	}
+	else
+	{
+		UE_LOG(Project_S, Log, TEXT("InteractableActor is null"));
+	}
 }
 
 void APS_Character::JumpStart(const FInputActionValue& Value)
@@ -513,7 +517,8 @@ void APS_Character::Dodge(const FInputActionValue& Value)
 			if (HasAuthority())
 			{
 				FColor DrawColor = FColor::Green;
-				DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + (LaunchVector), DrawColor, false, 1, 0, 5);
+				//DrawDebugLine(GetWorld(), GetActorLocation(), GetActorLocation() + (LaunchVector), DrawColor, false, 1, 0, 5);
+				DrawDebugDirectionalArrow(GetWorld(), GetActorLocation() + FVector(0.f, 0.f, 100.0f), GetActorLocation() + LaunchVector + FVector(0.f, 0.f, 100.0f), 150.0f, DrawColor, false, 1.0f, 0, 5.0f);
 				// 서버에서 호출
 				Dodge_Client(LaunchVector);
 			}
