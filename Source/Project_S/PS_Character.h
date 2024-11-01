@@ -67,6 +67,10 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void SprintEnd_Client();
 
+	// Interact RPC functions
+	UFUNCTION(Server, Reliable)
+	void Interact_Server();
+
 	// Attack RPC functions
 	void Attack(const FInputActionValue& Value);
 
@@ -75,6 +79,7 @@ protected:
 
 	void HandleAttack();
 
+	// Dodge RPC funtions
 	void DodgeDirectionStart(const FInputActionValue& Value);
 
 	void DodgeDirectionEnd(const FInputActionValue& Value);
@@ -168,6 +173,10 @@ private:
 
 	// PS_CharacterStats pointer variables
 	struct FPS_CharacterStats* CharacterStats;
+
+	// Interactable Actor pointer variables
+	UPROPERTY()
+	AActor* InteractableActor;
 
 	// Weapon variables
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))

@@ -29,6 +29,10 @@
 #include "PS_BasePickup.h"
 #include "PS_Weapon.h"
 
+// Interact
+#include "PS_Interactable.h"
+#include "Kismet/KismetSystemLibrary.h"
+
 // Attack
 #include "PS_AnimInstance.h"
 #include "Net/UnrealNetwork.h"
@@ -114,13 +118,27 @@ void APS_Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// Timeline
-	/*
-	if (DodgeTimeline->IsPlaying())
+	// Interact
+	if (GetLocalRole() != ROLE_Authority) return;
+	FHitResult HitResult;
+	FCollisionQueryParams QueryParams;
+	QueryParams.bTraceComplex = true;
+	QueryParams.AddIgnoredActor(this);
+
+	auto SphereRadius = 50.0f;
+	auto StartLocation = GetActorLocation() + GetActorForwardVector() * 150.0f;
+	auto EndLocation = StartLocation + GetActorForwardVector() * 500.0f;
+	
+	auto IsHit = UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocation, EndLocation, SphereRadius, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, HitResult, true);
+	if (IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Interactable::StaticClass()))
 	{
-		DodgeTimeline->TickTimeline(DeltaTime);
+		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Magenta, false, 1.0f);
+		InteractableActor = HitResult.GetActor();
 	}
-	*/
+	else
+	{
+		InteractableActor = nullptr;
+	}
 
 	// 캐릭터가 공중에 떠 있으면 CharacterMovement의 RotationRate를 줄임
 	GetCharacterMovement()->RotationRate = (GetMovementComponent()->IsFalling() ? FRotator(0.0f, 150.0f, 0.0f) : FRotator(0.0f, 500.0f, 0.0f));
@@ -129,6 +147,8 @@ void APS_Character::Tick(float DeltaTime)
 void APS_Character::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+
+	//if (GetLocalRole() != ROLE_Authority) return;
 
 	// Setup Delegates
 	PS_AnimInstance = Cast<UPS_AnimInstance>(GetMesh()->GetAnimInstance());
@@ -296,7 +316,16 @@ void APS_Character::SprintEnd_Client_Implementation()
 void APS_Character::Interact(const FInputActionValue& Value)
 {
 	// 아직 미구현
-	GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Red, TEXT("Interact"));
+	//GEngine->AddOnScreenDebugMessage(3, 5.f, FColor::Red, TEXT("Interact"));
+	Interact_Server();
+}
+
+void APS_Character::Interact_Server_Implementation()
+{
+	if (InteractableActor)
+	{
+		IPS_Interactable::Execute_Interact(InteractableActor, this);
+	}
 }
 
 void APS_Character::JumpStart(const FInputActionValue& Value)
