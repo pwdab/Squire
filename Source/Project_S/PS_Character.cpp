@@ -31,6 +31,7 @@
 
 // Interact
 #include "PS_Interactable.h"
+#include "PS_Grabable.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 // Attack
@@ -94,6 +95,11 @@ APS_Character::APS_Character()
 	Dodge_Direction = EDirection::N;
 	bIsDodging = false;
 
+	// Interact variables
+	InteractableActor = nullptr;
+	GrabableActor = nullptr;
+	GrabbedActor = nullptr;
+
 	// Replication
 	bReplicates = true;
 }
@@ -138,6 +144,16 @@ void APS_Character::Tick(float DeltaTime)
 	else
 	{
 		InteractableActor = nullptr;
+	}
+
+	if (!GrabbedActor && IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Grabable::StaticClass()))
+	{
+		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Yellow, false, 1.0f);
+		GrabableActor = HitResult.GetActor();
+	}
+	else
+	{
+		GrabableActor = nullptr;
 	}
 
 	// 캐릭터가 공중에 떠 있으면 CharacterMovement의 RotationRate를 줄임
@@ -330,6 +346,28 @@ void APS_Character::Interact_Server_Implementation()
 	{
 		UE_LOG(Project_S, Log, TEXT("InteractableActor is null"));
 	}
+
+	if (GrabableActor)
+	{
+		if (!GrabbedActor)
+		{
+			IPS_Grabable::Execute_Grab(GrabableActor, this);
+			GrabbedActor = GrabableActor;
+		}
+	}
+	else
+	{
+		if (GrabbedActor)
+		{
+			IPS_Grabable::Execute_UnGrab(GrabbedActor, this);
+			GrabbedActor = nullptr;
+		}
+		else
+		{
+			UE_LOG(Project_S, Log, TEXT("GrabableActor is null"));
+		}
+	}
+	
 }
 
 void APS_Character::JumpStart(const FInputActionValue& Value)

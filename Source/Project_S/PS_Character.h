@@ -178,6 +178,13 @@ private:
 	UPROPERTY()
 	AActor* InteractableActor;
 
+	// Grabable Actor pointer variables
+	UPROPERTY()
+	AActor* GrabableActor;
+
+	UPROPERTY()
+	AActor* GrabbedActor;
+
 	// Weapon variables
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
 	class APS_Weapon* CurrentLeftWeapon;
