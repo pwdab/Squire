@@ -37,7 +37,6 @@ public:
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Montage", Meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* DodgeMontage;
-
 	
 private:
 	// Anim notify functions
@@ -60,6 +59,14 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pawn", meta = (AllowPrivateAccess = "true"))
 	bool IsInAir;
+
+	UPROPERTY(EditAnywhere, BlueprintReadONly, Category = "Pawn", meta = (AllowPrivateAccess = "true"))
+	FRotator ControlRotation;
+
+	const float MAX_ROTATION_ROLL = 60.0f;
+	const float MIN_ROTATION_ROLL = -45.0f;
+	const float MAX_ROTATION_YAW = 75.0f;
+	const float MIN_ROTATION_YAW = -75.0f;
 
 	/*
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))

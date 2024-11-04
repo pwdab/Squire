@@ -13,6 +13,9 @@ UPS_AnimInstance::UPS_AnimInstance()
 
 	LoadAnimMontage(AttackMontage, TEXT("/Game/Blueprints/BP_Character_Attack_AnimMontage.BP_Character_Attack_AnimMontage"));
 	LoadAnimMontage(DodgeMontage, TEXT("/Game/Blueprints/BP_Character_Dodge_AnimMontage.BP_Character_Dodge_AnimMontage"));
+
+	ControlRotation.Roll = 90.0f;
+	ControlRotation.Yaw = -90.0f;
 }
 
 // BeginPlay()¿Í À¯»ç
@@ -33,6 +36,17 @@ void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		{
 			IsInAir = Character->GetMovementComponent()->IsFalling();
 			MaxWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
+			ControlRotation.Roll = -Character->GetControlRotation().Pitch + 90.0f;
+			if (ControlRotation.Roll < 0)
+			{
+				ControlRotation.Roll += 360.0f;
+			}
+			ControlRotation.Roll = FMath::Clamp(ControlRotation.Roll, 90 - MAX_ROTATION_ROLL, 90 - MIN_ROTATION_ROLL);
+
+
+			ControlRotation.Yaw = Character->GetControlRotation().Yaw - 90.0f - Character->GetActorRotation().Yaw;
+			//ControlRotation.Roll = FMath::Clamp(-Character->GetControlRotation().Pitch + 90.0f, MIN_ROTATION_ROLL, MAX_ROTATION_ROLL);
+			//ControlRotation.Yaw = FMath::Clamp(Character->GetControlRotation().Yaw - 90.0f - Character->GetActorRotation().Yaw, MIN_ROTATION_YAW, MAX_ROTATION_YAW);
 		}
 	}
 }
