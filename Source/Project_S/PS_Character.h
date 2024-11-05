@@ -47,6 +47,7 @@ protected:
 
 	// Input action functions
 	void Move(const struct FInputActionValue& Value);
+	void MoveEnd(const struct FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void SprintStart(const FInputActionValue& Value);
 	void SprintEnd(const FInputActionValue& Value);
@@ -144,6 +145,9 @@ private:
 	TObjectPtr<class UInputAction> MoveAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> MoveEndAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> LookAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
@@ -224,6 +228,20 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dodge", meta = (AllowPrivateAccess = "true"))
 	bool bIsDodging;
 
+	// Actor Turn variables
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn", meta = (AllowPrivateAccess = "true"))
+	bool bIsMoving;
+
+	/*
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn", meta = (AllowPrivateAccess = "true"))
+	bool bIsTurning;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn", meta = (AllowPrivateAccess = "true"))
+	bool bIsTurning;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn", meta = (AllowPrivateAccess = "true"))
+	bool bIsTurning;
+	*/
 public:
 	// Getter functions
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }

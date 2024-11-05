@@ -26,6 +26,7 @@ public:
 
 	// User functions
 	void JumpToMontageSection(UAnimMontage* Montage, int NewSection);
+	void SetAngleInDegrees(float Value);
 
 	// Delegates
 	FOnNextAttackCheckDelegate OnNextAttackCheck;
@@ -56,6 +57,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pawn", meta = (AllowPrivateAccess = "true"))
 	FVector2D CurrentPawnSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pawn", meta = (AllowPrivateAccess = "true"))
+	float CurrentPawnDirection;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Pawn", meta = (AllowPrivateAccess = "true"))
 	bool IsInAir;

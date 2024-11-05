@@ -41,13 +41,14 @@ void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			{
 				ControlRotation.Roll += 360.0f;
 			}
+
+			// 머리 위아래
 			ControlRotation.Roll = FMath::Clamp(ControlRotation.Roll, 90 - MAX_ROTATION_ROLL, 90 - MIN_ROTATION_ROLL);
 
+			// 머리 좌우
 			ControlRotation.Yaw = Character->GetControlRotation().Yaw - 90.0f - Character->GetActorRotation().Yaw;
 
-			//UE_LOG(Project_S, Log, TEXT("ControlRotation.Yaw = %f, ActorRotation.Yaw = %f\n"), ControlRotation.Yaw, Character->GetActorRotation().Yaw);
-			//ControlRotation.Roll = FMath::Clamp(-Character->GetControlRotation().Pitch + 90.0f, MIN_ROTATION_ROLL, MAX_ROTATION_ROLL);
-			//ControlRotation.Yaw = FMath::Clamp(Character->GetControlRotation().Yaw - 90.0f - Character->GetActorRotation().Yaw, MIN_ROTATION_YAW, MAX_ROTATION_YAW);
+			CurrentPawnDirection = FMath::Clamp(FVector::DotProduct(Character->GetActorForwardVector(), Character->GetVelocity()), -1, 1);
 		}
 	}
 }

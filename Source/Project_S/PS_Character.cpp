@@ -73,7 +73,7 @@ APS_Character::APS_Character()
 	}
 
 	// Setup CharacterMovement
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
 	GetCharacterMovement()->MaxWalkSpeed = 0.0f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.0f;
@@ -99,6 +99,9 @@ APS_Character::APS_Character()
 	InteractableActor = nullptr;
 	GrabableActor = nullptr;
 	GrabbedActor = nullptr;
+
+	// Actor Turn variables
+	bIsMoving = false;
 
 	// Replication
 	bReplicates = true;
@@ -224,6 +227,7 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &APS_Character::Move);
+		EnhancedInputComponent->BindAction(MoveEndAction, ETriggerEvent::Completed, this, &APS_Character::MoveEnd);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APS_Character::Look);
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &APS_Character::Interact);
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &APS_Character::SprintStart);
@@ -257,6 +261,8 @@ void APS_Character::UpdateCharacterStats()
 
 void APS_Character::Move(const FInputActionValue& Value)
 {
+	bIsMoving = true;
+
 	if (!PS_AnimInstance->Montage_IsPlaying(NULL))
 	//if (!bIsAttacking)
 	{
@@ -272,18 +278,100 @@ void APS_Character::Move(const FInputActionValue& Value)
 
 			AddMovementInput(ForwardDirection, MovementVector.Y);
 			AddMovementInput(RightDirection, MovementVector.X);
+
+			// YawRotation 방향과 MovementVector 사이의 내적값
+			float DotProduct = FMath::Clamp(FVector2D::DotProduct(FVector2D(0.0f, 1.0f), MovementVector.GetSafeNormal()), -1.0f, 1.0f);
+
+			// 내적값을 통해 각도로 변환
+			float AngleInDegrees = FMath::RadiansToDegrees(FMath::Acos(DotProduct));
+			// 왼쪽으로 가는 경우
+			if (MovementVector.X < 0)
+			{
+				AngleInDegrees *= -1;
+			}
+
+			// 앞으로 가는 경우
+			if (FMath::Abs(AngleInDegrees) <= 90)
+			{
+				AngleInDegrees = FMath::Clamp(AngleInDegrees, -71.0f, 71.0f);		// 71도로 설정해야 멈췄을 때 Look()에서 정면을 바라보도록 할 수 있음
+				
+			}
+			// 뒤로 가는 경우
+			else
+			{
+				AngleInDegrees = (AngleInDegrees < 0) ? (180 + AngleInDegrees) : (-180 + AngleInDegrees);
+			}
+
+			SetActorRotation(FMath::RInterpTo(GetActorRotation(), FRotator(GetActorRotation().Pitch, Controller->GetControlRotation().Yaw + AngleInDegrees, GetActorRotation().Roll), GetWorld()->GetDeltaSeconds(), 10.0f));
+			//SetActorRotation(FRotator(GetActorRotation().Pitch, Controller->GetControlRotation().Yaw + AngleInDegrees, GetActorRotation().Roll));
 		}
 	}
 }
 
+void APS_Character::MoveEnd(const FInputActionValue& Value)
+{
+	bIsMoving = false;
+}
+
 void APS_Character::Look(const FInputActionValue& Value)
 {
+	
 	const auto LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+		
+		if (!bIsMoving)
+		{
+			float ControlYaw = GetControlRotation().Yaw;
+			float ActorYaw = GetActorRotation().Yaw;
+
+			if (ActorYaw < 0)
+			{
+				ActorYaw += 360.0f;
+			}
+
+			// delta_angle이 70도가 될 때까지 캐릭터의 몸체는 움직이지 않음
+			float delta_angle = ControlYaw - ActorYaw;
+
+			if (delta_angle < 0)
+			{
+				delta_angle += 360.0f;
+			}
+
+			if (delta_angle > 180)
+			{
+				delta_angle -= 360.0f;
+			}
+
+			/*
+			if (!bIsTurning && (delta_angle > 70 || delta_angle < -70))
+			{
+				bIsTurning = true;
+				TargetYaw = ControlYaw;
+			}
+			*/
+
+			// delta_angle이 70도보다 커지면 캐릭터의 몸체도 같이 움직여 delta_angle이 70도보다 커지는 것을 방지
+			// 오른쪽으로 회전
+			if (delta_angle > 70)
+			{
+				ActorYaw += delta_angle - 70.0f;
+				FRotator new_rotator = GetActorRotation();
+				new_rotator.Yaw = ActorYaw;
+				SetActorRotation(new_rotator);
+			}
+			// 왼쪽으로 회전
+			else if (delta_angle < -70)
+			{
+				ActorYaw += delta_angle + 70.0f;
+				FRotator new_rotator = GetActorRotation();
+				new_rotator.Yaw = ActorYaw;
+				SetActorRotation(new_rotator);
+			}
+		}
 	}
 }
 
