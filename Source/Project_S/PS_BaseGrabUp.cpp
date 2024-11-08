@@ -36,6 +36,7 @@ APS_BaseGrabUp::APS_BaseGrabUp()
 
 	bIsActive = false;
 	Owner = nullptr;
+	PrimitiveRotation = FRotator::ZeroRotator;
 }
 
 // Called when the game starts or when spawned
@@ -55,7 +56,10 @@ void APS_BaseGrabUp::Tick(float DeltaTime)
 
 		// 캐릭터 시선 방향에 위치
 		FVector ViewVector = FVector(FMath::Cos(FMath::DegreesToRadians(Owner->GetControlRotation().Yaw)), FMath::Sin(FMath::DegreesToRadians(Owner->GetControlRotation().Yaw)), FMath::Tan(FMath::DegreesToRadians(Owner->GetControlRotation().Pitch)));
-		SetActorLocation(GetOwner()->GetActorLocation() + ViewVector * 250.0f + FVector(0.0f, 0.0f, 25.0f));
+		SetActorLocation(GetOwner()->GetActorLocation() + ViewVector * 500.0f + FVector(0.0f, 0.0f, 25.0f));
+
+		FRotator NewRotation = FRotator(0.0f, Owner->GetControlRotation().Yaw, 0.0f) + PrimitiveRotation;
+		SetActorRotation(NewRotation);
 	}
 }
 
@@ -70,6 +74,7 @@ void APS_BaseGrabUp::Grab_Implementation(class APS_Character* CharacterInstigato
 	Mesh->SetEnableGravity(false);
 	SetOwner(CharacterInstigator);
 	Owner = CharacterInstigator;
+	PrimitiveRotation = GetActorRotation() - FRotator(0.0f, Owner->GetControlRotation().Yaw, 0.0f);
 }
 
 void APS_BaseGrabUp::UnGrab_Implementation(class APS_Character* CharacterInstigator)

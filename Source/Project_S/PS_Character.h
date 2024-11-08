@@ -237,6 +237,9 @@ private:
 	const float MAX_ROTATION_YAW = 75.0f;
 	const float MIN_ROTATION_YAW = -75.0f;
 
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Opacity", meta = (AllowPrivateAccess = "true"))
+	float DitherAlpha;
+
 	/*
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn", meta = (AllowPrivateAccess = "true"))
 	bool bIsTurning;

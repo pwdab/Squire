@@ -104,6 +104,8 @@ APS_Character::APS_Character()
 	// Actor Turn variables
 	bIsMoving = false;
 
+	DitherAlpha = 1.0f;
+
 	// Replication
 	bReplicates = true;
 }
@@ -153,7 +155,7 @@ void APS_Character::Tick(float DeltaTime)
 		InteractableActor = nullptr;
 	}
 
-	if (!GrabbedActor && IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Grabable::StaticClass()))
+	if (!GrabbedActor && IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Grabable::StaticClass()) && HitResult.GetActor()->GetOwner() == nullptr)
 	{
 		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Yellow, false, 1.0f);
 		GrabableActor = HitResult.GetActor();
@@ -162,8 +164,18 @@ void APS_Character::Tick(float DeltaTime)
 	{
 		GrabableActor = nullptr;
 	}
-
 	
+	// SpringArm의 길이가 일정 이하로 줄어들면 Mesh를 투명하게 만듦
+	float CurrentCameraDistance = (GetFollowCamera()->GetComponentLocation() - GetActorLocation()).Size();
+	if (CurrentCameraDistance < 200.0f)
+	{
+		// Opacity를 길이에 비례하여 감소
+		DitherAlpha = FMath::Clamp((CurrentCameraDistance - 100.0f) / 200.0f, 0.0f, 1.0f);
+	}
+	else
+	{
+		DitherAlpha = 1.0f;
+	}
 
 	// 캐릭터가 공중에 떠 있으면 CharacterMovement의 RotationRate를 줄임
 	GetCharacterMovement()->RotationRate = (GetMovementComponent()->IsFalling() ? FRotator(0.0f, 150.0f, 0.0f) : FRotator(0.0f, 500.0f, 0.0f));
