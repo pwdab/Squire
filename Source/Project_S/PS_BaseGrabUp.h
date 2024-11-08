@@ -30,9 +30,11 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	/*
 	// Component variables
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCapsuleComponent> CapsuleCollision;
+	*/
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UStaticMeshComponent> Mesh;
