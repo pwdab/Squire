@@ -63,6 +63,7 @@ APS_Character::APS_Character()
 
 	// Setup Capsule Component
 	GetCapsuleComponent()->InitCapsuleSize(45.0f, 100.0f);
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("PS_Character"));
 
 	// Setup Mesh Component
 	GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -100.0f));
@@ -135,10 +136,13 @@ void APS_Character::Tick(float DeltaTime)
 	QueryParams.AddIgnoredActor(this);
 
 	auto SphereRadius = 50.0f;
-	auto StartLocation = GetActorLocation() + GetActorForwardVector() * 150.0f;
-	auto EndLocation = StartLocation + GetActorForwardVector() * 500.0f;
+	auto StartLocation = GetActorLocation() + FVector(0.0f, 0.0f, 25.0f);
+	FVector ViewVector = FVector(FMath::Cos(FMath::DegreesToRadians(GetControlRotation().Yaw)), FMath::Sin(FMath::DegreesToRadians(GetControlRotation().Yaw)), FMath::Tan(FMath::DegreesToRadians(GetControlRotation().Pitch)));
+	auto EndLocation = StartLocation + ViewVector * 250.0f;
 	
-	auto IsHit = UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocation, EndLocation, SphereRadius, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, HitResult, true);
+	DrawDebugDirectionalArrow(GetWorld(), StartLocation, EndLocation, 150.0f, FColor::Yellow, false, -1.0f, 0, 5.0f);
+	//auto IsHit = UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocation, EndLocation, SphereRadius, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, HitResult, true);
+	auto IsHit = GetWorld()->SweepSingleByChannel(HitResult, StartLocation, EndLocation, FQuat::Identity, ECollisionChannel::ECC_GameTraceChannel2, FCollisionShape::MakeSphere(SphereRadius), QueryParams);
 	if (IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Interactable::StaticClass()))
 	{
 		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Magenta, false, 1.0f);
@@ -158,6 +162,8 @@ void APS_Character::Tick(float DeltaTime)
 	{
 		GrabableActor = nullptr;
 	}
+
+	
 
 	// 캐릭터가 공중에 떠 있으면 CharacterMovement의 RotationRate를 줄임
 	GetCharacterMovement()->RotationRate = (GetMovementComponent()->IsFalling() ? FRotator(0.0f, 150.0f, 0.0f) : FRotator(0.0f, 500.0f, 0.0f));
@@ -441,6 +447,10 @@ void APS_Character::Interact_Server_Implementation()
 		{
 			IPS_Grabable::Execute_Grab(GrabableActor, this);
 			GrabbedActor = GrabableActor;
+		}
+		else
+		{
+			UE_LOG(Project_S, Log, TEXT("GrabbedActor is not null"));
 		}
 	}
 	else

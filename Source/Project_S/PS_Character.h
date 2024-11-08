@@ -232,6 +232,11 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn", meta = (AllowPrivateAccess = "true"))
 	bool bIsMoving;
 
+	const float MAX_ROTATION_ROLL = 60.0f;
+	const float MIN_ROTATION_ROLL = -45.0f;
+	const float MAX_ROTATION_YAW = 75.0f;
+	const float MIN_ROTATION_YAW = -75.0f;
+
 	/*
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn", meta = (AllowPrivateAccess = "true"))
 	bool bIsTurning;

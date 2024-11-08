@@ -31,16 +31,16 @@ protected:
 
 private:
 	// Component variables
-	/*
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCapsuleComponent> CapsuleCollision;
-	*/
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UStaticMeshComponent> Mesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grab", meta = (AllowPrivateAccess = "true"))
 	bool bIsActive;
+
+	ACharacter* Owner;
 
 public:
 	// Getter functions
