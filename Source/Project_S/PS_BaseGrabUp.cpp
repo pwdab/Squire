@@ -11,6 +11,7 @@ APS_BaseGrabUp::APS_BaseGrabUp()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	/*
 	// Setup Capsule Component
 	CapsuleCollision = CreateDefaultSubobject<UCapsuleComponent>("Collision");
 	RootComponent = CapsuleCollision;
@@ -21,6 +22,7 @@ APS_BaseGrabUp::APS_BaseGrabUp()
 	CapsuleCollision->SetCollisionProfileName(TEXT("Grabable"));
 	CapsuleCollision->SetSimulatePhysics(true);
 	CapsuleCollision->SetEnableGravity(true);
+	*/
 
 	// Setup Mesh Component
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>("Mesh");
@@ -28,6 +30,9 @@ APS_BaseGrabUp::APS_BaseGrabUp()
 	Mesh->SetupAttachment(RootComponent);
 	//Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	Mesh->SetRelativeRotation(FRotator(0.0f, 0.0f, 0.0f));
+	Mesh->SetCollisionProfileName(TEXT("Grabable"));
+	Mesh->SetSimulatePhysics(true);
+	Mesh->SetEnableGravity(true);
 
 	bIsActive = false;
 	Owner = nullptr;
@@ -59,8 +64,10 @@ void APS_BaseGrabUp::Grab_Implementation(class APS_Character* CharacterInstigato
 {
 	UE_LOG(Project_S, Log, TEXT("Grab\n"));
 	bIsActive = true;
-	CapsuleCollision->SetSimulatePhysics(false);
-	CapsuleCollision->SetEnableGravity(false);
+	//CapsuleCollision->SetSimulatePhysics(false);
+	//CapsuleCollision->SetEnableGravity(false);
+	Mesh->SetSimulatePhysics(false);
+	Mesh->SetEnableGravity(false);
 	SetOwner(CharacterInstigator);
 	Owner = CharacterInstigator;
 }
@@ -69,8 +76,10 @@ void APS_BaseGrabUp::UnGrab_Implementation(class APS_Character* CharacterInstiga
 {
 	UE_LOG(Project_S, Log, TEXT("UnGrab\n"));
 	bIsActive = false;
-	CapsuleCollision->SetSimulatePhysics(true);
-	CapsuleCollision->SetEnableGravity(true);
+	//CapsuleCollision->SetSimulatePhysics(true);
+	//CapsuleCollision->SetEnableGravity(true);
+	Mesh->SetSimulatePhysics(true);
+	Mesh->SetEnableGravity(true);
 	SetOwner(nullptr);
 	Owner = nullptr;
 }
