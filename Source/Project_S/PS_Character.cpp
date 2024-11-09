@@ -104,6 +104,7 @@ APS_Character::APS_Character()
 	// Actor Turn variables
 	bIsMoving = false;
 
+	// Material variables
 	DitherAlpha = 1.0f;
 
 	// Replication

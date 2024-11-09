@@ -237,6 +237,7 @@ private:
 	const float MAX_ROTATION_YAW = 75.0f;
 	const float MIN_ROTATION_YAW = -75.0f;
 
+	// Material variables
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Opacity", meta = (AllowPrivateAccess = "true"))
 	float DitherAlpha;
 
