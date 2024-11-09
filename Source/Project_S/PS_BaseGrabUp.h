@@ -44,6 +44,8 @@ private:
 
 	ACharacter* Owner;
 
+	FRotator PrimitiveRotation;
+
 public:
 	// Getter functions
 	//FORCEINLINE UCapsuleComponent* GetCapsuleCollision() const { return CapsuleCollision; }
