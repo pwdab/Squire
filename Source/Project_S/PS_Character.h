@@ -55,6 +55,23 @@ protected:
 	void JumpStart(const FInputActionValue& Value);
 	void JumpEnd(const FInputActionValue& Value);
 
+	// Turn RPC functions
+	void RotateActor(FRotator NewRotator);
+
+	UFUNCTION(Server, Reliable)
+	void RotateActor_Server(FRotator NewRotator);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void RotateActor_Client(FRotator NewRotator);
+
+	void SetHeadRotator(FRotator NewRotator);
+
+	UFUNCTION(Server, Reliable)
+	void SetHeadRotator_Server(FRotator NewRotator);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SetHeadRotator_Client(FRotator NewRotator);
+
 	// Sprint RPC functions
 	UFUNCTION(Server, Reliable)
 	void SprintStart_Server();
@@ -232,6 +249,12 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn", meta = (AllowPrivateAccess = "true"))
 	bool bIsMoving;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn", meta = (AllowPrivateAccess = "true"))
+	bool bIsTurning;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Turn", meta = (AllowPrivateAccess = "true"))
+	FRotator HeadRotator;
+
 	const float MAX_ROTATION_ROLL = 60.0f;
 	const float MIN_ROTATION_ROLL = -45.0f;
 	const float MAX_ROTATION_YAW = 75.0f;
@@ -256,4 +279,5 @@ public:
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE FPS_CharacterStats* GetCharacterStats() const { return CharacterStats; }
+	FORCEINLINE FRotator GetHeadRotator() const { return HeadRotator; }
 };

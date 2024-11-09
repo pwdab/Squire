@@ -26,7 +26,7 @@ public:
 
 	// User functions
 	void JumpToMontageSection(UAnimMontage* Montage, int NewSection);
-	void SetAngleInDegrees(float Value);
+	void SetControlRotation(FRotator Rotator);
 
 	// Delegates
 	FOnNextAttackCheckDelegate OnNextAttackCheck;

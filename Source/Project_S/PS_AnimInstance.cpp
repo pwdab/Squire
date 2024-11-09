@@ -4,6 +4,7 @@
 #include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "PS_Character.h"
 
 UPS_AnimInstance::UPS_AnimInstance()
 {
@@ -36,18 +37,18 @@ void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		{
 			IsInAir = Character->GetMovementComponent()->IsFalling();
 			MaxWalkSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
+
+			/*
 			ControlRotation.Roll = -Character->GetControlRotation().Pitch + 90.0f;
 			if (ControlRotation.Roll < 0)
 			{
 				ControlRotation.Roll += 360.0f;
 			}
-
 			// 머리 위아래
 			ControlRotation.Roll = FMath::Clamp(ControlRotation.Roll, 90 - MAX_ROTATION_ROLL, 90 - MIN_ROTATION_ROLL);
-
 			// 머리 좌우
 			ControlRotation.Yaw = Character->GetControlRotation().Yaw - 90.0f - Character->GetActorRotation().Yaw;
-
+			*/
 			CurrentPawnDirection = FMath::Clamp(FVector::DotProduct(Character->GetActorForwardVector(), Character->GetVelocity()), -1, 1);
 		}
 	}
@@ -57,6 +58,11 @@ void UPS_AnimInstance::JumpToMontageSection(UAnimMontage* Montage, int NewSectio
 {
 	PS_CHECK(Montage_IsPlaying(Montage));
 	Montage_JumpToSection(GetMontageSectionName(Montage, NewSection), Montage);
+}
+
+void UPS_AnimInstance::SetControlRotation(FRotator Rotator)
+{
+	ControlRotation = Rotator;
 }
 
 void UPS_AnimInstance::AnimNotify_AttackHitCheck()
