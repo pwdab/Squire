@@ -54,6 +54,7 @@ protected:
 	void Interact(const FInputActionValue& Value);
 	void JumpStart(const FInputActionValue& Value);
 	void JumpEnd(const FInputActionValue& Value);
+	void SetDitherAlpha(const float Value);
 
 	// Turn RPC functions
 	void RotateActor(FRotator NewRotator);
