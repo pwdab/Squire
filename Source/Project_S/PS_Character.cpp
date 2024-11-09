@@ -146,6 +146,17 @@ void APS_Character::Tick(float DeltaTime)
 	DrawDebugDirectionalArrow(GetWorld(), StartLocation, EndLocation, 150.0f, FColor::Yellow, false, -1.0f, 0, 5.0f);
 	//auto IsHit = UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocation, EndLocation, SphereRadius, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, HitResult, true);
 	auto IsHit = GetWorld()->SweepSingleByChannel(HitResult, StartLocation, EndLocation, FQuat::Identity, ECollisionChannel::ECC_GameTraceChannel2, FCollisionShape::MakeSphere(SphereRadius), QueryParams);
+	if (!GrabbedActor && IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Grabable::StaticClass()) && HitResult.GetActor()->GetOwner() == nullptr)
+	{
+		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Yellow, false, 1.0f);
+		GrabableActor = HitResult.GetActor();
+	}
+	else
+	{
+		GrabableActor = nullptr;
+	}
+
+	IsHit = GetWorld()->SweepSingleByChannel(HitResult, StartLocation, EndLocation, FQuat::Identity, ECollisionChannel::ECC_GameTraceChannel5, FCollisionShape::MakeSphere(SphereRadius), QueryParams);
 	if (IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Interactable::StaticClass()))
 	{
 		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Magenta, false, 1.0f);
@@ -156,15 +167,7 @@ void APS_Character::Tick(float DeltaTime)
 		InteractableActor = nullptr;
 	}
 
-	if (!GrabbedActor && IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Grabable::StaticClass()) && HitResult.GetActor()->GetOwner() == nullptr)
-	{
-		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Yellow, false, 1.0f);
-		GrabableActor = HitResult.GetActor();
-	}
-	else
-	{
-		GrabableActor = nullptr;
-	}
+	
 	
 	// SpringArm의 길이가 일정 이하로 줄어들면 Mesh를 투명하게 만듦
 	float CurrentCameraDistance = (GetFollowCamera()->GetComponentLocation() - GetActorLocation()).Size();

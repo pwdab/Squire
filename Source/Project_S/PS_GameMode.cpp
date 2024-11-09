@@ -5,6 +5,7 @@
 #include "PS_PlayerController.h"
 #include "PS_PlayerState.h"
 #include "PS_Character.h"
+#include "PS_HUD.h"
 #include "UObject/ConstructorHelpers.h"
 
 
@@ -13,6 +14,7 @@ APS_GameMode::APS_GameMode()
 	GameStateClass = APS_GameState::StaticClass();
 	PlayerStateClass = APS_PlayerState::StaticClass();
 	PlayerControllerClass = APS_PlayerController::StaticClass();
+	HUDClass = APS_HUD::StaticClass();
 
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprints/BP_Character"));
 	if (PlayerPawnBPClass.Class != nullptr)
