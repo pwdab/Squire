@@ -29,6 +29,14 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	void SetActorLocationandRotation(FVector NewLocation, FRotator NewRotator);
+
+	UFUNCTION(Server, Reliable)
+	void SetActorLocationandRotation_Server(FVector NewLocation, FRotator NewRotator);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SetActorLocationandRotation_Client(FVector NewLocation, FRotator NewRotator);
+
 private:
 	/*
 	// Component variables

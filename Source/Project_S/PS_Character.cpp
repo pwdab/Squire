@@ -103,6 +103,8 @@ APS_Character::APS_Character()
 
 	// Actor Turn variables
 	bIsMoving = false;
+	bIsTurning = false;
+	HeadRotator = FRotator::ZeroRotator;
 
 	// Material variables
 	DitherAlpha = 1.0f;
@@ -133,53 +135,127 @@ void APS_Character::Tick(float DeltaTime)
 
 	// Interact
 	if (GetLocalRole() != ROLE_Authority) return;
-	FHitResult HitResult;
-	FCollisionQueryParams QueryParams;
-	QueryParams.bTraceComplex = true;
-	QueryParams.AddIgnoredActor(this);
-
-	auto SphereRadius = 50.0f;
-	auto StartLocation = GetActorLocation() + FVector(0.0f, 0.0f, 25.0f);
-	FVector ViewVector = FVector(FMath::Cos(FMath::DegreesToRadians(GetControlRotation().Yaw)), FMath::Sin(FMath::DegreesToRadians(GetControlRotation().Yaw)), FMath::Tan(FMath::DegreesToRadians(GetControlRotation().Pitch)));
-	auto EndLocation = StartLocation + ViewVector * 250.0f;
-	
-	DrawDebugDirectionalArrow(GetWorld(), StartLocation, EndLocation, 150.0f, FColor::Yellow, false, -1.0f, 0, 5.0f);
-	//auto IsHit = UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocation, EndLocation, SphereRadius, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, HitResult, true);
-	auto IsHit = GetWorld()->SweepSingleByChannel(HitResult, StartLocation, EndLocation, FQuat::Identity, ECollisionChannel::ECC_GameTraceChannel2, FCollisionShape::MakeSphere(SphereRadius), QueryParams);
-	if (!GrabbedActor && IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Grabable::StaticClass()) && HitResult.GetActor()->GetOwner() == nullptr)
-	{
-		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Yellow, false, 1.0f);
-		GrabableActor = HitResult.GetActor();
-	}
 	else
 	{
-		GrabableActor = nullptr;
+		FHitResult HitResult;
+		FCollisionQueryParams QueryParams;
+		QueryParams.bTraceComplex = true;
+		QueryParams.AddIgnoredActor(this);
+
+		auto SphereRadius = 50.0f;
+		auto StartLocation = GetActorLocation() + FVector(0.0f, 0.0f, 25.0f);
+		FVector ViewVector = FVector(FMath::Cos(FMath::DegreesToRadians(GetControlRotation().Yaw)), FMath::Sin(FMath::DegreesToRadians(GetControlRotation().Yaw)), FMath::Tan(FMath::DegreesToRadians(GetControlRotation().Pitch)));
+		auto EndLocation = StartLocation + ViewVector * 250.0f;
+
+		DrawDebugDirectionalArrow(GetWorld(), StartLocation, EndLocation, 150.0f, FColor::Yellow, false, -1.0f, 0, 5.0f);
+		//auto IsHit = UKismetSystemLibrary::SphereTraceSingle(GetWorld(), StartLocation, EndLocation, SphereRadius, UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, HitResult, true);
+		auto IsHit = GetWorld()->SweepSingleByChannel(HitResult, StartLocation, EndLocation, FQuat::Identity, ECollisionChannel::ECC_GameTraceChannel2, FCollisionShape::MakeSphere(SphereRadius), QueryParams);
+		if (!GrabbedActor && IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Grabable::StaticClass()) && HitResult.GetActor()->GetOwner() == nullptr)
+		{
+			DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Yellow, false, 1.0f);
+			GrabableActor = HitResult.GetActor();
+		}
+		else
+		{
+			GrabableActor = nullptr;
+		}
+
+		IsHit = GetWorld()->SweepSingleByChannel(HitResult, StartLocation, EndLocation, FQuat::Identity, ECollisionChannel::ECC_GameTraceChannel5, FCollisionShape::MakeSphere(SphereRadius), QueryParams);
+		if (IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Interactable::StaticClass()))
+		{
+			DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Magenta, false, 1.0f);
+			InteractableActor = HitResult.GetActor();
+		}
+		else
+		{
+			InteractableActor = nullptr;
+		}
+	}
+	
+
+	// Turn
+	if (!bIsMoving)
+	{
+		float ControlYaw = GetControlRotation().Yaw;
+		float ActorYaw = GetActorRotation().Yaw;
+
+		if (ActorYaw < 0)
+		{
+			ActorYaw += 360.0f;
+		}
+
+		// delta_angle이 70도가 될 때까지 캐릭터의 몸체는 움직이지 않음
+		float delta_angle = ControlYaw - ActorYaw;
+
+		if (delta_angle < 0)
+		{
+			delta_angle += 360.0f;
+		}
+
+		if (delta_angle > 180)
+		{
+			delta_angle -= 360.0f;
+		}
+
+		// delta_angle이 70도보다 커지면 캐릭터의 몸체도 같이 움직여 delta_angle이 70도보다 커지는 것을 방지
+		// 오른쪽으로 회전
+		if (delta_angle > 70)
+		{
+			ActorYaw += delta_angle - 70.0f;
+			FRotator new_rotator = GetActorRotation();
+			new_rotator.Yaw = ActorYaw;
+			//SetActorRotation(new_rotator);
+			RotateActor(new_rotator);
+			bIsTurning = true;
+		}
+		// 왼쪽으로 회전
+		else if (delta_angle < -70)
+		{
+			ActorYaw += delta_angle + 70.0f;
+			FRotator new_rotator = GetActorRotation();
+			new_rotator.Yaw = ActorYaw;
+			//SetActorRotation(new_rotator);
+			RotateActor(new_rotator);
+			bIsTurning = true;
+		}
+
+		// delta_angle이 70도보다 커지면 캐릭터의 몸체를 카메라 방향으로 천천히 돌린다
+		if (FMath::Abs(ControlYaw - ActorYaw) <= 10.0f)
+		{
+			bIsTurning = false;
+		}
+		else
+		{
+			RotateActor(FMath::RInterpTo(GetActorRotation(), FRotator(GetActorRotation().Pitch, Controller->GetControlRotation().Yaw, GetActorRotation().Roll), GetWorld()->GetDeltaSeconds(), 5.0f));
+		}
 	}
 
-	IsHit = GetWorld()->SweepSingleByChannel(HitResult, StartLocation, EndLocation, FQuat::Identity, ECollisionChannel::ECC_GameTraceChannel5, FCollisionShape::MakeSphere(SphereRadius), QueryParams);
-	if (IsHit && HitResult.GetActor()->GetClass()->ImplementsInterface(UPS_Interactable::StaticClass()))
+	HeadRotator.Roll = -GetControlRotation().Pitch + 90.0f;
+	if (HeadRotator.Roll < 0)
 	{
-		DrawDebugSphere(GetWorld(), HitResult.ImpactPoint, SphereRadius, 12, FColor::Magenta, false, 1.0f);
-		InteractableActor = HitResult.GetActor();
-	}
-	else
-	{
-		InteractableActor = nullptr;
+		HeadRotator.Roll += 360.0f;
 	}
 
+	// 머리 위아래
+	HeadRotator.Roll = FMath::Clamp(HeadRotator.Roll, 90 - MAX_ROTATION_ROLL, 90 - MIN_ROTATION_ROLL);
+	// 머리 좌우
+	HeadRotator.Yaw = GetControlRotation().Yaw - 90.0f - GetActorRotation().Yaw;
+
+	SetHeadRotator(HeadRotator);
 	
-	
+	/*
 	// SpringArm의 길이가 일정 이하로 줄어들면 Mesh를 투명하게 만듦
 	float CurrentCameraDistance = (GetFollowCamera()->GetComponentLocation() - GetActorLocation()).Size();
 	if (CurrentCameraDistance < 200.0f)
 	{
 		// Opacity를 길이에 비례하여 감소
-		DitherAlpha = FMath::Clamp((CurrentCameraDistance - 100.0f) / 200.0f, 0.0f, 1.0f);
+		SetDitherAlpha(FMath::Clamp((CurrentCameraDistance - 100.0f) / 200.0f, 0.0f, 1.0f));
 	}
 	else
 	{
-		DitherAlpha = 1.0f;
+		SetDitherAlpha(1.0f);
 	}
+	*/
 
 	// 캐릭터가 공중에 떠 있으면 CharacterMovement의 RotationRate를 줄임
 	GetCharacterMovement()->RotationRate = (GetMovementComponent()->IsFalling() ? FRotator(0.0f, 150.0f, 0.0f) : FRotator(0.0f, 500.0f, 0.0f));
@@ -324,7 +400,8 @@ void APS_Character::Move(const FInputActionValue& Value)
 				AngleInDegrees = (AngleInDegrees < 0) ? (180 + AngleInDegrees) : (-180 + AngleInDegrees);
 			}
 
-			SetActorRotation(FMath::RInterpTo(GetActorRotation(), FRotator(GetActorRotation().Pitch, Controller->GetControlRotation().Yaw + AngleInDegrees, GetActorRotation().Roll), GetWorld()->GetDeltaSeconds(), 10.0f));
+			//SetActorRotation(FMath::RInterpTo(GetActorRotation(), FRotator(GetActorRotation().Pitch, Controller->GetControlRotation().Yaw + AngleInDegrees, GetActorRotation().Roll), GetWorld()->GetDeltaSeconds(), 10.0f));
+			RotateActor(FMath::RInterpTo(GetActorRotation(), FRotator(GetActorRotation().Pitch, Controller->GetControlRotation().Yaw + AngleInDegrees, GetActorRotation().Roll), GetWorld()->GetDeltaSeconds(), 5.0f));
 			//SetActorRotation(FRotator(GetActorRotation().Pitch, Controller->GetControlRotation().Yaw + AngleInDegrees, GetActorRotation().Roll));
 		}
 	}
@@ -337,64 +414,60 @@ void APS_Character::MoveEnd(const FInputActionValue& Value)
 
 void APS_Character::Look(const FInputActionValue& Value)
 {
-	
 	const auto LookAxisVector = Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
 	{
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
-		
-		if (!bIsMoving)
+
+		/*
+		HeadRotator.Roll = -GetControlRotation().Pitch + 90.0f;
+		if (HeadRotator.Roll < 0)
 		{
-			float ControlYaw = GetControlRotation().Yaw;
-			float ActorYaw = GetActorRotation().Yaw;
-
-			if (ActorYaw < 0)
-			{
-				ActorYaw += 360.0f;
-			}
-
-			// delta_angle이 70도가 될 때까지 캐릭터의 몸체는 움직이지 않음
-			float delta_angle = ControlYaw - ActorYaw;
-
-			if (delta_angle < 0)
-			{
-				delta_angle += 360.0f;
-			}
-
-			if (delta_angle > 180)
-			{
-				delta_angle -= 360.0f;
-			}
-
-			/*
-			if (!bIsTurning && (delta_angle > 70 || delta_angle < -70))
-			{
-				bIsTurning = true;
-				TargetYaw = ControlYaw;
-			}
-			*/
-
-			// delta_angle이 70도보다 커지면 캐릭터의 몸체도 같이 움직여 delta_angle이 70도보다 커지는 것을 방지
-			// 오른쪽으로 회전
-			if (delta_angle > 70)
-			{
-				ActorYaw += delta_angle - 70.0f;
-				FRotator new_rotator = GetActorRotation();
-				new_rotator.Yaw = ActorYaw;
-				SetActorRotation(new_rotator);
-			}
-			// 왼쪽으로 회전
-			else if (delta_angle < -70)
-			{
-				ActorYaw += delta_angle + 70.0f;
-				FRotator new_rotator = GetActorRotation();
-				new_rotator.Yaw = ActorYaw;
-				SetActorRotation(new_rotator);
-			}
+			HeadRotator.Roll += 360.0f;
 		}
+
+		// 머리 위아래
+		HeadRotator.Roll = FMath::Clamp(HeadRotator.Roll, 90 - MAX_ROTATION_ROLL, 90 - MIN_ROTATION_ROLL);
+		// 머리 좌우
+		HeadRotator.Yaw = GetControlRotation().Yaw - 90.0f - GetActorRotation().Yaw;
+
+		SetHeadRotator(HeadRotator);
+		*/
+		//PS_AnimInstance->SetControlRotation(HeadRotator);
+		//UE_LOG(Project_S, Log, TEXT("HeadRotator = %s\n"), *HeadRotator.ToString());
 	}
+}
+
+void APS_Character::RotateActor(FRotator NewRotator)
+{
+	RotateActor_Server(NewRotator);
+}
+
+void APS_Character::RotateActor_Server_Implementation(FRotator NewRotator)
+{
+	RotateActor_Client(NewRotator);
+}
+
+void APS_Character::RotateActor_Client_Implementation(FRotator NewRotator)
+{
+	SetActorRotation(NewRotator);
+}
+
+void APS_Character::SetHeadRotator(FRotator NewRotator)
+{
+	SetHeadRotator_Server(NewRotator);
+}
+
+void APS_Character::SetHeadRotator_Server_Implementation(FRotator NewRotator)
+{
+	SetHeadRotator_Client(NewRotator);
+}
+
+void APS_Character::SetHeadRotator_Client_Implementation(FRotator NewRotator)
+{
+	PS_AnimInstance->SetControlRotation(NewRotator);
 }
 
 void APS_Character::SprintStart(const FInputActionValue& Value)
@@ -481,7 +554,6 @@ void APS_Character::Interact_Server_Implementation()
 			UE_LOG(Project_S, Log, TEXT("GrabableActor is null"));
 		}
 	}
-	
 }
 
 void APS_Character::JumpStart(const FInputActionValue& Value)
@@ -494,8 +566,14 @@ void APS_Character::JumpEnd(const FInputActionValue& Value)
 	bPressedJump = false;
 }
 
+void APS_Character::SetDitherAlpha(const float Value)
+{
+	DitherAlpha = Value;
+}
+
 void APS_Character::Attack(const FInputActionValue& Value)
 {
+	/*
 	if (HasAuthority())
 	{
 		// 서버에서 호출
@@ -506,6 +584,7 @@ void APS_Character::Attack(const FInputActionValue& Value)
 		// 클라이언트에서 호출
 		Attack_Server();
 	}
+	*/
 }
 
 bool APS_Character::Attack_Server_Validate()
@@ -515,13 +594,16 @@ bool APS_Character::Attack_Server_Validate()
 
 void APS_Character::Attack_Server_Implementation()
 {
+	/*
 	// 서버에서 호출
 	HandleAttack();
+	*/
 }
 
 // 공격을 처리하는 함수 (트레이스와 데미지 계산)
 void APS_Character::HandleAttack()
 {
+	/*
 	if (bIsAttacking)
 	{
 		// 공격 시작
@@ -579,10 +661,12 @@ void APS_Character::HandleAttack()
 	// 공격 종료 처리
 	//FTimerHandle UnusedHandle;
 	//GetWorldTimerManager().SetTimer(UnusedHandle, this, &APS_Character::EndAttack, AttackDuration, false);
+	*/
 }
 
 void APS_Character::DodgeDirectionStart(const FInputActionValue& Value)
 {
+	/*
 	const auto MovementVector = Value.Get<FVector2D>();
 	if (MovementVector.X > 0) {
 		if (MovementVector.Y > 0) {
@@ -618,16 +702,20 @@ void APS_Character::DodgeDirectionStart(const FInputActionValue& Value)
 		}
 	}
 	//UE_LOG(Project_S, Log, TEXT("Dodge_Direction = %d\n"), Dodge_Direction);
+	*/
 }
 
 void APS_Character::DodgeDirectionEnd(const FInputActionValue& Value)
 {
+	/*
 	Dodge_Direction = EDirection::N;
 	//UE_LOG(Project_S, Log, TEXT("Dodge_Direction = %d\n"), Dodge_Direction);
+	*/
 }
 
 void APS_Character::Dodge(const FInputActionValue& Value)
 {
+	/*
 	if (!bIsDodging)
 	{
 		if (Controller != nullptr)
@@ -681,20 +769,25 @@ void APS_Character::Dodge(const FInputActionValue& Value)
 			}
 		}
 	}
+	*/
 }
 
 void APS_Character::Dodge_Server_Implementation(const FVector Value)
 {
+	/*
 	Dodge_Client(Value);
+	*/
 }
 
 void APS_Character::Dodge_Client_Implementation(const FVector Value)
 {
+	/*
 	// Blueprint 이벤트 호출
 	OnDodge(Value);
 	//LaunchCharacter(Value * 5000.0f, false, true);
 	SetActorRotation(Value.Rotation());
 	PlayMontage(PS_AnimInstance->DodgeMontage);
+	*/
 }
 
 void APS_Character::PlayMontage(UAnimMontage* Montage)
@@ -812,6 +905,7 @@ void APS_Character::AttackStartComboState()
 	PS_CHECK(FMath::IsWithinInclusive<int>(CurrentCombo, 0, MaxCombo - 1));
 	CurrentCombo = FMath::Clamp<int>(CurrentCombo + 1, 1, MaxCombo);
 }
+
 void APS_Character::AttackEndComboState()
 {
 	// 콤보 공격 종료

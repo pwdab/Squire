@@ -42,7 +42,7 @@ void APS_GameState::BeginPlay()
 {
     Super::BeginPlay();
 
-    SetTimer(0, 1, 0, 0);
+    SetTimer(0, 0, 0, 0);
 
     StartTimer(true);
 
