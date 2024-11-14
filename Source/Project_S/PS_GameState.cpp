@@ -2,19 +2,21 @@
 
 
 #include "PS_GameState.h"
+#include "PS_PlayerState.h"
+#include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 
 APS_GameState::APS_GameState()
 {
     PrimaryActorTick.bCanEverTick = true;
     
-    RemainingTime = FTimespan::Zero();
-    TimerHandler.Invalidate();
-    bForward = true;
+    //RemainingTime = FTimespan::Zero();
+    //TimerHandler.Invalidate();
+    //bForward = true;
 
-    Map = 1;
-    Stage = 1;
-    Life = 2;
+    CurrentMap = 1;
+    CurrentStage = 1;
+    CurrentLife = 2;
 }
 
 void APS_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -22,26 +24,31 @@ void APS_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
     // Setup Replication variables
-    DOREPLIFETIME(APS_GameState, RemainingTime);
-    DOREPLIFETIME(APS_GameState, Map);
-    DOREPLIFETIME(APS_GameState, Stage);
-    DOREPLIFETIME(APS_GameState, Life);
+    //DOREPLIFETIME(APS_GameState, RemainingTime);
+    DOREPLIFETIME(APS_GameState, CurrentMap);
+    DOREPLIFETIME(APS_GameState, CurrentStage);
+    DOREPLIFETIME(APS_GameState, CurrentLife);
 }
 
 void APS_GameState::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
+    /*
     if (!TimerHandler.IsValid())
     {
         UpdateTimerbyMiliSecond();
     }
+
+    GEngine->AddOnScreenDebugMessage(2, 5.f, FColor::Blue, FString::Printf(TEXT("MatchState = %s"), *GetMatchState().ToString()));
+    */
 }
 
 void APS_GameState::BeginPlay()
 {
     Super::BeginPlay();
 
+    /*
     SetTimer(0, 0, 0, 0);
 
     StartTimer(true);
@@ -49,8 +56,24 @@ void APS_GameState::BeginPlay()
     OnMapChanged.Broadcast(Map);
     OnStageChanged.Broadcast(Stage);
     OnLifeChanged.Broadcast(Life);
+    */
 }
 
+void APS_GameState::HandleMatchHasStarted()
+{
+    /*
+    PS_LOG_S(Log);
+    for (APlayerState* PlayerState : PlayerArray)
+    {
+        if (PlayerState)
+        {
+            UE_LOG(Project_S, Log, TEXT("Player: %s"), *PlayerState->GetPlayerName());
+        }
+    }
+    */
+}
+
+/*
 FTimespan APS_GameState::GetRemainingTime() const
 {
     return RemainingTime;
@@ -121,18 +144,63 @@ void APS_GameState::OnRep_Time(FTimespan OldValue) const
 {
     OnTimeChanged.Broadcast(RemainingTime);
 }
+*/
 
 void APS_GameState::OnRep_Map(uint8 OldValue) const
 {
-    OnMapChanged.Broadcast(Map);
+    OnMapChanged.Broadcast(CurrentMap);
 }
 
 void APS_GameState::OnRep_Stage(uint8 OldValue) const
 {
-    OnStageChanged.Broadcast(Stage);
+    OnStageChanged.Broadcast(CurrentStage);
 }
 
 void APS_GameState::OnRep_Life(uint8 OldValue) const
 {
-    OnLifeChanged.Broadcast(Life);
+    OnLifeChanged.Broadcast(CurrentLife);
+}
+
+void APS_GameState::SetStage(int MapNumber, int StageNumber)
+{
+    PS_LOG_S(Log);
+    CurrentMap = MapNumber;
+    CurrentStage = StageNumber;
+
+    OnMapChanged.Broadcast(CurrentMap);
+    OnStageChanged.Broadcast(CurrentStage);
+}
+
+/*
+FTimespan APS_GameState::GetRemainingTime() const
+{
+    return RemainingTime;
+}
+*/
+
+void APS_GameState::DeductLife()
+{
+    PS_LOG_S(Log);
+    CurrentLife--;
+
+    OnLifeChanged.Broadcast(CurrentLife);
+
+    if (CurrentLife <= 0)
+    {
+        // Handle game over logic
+    }
+}
+
+bool APS_GameState::AllPlayersSelected() const
+{
+    PS_LOG_S(Log);
+    for (APlayerState* PlayerState : PlayerArray)
+    {
+        APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PlayerState);
+        if (PS_PlayerState && !PS_PlayerState->HasSelectedWord())
+        {
+            return false;
+        }
+    }
+    return true;
 }
