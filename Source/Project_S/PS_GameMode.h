@@ -18,6 +18,7 @@ public:
 	APS_GameMode();
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
+	virtual void PostSeamlessTravel() override;
 
 	// 로비 및 스테이지 전환 관리
 	void TransitionToStage(uint8 MapNumber ,uint8 StageNumber);

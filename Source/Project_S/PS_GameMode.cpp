@@ -24,6 +24,7 @@ APS_GameMode::APS_GameMode()
 	}
 
     CurrentPlayersCount = 0;
+    bUseSeamlessTravel = true;
 }
 
 void APS_GameMode::BeginPlay()
@@ -72,7 +73,40 @@ void APS_GameMode::TransitionToStage(uint8 MapNumber, uint8 StageNumber)
     FString MapName = FString::Printf(TEXT("Game/Maps/Level_%d_%d"), MapNumber, StageNumber);
 
     //GetWorld()->ServerTravel(MapName);
-    GetWorld()->ServerTravel(FString::Printf(TEXT("/Game/Maps/Level_0_new")));
+    //GetWorld()->ServerTravel(FString::Printf(TEXT("/Game/Maps/Level_0_new?listen")));
+    CurrentPlayersCount = 0;
+    GetWorld()->ServerTravel(TEXT("/Game/Maps/Level_0_new?listen"), true);
+    //GetWorld()->ServerTravel(TEXT("/Game/Maps/Level_0_new"), true, true);
+
+    UE_LOG(Project_S, Log, TEXT("ServerTravel End\n"));
+}
+
+void APS_GameMode::PostSeamlessTravel()
+{
+    Super::PostSeamlessTravel();
+
+    PS_LOG_S(Log);
+
+    APS_GameState* PS_GameState = GetGameState<APS_GameState>();
+    if (PS_GameState)
+    {
+        // 모든 플레이어를 확인
+        for (APlayerState* PlayerState : PS_GameState->PlayerArray)
+        {
+            if (PlayerState)
+            {
+                CurrentPlayersCount++;
+                UE_LOG(Project_S, Log, TEXT("Player %s has joined the new map."), *PlayerState->GetPlayerName());
+                UE_LOG(Project_S, Log, TEXT("CurrentPlayersCount : %d"), CurrentPlayersCount);
+            }
+        }
+    }
+
+    // 10초 동안 단어 선택 UI 표시
+    if (CurrentPlayersCount == 2)
+    {
+        StartWordSelectionTimer(10);
+    }
 }
 
 void APS_GameMode::StartWordSelectionTimer(int TimeLimit)
