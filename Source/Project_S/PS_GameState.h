@@ -12,11 +12,10 @@
  */
 
 // Declare Delegates
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTimeChanged, FTimespan, NewTime);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTimeChanged, FTimespan, NewTime);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMapChanged, uint8, NewMap);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStageChanged, uint8, NewStage);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLifeChanged, uint8, NewLife);
-
 
 UCLASS()
 class PROJECT_S_API APS_GameState : public AGameState
@@ -28,6 +27,26 @@ public:
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+    void SetStage(int MapNumber, int StageNumber);
+    void DeductLife();
+    bool AllPlayersSelected() const;
+
+    // Declare Delegate Functions
+    /*
+    UPROPERTY(BlueprintAssignable, Category = "Events")
+    FOnTimeChanged OnTimeChanged;
+    */
+
+    UPROPERTY(BlueprintAssignable, Category = "Events")
+    FOnMapChanged OnMapChanged;
+
+    UPROPERTY(BlueprintAssignable, Category = "Events")
+    FOnStageChanged OnStageChanged;
+
+    UPROPERTY(BlueprintAssignable, Category = "Events")
+    FOnLifeChanged OnLifeChanged;
+
+    /*
     UFUNCTION(BlueprintCallable, Category = "Timer")
     FTimespan GetRemainingTime() const;
 
@@ -48,39 +67,36 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Timer")
     void OnTimerEnd();
+    */
 
 protected:
     virtual void Tick(float DeltaTime) override;
     virtual void BeginPlay() override;
 
-    // Declare Delegate Functions
-    UPROPERTY(BlueprintAssignable, Category = "Events")
-    FOnTimeChanged OnTimeChanged;
 
-    UPROPERTY(BlueprintAssignable, Category = "Events")
-    FOnMapChanged OnMapChanged;
+    virtual void HandleMatchHasStarted() override;
 
-    UPROPERTY(BlueprintAssignable, Category = "Events")
-    FOnStageChanged OnStageChanged;
-
-    UPROPERTY(BlueprintAssignable, Category = "Events")
-    FOnLifeChanged OnLifeChanged;
+    
 
     // Replicate Variables
+    /*
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing="OnRep_Time", Category = "HUD")
     FTimespan RemainingTime;
+    */
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = "OnRep_Map", Category = "HUD")
-    uint8 Map;
+    uint8 CurrentMap;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = "OnRep_Stage", Category = "HUD")
-    uint8 Stage;
+    uint8 CurrentStage;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = "OnRep_Life", Category = "HUD")
-    uint8 Life;
+    uint8 CurrentLife;
 
+    /*
     UFUNCTION()
     void OnRep_Time(FTimespan OldValue) const;
+    */
 
     UFUNCTION()
     void OnRep_Map(uint8 OldValue) const;
@@ -91,7 +107,9 @@ protected:
     UFUNCTION()
     void OnRep_Life(uint8 OldValue) const;
 
-private:
-    FTimerHandle TimerHandler;
-    bool bForward;
+public:
+    // Getter functions
+    FORCEINLINE uint8 GetCurrentMap() const { return CurrentMap; }
+    FORCEINLINE uint8 GetCurrentStage() const { return CurrentStage; }
+    FORCEINLINE uint8 GetCurrentLife() const { return CurrentLife; }
 };
