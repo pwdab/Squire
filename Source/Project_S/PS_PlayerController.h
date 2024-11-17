@@ -26,6 +26,7 @@ public:
     void ShowWordSelectionUI();
 
 protected:
+
     // Word selection widget class, settable in editor
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> WordSelectionWidgetClass;

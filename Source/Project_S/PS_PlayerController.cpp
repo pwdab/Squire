@@ -3,6 +3,7 @@
 
 #include "PS_PlayerController.h"
 #include "PS_PlayerState.h"
+#include "PS_GameMode.h"
 #include "Blueprint/UserWidget.h"
 
 void APS_PlayerController::ShowWordSelectionUI()
