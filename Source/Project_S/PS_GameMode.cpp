@@ -14,14 +14,25 @@ APS_GameMode::APS_GameMode()
 {
 	GameStateClass = APS_GameState::StaticClass();
 	PlayerStateClass = APS_PlayerState::StaticClass();
-	PlayerControllerClass = APS_PlayerController::StaticClass();
-	HUDClass = APS_HUD::StaticClass();
+	//PlayerControllerClass = APS_PlayerController::StaticClass();
 
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprints/BP_Character"));
 	if (PlayerPawnBPClass.Class != nullptr)
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+
+    static ConstructorHelpers::FClassFinder<APS_HUD> HUDBPClass(TEXT("/Game/Blueprints/BP_HUD"));
+    if (HUDBPClass.Class != nullptr)
+    {
+        HUDClass = HUDBPClass.Class;
+    }
+
+    static ConstructorHelpers::FClassFinder<APS_PlayerController> PlayerControllerBPClass(TEXT("/Game/Blueprints/BP_PlayerController"));
+    if (PlayerControllerBPClass.Class != nullptr)
+    {
+        PlayerControllerClass = PlayerControllerBPClass.Class;
+    }
 
     CurrentPlayersCount = 0;
     bUseSeamlessTravel = true;
@@ -52,6 +63,13 @@ void APS_GameMode::PostLogin(APlayerController* NewPlayer)
     PS_LOG_S(Log);
     CurrentPlayersCount++;
     UE_LOG(Project_S, Log, TEXT("CurrentPlayersCount : %d"), CurrentPlayersCount);
+
+    // 나중에 CurrentPlayerCount == 2이면 Update하도록 바꿔야 함.
+    APS_GameState* PS_GameState = GetGameState<APS_GameState>();
+    if (PS_GameState)
+    {
+        PS_GameState->UpdateGameState();
+    }
 
     // Wait until Players are log-in.
     if (CurrentPlayersCount == 2)
@@ -102,6 +120,13 @@ void APS_GameMode::PostSeamlessTravel()
         }
     }
 
+    // 나중에 CurrentPlayerCount == 2이면 Update하도록 바꿔야 함.
+    //APS_GameState* PS_GameState = GetGameState<APS_GameState>();
+    if (PS_GameState)
+    {
+        PS_GameState->UpdateGameState();
+    }
+
     // 10초 동안 단어 선택 UI 표시
     if (CurrentPlayersCount == 2)
     {
@@ -148,9 +173,11 @@ void APS_GameMode::OnWordSelectionComplete()
         {
             PS_GameInstance->SetMap(CurrentMap);
             PS_GameInstance->SetStage(CurrentStage);
-
-            TransitionToStage(CurrentMap, CurrentStage);
         }
+
+        PS_GameState->SetStage(CurrentMap, CurrentStage);
+
+        TransitionToStage(CurrentMap, CurrentStage);
     }
 }
 
