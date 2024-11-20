@@ -10,7 +10,4 @@ UCLASS()
 class PROJECT_S_API APS_HUD : public AHUD
 {
     GENERATED_BODY()
-
-    APS_HUD();
-
 };

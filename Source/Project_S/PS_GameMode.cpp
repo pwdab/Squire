@@ -40,15 +40,16 @@ APS_GameMode::APS_GameMode()
 
 void APS_GameMode::BeginPlay()
 {
-    Super::BeginPlay();
-
-    PS_LOG_S(Log);
+    Super::BeginPlay(); 
 
     if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
     {
         CurrentMap = PS_GameInstance->GetMap();
         CurrentStage = PS_GameInstance->GetStage();
     }
+
+    PS_LOG_S(Log);
+    UE_LOG(Project_S, Log, TEXT("Map - Stage = %d - %d\n"), CurrentMap, CurrentStage);
     
     APS_GameState* PS_GameState = GetGameState<APS_GameState>();
     if (PS_GameState)
@@ -122,9 +123,19 @@ void APS_GameMode::PostSeamlessTravel()
 
     // 나중에 CurrentPlayerCount == 2이면 Update하도록 바꿔야 함.
     //APS_GameState* PS_GameState = GetGameState<APS_GameState>();
-    if (PS_GameState)
+    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
     {
-        PS_GameState->UpdateGameState();
+        CurrentMap = PS_GameInstance->GetMap();
+        CurrentStage = PS_GameInstance->GetStage();
+
+        PS_GameState->SetStage(CurrentMap, CurrentStage);
+        PS_GameState->SetLife(PS_GameInstance->GetLife());
+
+        ///////
+        // 
+        // HUD에서 업데이트 해야 함..
+        // 
+        ///////
     }
 
     // 10초 동안 단어 선택 UI 표시
@@ -159,7 +170,8 @@ void APS_GameMode::OnWordSelectionComplete()
     }
     else
     {
-        PS_GameState->DeductLife();
+        PS_LOG_S(Log);
+        UE_LOG(Project_S, Log, TEXT("Map - Stage = %d - %d\n"), CurrentMap, CurrentStage);
 
         // Move to Next Level
         CurrentStage++;
@@ -169,13 +181,15 @@ void APS_GameMode::OnWordSelectionComplete()
             CurrentStage -= 10;
         }
 
+        PS_LOG_S(Log);
+        UE_LOG(Project_S, Log, TEXT("Map - Stage = %d - %d\n"), CurrentMap, CurrentStage);
+
         if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
         {
             PS_GameInstance->SetMap(CurrentMap);
             PS_GameInstance->SetStage(CurrentStage);
+            PS_GameInstance->DeductLife();
         }
-
-        PS_GameState->SetStage(CurrentMap, CurrentStage);
 
         TransitionToStage(CurrentMap, CurrentStage);
     }

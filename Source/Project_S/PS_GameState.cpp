@@ -121,6 +121,7 @@ void APS_GameState::OnRep_Life(uint8 OldValue) const
 void APS_GameState::UpdateGameState()
 {
     PS_LOG_S(Log);
+    UE_LOG(Project_S, Log, TEXT("Map - Stage = %d - %d, Life = %d\n"), CurrentMap, CurrentStage, CurrentLife);
 
     OnMapChanged.Broadcast(CurrentMap);
     OnStageChanged.Broadcast(CurrentStage);
@@ -129,12 +130,24 @@ void APS_GameState::UpdateGameState()
 
 void APS_GameState::SetStage(int MapNumber, int StageNumber)
 {
-    PS_LOG_S(Log);
     CurrentMap = MapNumber;
     CurrentStage = StageNumber;
 
+    PS_LOG_S(Log);
+    UE_LOG(Project_S, Log, TEXT("Map - Stage = %d - %d\n"), CurrentMap, CurrentStage);
+
     OnMapChanged.Broadcast(CurrentMap);
     OnStageChanged.Broadcast(CurrentStage);
+}
+
+void APS_GameState::SetLife(int NewLife)
+{
+    CurrentLife = NewLife;
+
+    PS_LOG_S(Log);
+    UE_LOG(Project_S, Log, TEXT("Life = %d\n"), CurrentLife);
+
+    OnLifeChanged.Broadcast(CurrentLife);
 }
 
 /*
@@ -143,19 +156,6 @@ FTimespan APS_GameState::GetRemainingTime() const
     return RemainingTime;
 }
 */
-
-void APS_GameState::DeductLife()
-{
-    PS_LOG_S(Log);
-    CurrentLife--;
-
-    OnLifeChanged.Broadcast(CurrentLife);
-
-    if (CurrentLife <= 0)
-    {
-        // Handle game over logic
-    }
-}
 
 bool APS_GameState::AllPlayersSelected() const
 {

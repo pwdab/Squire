@@ -29,7 +29,7 @@ public:
 
     void UpdateGameState();
     void SetStage(int MapNumber, int StageNumber);
-    void DeductLife();
+    void SetLife(int NewLife);
     bool AllPlayersSelected() const;
 
     // Declare Delegate Functions

@@ -2,8 +2,7 @@
 
 
 #include "PS_HUD.h"
-
-APS_HUD::APS_HUD()
-{
-	//GetWorld()->GetGameState();
-}
+#include "PS_GameState.h"
+#include "GameFramework/PlayerState.h"
+#include "PS_GameInstance.h"
+#include "PS_GameMode.h"
