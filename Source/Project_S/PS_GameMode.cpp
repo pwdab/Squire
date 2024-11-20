@@ -141,7 +141,7 @@ void APS_GameMode::PostSeamlessTravel()
     // 10초 동안 단어 선택 UI 표시
     if (CurrentPlayersCount == 2)
     {
-        //StartWordSelectionTimer(10);
+        StartWordSelectionTimer(10);
     }
 }
 
