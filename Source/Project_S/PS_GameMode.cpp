@@ -14,8 +14,7 @@ APS_GameMode::APS_GameMode()
 {
 	GameStateClass = APS_GameState::StaticClass();
 	PlayerStateClass = APS_PlayerState::StaticClass();
-	PlayerControllerClass = APS_PlayerController::StaticClass();
-	HUDClass = APS_HUD::StaticClass();
+	//PlayerControllerClass = APS_PlayerController::StaticClass();
 
 	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprints/BP_Character"));
 	if (PlayerPawnBPClass.Class != nullptr)
@@ -23,21 +22,34 @@ APS_GameMode::APS_GameMode()
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
 
+    static ConstructorHelpers::FClassFinder<APS_HUD> HUDBPClass(TEXT("/Game/Blueprints/BP_HUD"));
+    if (HUDBPClass.Class != nullptr)
+    {
+        HUDClass = HUDBPClass.Class;
+    }
+
+    static ConstructorHelpers::FClassFinder<APS_PlayerController> PlayerControllerBPClass(TEXT("/Game/Blueprints/BP_PlayerController"));
+    if (PlayerControllerBPClass.Class != nullptr)
+    {
+        PlayerControllerClass = PlayerControllerBPClass.Class;
+    }
+
     CurrentPlayersCount = 0;
     bUseSeamlessTravel = true;
 }
 
 void APS_GameMode::BeginPlay()
 {
-    Super::BeginPlay();
-
-    PS_LOG_S(Log);
+    Super::BeginPlay(); 
 
     if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
     {
         CurrentMap = PS_GameInstance->GetMap();
         CurrentStage = PS_GameInstance->GetStage();
     }
+
+    PS_LOG_S(Log);
+    UE_LOG(Project_S, Log, TEXT("Map - Stage = %d - %d\n"), CurrentMap, CurrentStage);
     
     APS_GameState* PS_GameState = GetGameState<APS_GameState>();
     if (PS_GameState)
@@ -52,6 +64,13 @@ void APS_GameMode::PostLogin(APlayerController* NewPlayer)
     PS_LOG_S(Log);
     CurrentPlayersCount++;
     UE_LOG(Project_S, Log, TEXT("CurrentPlayersCount : %d"), CurrentPlayersCount);
+
+    // 나중에 CurrentPlayerCount == 2이면 Update하도록 바꿔야 함.
+    APS_GameState* PS_GameState = GetGameState<APS_GameState>();
+    if (PS_GameState)
+    {
+        PS_GameState->UpdateGameState();
+    }
 
     // Wait until Players are log-in.
     if (CurrentPlayersCount == 2)
@@ -102,10 +121,27 @@ void APS_GameMode::PostSeamlessTravel()
         }
     }
 
+    // 나중에 CurrentPlayerCount == 2이면 Update하도록 바꿔야 함.
+    //APS_GameState* PS_GameState = GetGameState<APS_GameState>();
+    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+    {
+        CurrentMap = PS_GameInstance->GetMap();
+        CurrentStage = PS_GameInstance->GetStage();
+
+        PS_GameState->SetStage(CurrentMap, CurrentStage);
+        PS_GameState->SetLife(PS_GameInstance->GetLife());
+
+        ///////
+        // 
+        // HUD에서 업데이트 해야 함..
+        // 
+        ///////
+    }
+
     // 10초 동안 단어 선택 UI 표시
     if (CurrentPlayersCount == 2)
     {
-        //StartWordSelectionTimer(10);
+        StartWordSelectionTimer(10);
     }
 }
 
@@ -134,7 +170,8 @@ void APS_GameMode::OnWordSelectionComplete()
     }
     else
     {
-        PS_GameState->DeductLife();
+        PS_LOG_S(Log);
+        UE_LOG(Project_S, Log, TEXT("Map - Stage = %d - %d\n"), CurrentMap, CurrentStage);
 
         // Move to Next Level
         CurrentStage++;
@@ -144,13 +181,17 @@ void APS_GameMode::OnWordSelectionComplete()
             CurrentStage -= 10;
         }
 
+        PS_LOG_S(Log);
+        UE_LOG(Project_S, Log, TEXT("Map - Stage = %d - %d\n"), CurrentMap, CurrentStage);
+
         if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
         {
             PS_GameInstance->SetMap(CurrentMap);
             PS_GameInstance->SetStage(CurrentStage);
-
-            TransitionToStage(CurrentMap, CurrentStage);
+            PS_GameInstance->DeductLife();
         }
+
+        TransitionToStage(CurrentMap, CurrentStage);
     }
 }
 
