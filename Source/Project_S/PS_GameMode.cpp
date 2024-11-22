@@ -49,7 +49,6 @@ void APS_GameMode::BeginPlay()
     }
 
     PS_LOG_S(Log);
-    UE_LOG(Project_S, Log, TEXT("Map - Stage = %d - %d\n"), CurrentMap, CurrentStage);
     
     APS_GameState* PS_GameState = GetGameState<APS_GameState>();
     if (PS_GameState)
@@ -63,7 +62,6 @@ void APS_GameMode::PostLogin(APlayerController* NewPlayer)
     Super::PostLogin(NewPlayer);
     PS_LOG_S(Log);
     CurrentPlayersCount++;
-    UE_LOG(Project_S, Log, TEXT("CurrentPlayersCount : %d"), CurrentPlayersCount);
 
     // 나중에 CurrentPlayerCount == 2이면 Update하도록 바꿔야 함.
     APS_GameState* PS_GameState = GetGameState<APS_GameState>();
@@ -130,12 +128,6 @@ void APS_GameMode::PostSeamlessTravel()
 
         PS_GameState->SetStage(CurrentMap, CurrentStage);
         PS_GameState->SetLife(PS_GameInstance->GetLife());
-
-        ///////
-        // 
-        // HUD에서 업데이트 해야 함..
-        // 
-        ///////
     }
 
     // 10초 동안 단어 선택 UI 표시

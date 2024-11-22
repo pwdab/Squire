@@ -11,8 +11,6 @@ class PROJECT_S_API APS_HUD : public AHUD
 {
     GENERATED_BODY()
 public:
-    virtual void PostInitializeComponents() override;
-
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void UpdateVariables();
 
