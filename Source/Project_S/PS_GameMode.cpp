@@ -73,7 +73,7 @@ void APS_GameMode::PostLogin(APlayerController* NewPlayer)
     // Wait until Players are log-in.
     if (CurrentPlayersCount == 2)
     {
-       //StartWordSelectionTimer(10);
+       StartWordSelectionTimer(10);
     }
 }
 
