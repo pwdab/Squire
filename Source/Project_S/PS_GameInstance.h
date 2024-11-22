@@ -20,7 +20,6 @@ public:
 	void SetMap(uint8 InMap);
 	void SetStage(uint8 InStage);
 	void SetLife(uint8 InLife);
-	void DeductLife();
 
 	uint8 GetMap() const;
 	uint8 GetStage() const;

@@ -27,9 +27,8 @@ public:
 
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-    void UpdateGameState();
     void SetStage(int MapNumber, int StageNumber);
-    void SetLife(int NewLife);
+    void DeductLife();
     bool AllPlayersSelected() const;
 
     // Declare Delegate Functions
@@ -71,7 +70,13 @@ public:
     */
 
 protected:
-   
+    virtual void Tick(float DeltaTime) override;
+    virtual void BeginPlay() override;
+
+
+    virtual void HandleMatchHasStarted() override;
+
+    
 
     // Replicate Variables
     /*
