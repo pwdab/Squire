@@ -54,6 +54,7 @@ void APS_GameMode::BeginPlay()
     if (PS_GameState)
     {
         PS_GameState->SetStage(CurrentMap, CurrentStage);
+        //PS_GameState->CurrentHUDCount = 0;
     }
 }
 
@@ -61,7 +62,11 @@ void APS_GameMode::PostLogin(APlayerController* NewPlayer)
 {
     Super::PostLogin(NewPlayer);
     PS_LOG_S(Log);
-    CurrentPlayersCount++;
+    UE_LOG(LogTemp, Log, TEXT("Player has joined the game: %s"), *NewPlayer->GetName());
+    
+    /*
+    //CurrentPlayersCount++;
+    UE_LOG(Project_S, Log, TEXT("CurrentPlayersCount = %d\n"), CurrentPlayersCount);
 
     // 나중에 CurrentPlayerCount == 2이면 Update하도록 바꿔야 함.
     APS_GameState* PS_GameState = GetGameState<APS_GameState>();
@@ -73,14 +78,15 @@ void APS_GameMode::PostLogin(APlayerController* NewPlayer)
     // Wait until Players are log-in.
     if (CurrentPlayersCount == 2)
     {
-        StartWordSelectionTimer(10);
+        //StartWordSelectionTimer(10);
     }
+    */
 }
 
 void APS_GameMode::Logout(AController* Exiting)
 {
     Super::Logout(Exiting);
-    CurrentPlayersCount--;
+    //CurrentPlayersCount--;
 }
 
 void APS_GameMode::TransitionToStage(uint8 MapNumber, uint8 StageNumber)
@@ -91,7 +97,7 @@ void APS_GameMode::TransitionToStage(uint8 MapNumber, uint8 StageNumber)
 
     //GetWorld()->ServerTravel(MapName);
     //GetWorld()->ServerTravel(FString::Printf(TEXT("/Game/Maps/Level_0_new?listen")));
-    CurrentPlayersCount = 0;
+    //CurrentPlayersCount = 0;
     GetWorld()->ServerTravel(TEXT("/Game/Maps/Level_0_new?listen"), true);
     //GetWorld()->ServerTravel(TEXT("/Game/Maps/Level_0_new"), true, true);
 
@@ -112,9 +118,9 @@ void APS_GameMode::PostSeamlessTravel()
         {
             if (PlayerState)
             {
-                CurrentPlayersCount++;
+                //CurrentPlayersCount++;
                 UE_LOG(Project_S, Log, TEXT("Player %s has joined the new map."), *PlayerState->GetPlayerName());
-                UE_LOG(Project_S, Log, TEXT("CurrentPlayersCount : %d"), CurrentPlayersCount);
+                //UE_LOG(Project_S, Log, TEXT("CurrentPlayersCount : %d"), CurrentPlayersCount);
             }
         }
     }
@@ -130,16 +136,19 @@ void APS_GameMode::PostSeamlessTravel()
         PS_GameState->SetLife(PS_GameInstance->GetLife());
     }
 
+    /*
     // 10초 동안 단어 선택 UI 표시
     if (CurrentPlayersCount == 2)
     {
-        StartWordSelectionTimer(10);
+        //StartWordSelectionTimer(10);
     }
+    */
 }
 
 void APS_GameMode::StartWordSelectionTimer(int TimeLimit)
 {
     PS_LOG_S(Log);
+    // 
     GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnWordSelectionComplete, TimeLimit, false);
 
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
@@ -147,6 +156,17 @@ void APS_GameMode::StartWordSelectionTimer(int TimeLimit)
         APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
+            /*
+            APS_HUD* PS_HUD = Cast<APS_HUD>(PS_PlayerController->GetHUD());
+            if (PS_HUD)
+            {
+                PS_HUD->ToggleSelection();
+            }
+            else
+            {
+                UE_LOG(Project_S, Log, TEXT("PS_HUD is Null\n"));
+            }
+            */
             PS_PlayerController->ShowWordSelectionUI();
         }
     }
@@ -197,4 +217,15 @@ void APS_GameMode::OnGameSessionEnd()
 {
     PS_LOG_S(Log);
     StartWordSelectionTimer(30);
+}
+
+void APS_GameMode::OnHUDInitialized()
+{
+    CurrentPlayersCount++;
+    UE_LOG(Project_S, Log, TEXT("CurrentPlayersCount = %d\n"), CurrentPlayersCount);
+
+    if (CurrentPlayersCount == 2)
+    {
+        StartWordSelectionTimer(10);
+    }
 }

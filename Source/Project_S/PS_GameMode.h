@@ -33,6 +33,8 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	TSet<APlayerController*> InitializedHUDs;
+
 	uint8 CurrentMap;
 	uint8 CurrentStage;
 	
@@ -41,4 +43,11 @@ private:
 	FTimerHandle StageTransitionTimerHandle;
 	FTimerHandle SelectionUITimerHandle;
 	FTimerHandle GameSessionTimerHandle;
+
+public:
+	// Getter functions
+	//FORCEINLINE uint8 GetCurrentPlayersCount() const { return CurrentPlayersCount; }
+
+public:
+	void OnHUDInitialized();
 };

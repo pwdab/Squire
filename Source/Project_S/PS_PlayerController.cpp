@@ -4,18 +4,20 @@
 #include "PS_PlayerController.h"
 #include "PS_PlayerState.h"
 #include "PS_GameMode.h"
+#include "PS_HUD.h"
 #include "Blueprint/UserWidget.h"
 
-void APS_PlayerController::ShowWordSelectionUI()
+void APS_PlayerController::ShowWordSelectionUI_Implementation()
 {
     PS_LOG_S(Log);
-    if (WordSelectionWidgetClass && !WordSelectionWidget)
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
     {
-        WordSelectionWidget = CreateWidget<UUserWidget>(this, WordSelectionWidgetClass);
-        if (WordSelectionWidget)
-        {
-            WordSelectionWidget->AddToViewport();
-        }
+        PS_HUD->ToggleSelection();
+    }
+    else
+    {
+        UE_LOG(Project_S, Log, TEXT("PS_HUD is Null\n"));
     }
 }
 
@@ -28,4 +30,12 @@ void APS_PlayerController::OnSelectWord(FString Word)
         PS_PlayerState->UpdateSelectedWord(Word);
     }
     WordSelectionWidget->RemoveFromViewport();
+}
+
+void APS_PlayerController::ServerHUDInitialized_Implementation()
+{
+    if (APS_GameMode* PS_GameMode = Cast<APS_GameMode>(GetWorld()->GetAuthGameMode()))
+    {
+        PS_GameMode->OnHUDInitialized();
+    }
 }

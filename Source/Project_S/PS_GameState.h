@@ -16,6 +16,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMapChanged, uint8, NewMap);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStageChanged, uint8, NewStage);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLifeChanged, uint8, NewLife);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHUDChanged, uint8, NewHUD);
 
 UCLASS()
 class PROJECT_S_API APS_GameState : public AGameState
@@ -30,6 +31,7 @@ public:
     void UpdateGameState();
     void SetStage(int MapNumber, int StageNumber);
     void SetLife(int NewLife);
+    void SetHUD(int NewHUD);
     bool AllPlayersSelected() const;
 
     // Declare Delegate Functions
@@ -46,6 +48,11 @@ public:
 
     UPROPERTY(BlueprintAssignable, Category = "Events")
     FOnLifeChanged OnLifeChanged;
+
+    UPROPERTY(BlueprintAssignable, Category = "Events")
+    FOnHUDChanged OnHUDChanged;
+
+    //uint8 CurrentHUDCount;
 
     /*
     UFUNCTION(BlueprintCallable, Category = "Timer")
@@ -88,6 +95,9 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = "OnRep_Life", Category = "HUD")
     uint8 CurrentLife;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = "OnRep_HUD", Category = "HUD")
+    uint8 CurrentHUD;
+
     /*
     UFUNCTION()
     void OnRep_Time(FTimespan OldValue) const;
@@ -102,9 +112,13 @@ protected:
     UFUNCTION()
     void OnRep_Life(uint8 OldValue) const;
 
+    UFUNCTION()
+    void OnRep_HUD(uint8 OldValue) const;
+
 public:
     // Getter functions
     FORCEINLINE uint8 GetCurrentMap() const { return CurrentMap; }
     FORCEINLINE uint8 GetCurrentStage() const { return CurrentStage; }
     FORCEINLINE uint8 GetCurrentLife() const { return CurrentLife; }
+    FORCEINLINE uint8 GetCurrentHUD() const { return CurrentHUD; }
 };
