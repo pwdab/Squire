@@ -2,6 +2,7 @@
 
 
 #include "PS_GameState.h"
+#include "PS_GameMode.h"
 #include "PS_PlayerState.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
@@ -17,6 +18,8 @@ APS_GameState::APS_GameState()
     CurrentMap = 0;
     CurrentStage = 0;
     CurrentLife = 2;
+    CurrentHUD = 0;
+    //CurrentHUDCount = 0;
 }
 
 void APS_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -28,6 +31,7 @@ void APS_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
     DOREPLIFETIME(APS_GameState, CurrentMap);
     DOREPLIFETIME(APS_GameState, CurrentStage);
     DOREPLIFETIME(APS_GameState, CurrentLife);
+    DOREPLIFETIME(APS_GameState, CurrentHUD);
 }
 
 /*
@@ -118,6 +122,11 @@ void APS_GameState::OnRep_Life(uint8 OldValue) const
     OnLifeChanged.Broadcast(CurrentLife);
 }
 
+void APS_GameState::OnRep_HUD(uint8 OldValue) const
+{
+    OnHUDChanged.Broadcast(CurrentHUD);
+}
+
 void APS_GameState::UpdateGameState()
 {
     PS_LOG_S(Log);
@@ -126,6 +135,7 @@ void APS_GameState::UpdateGameState()
     OnMapChanged.Broadcast(CurrentMap);
     OnStageChanged.Broadcast(CurrentStage);
     OnLifeChanged.Broadcast(CurrentLife);
+    OnHUDChanged.Broadcast(CurrentLife);
 }
 
 void APS_GameState::SetStage(int MapNumber, int StageNumber)
@@ -148,6 +158,29 @@ void APS_GameState::SetLife(int NewLife)
     UE_LOG(Project_S, Log, TEXT("Life = %d\n"), CurrentLife);
 
     OnLifeChanged.Broadcast(CurrentLife);
+}
+
+void APS_GameState::SetHUD(int NewHUD)
+{
+    CurrentHUD = NewHUD;
+
+    PS_LOG_S(Log);
+    UE_LOG(Project_S, Log, TEXT("HUD = %d\n"), CurrentHUD);
+
+    OnHUDChanged.Broadcast(CurrentHUD);
+
+    if (CurrentHUD == 2)
+    {
+        APS_GameMode* PS_GameMode = Cast<APS_GameMode>(GetWorld()->GetAuthGameMode());
+        if (PS_GameMode)
+        {
+            PS_GameMode->StartWordSelectionTimer(10);
+        }
+        else
+        {
+            UE_LOG(Project_S, Log, TEXT("PS_GameMode is null\n"));
+        }
+    }
 }
 
 /*

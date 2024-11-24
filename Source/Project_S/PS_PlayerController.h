@@ -23,10 +23,13 @@ public:
     void OnSelectWord(FString Word);
 
     // UI를 통해 단어 선택
+    UFUNCTION(Client, Reliable)
     void ShowWordSelectionUI();
 
-protected:
+    UFUNCTION(Server, Reliable)
+    void ServerHUDInitialized();
 
+protected:
     // Word selection widget class, settable in editor
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> WordSelectionWidgetClass;
@@ -34,6 +37,10 @@ protected:
     // Instance of the word selection widget
     UPROPERTY()
     UUserWidget* WordSelectionWidget;
+
+    
+
+    
 
 private:
     bool bIsInZone;

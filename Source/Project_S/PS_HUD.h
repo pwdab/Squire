@@ -14,6 +14,12 @@ public:
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void UpdateVariables();
 
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ToggleDebug();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ToggleSelection();
+
 protected:
     virtual void BeginPlay() override;
 
