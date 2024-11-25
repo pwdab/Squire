@@ -23,16 +23,31 @@ public:
 
 	// 로비 및 스테이지 전환 관리
 	void TransitionToStage(uint8 MapNumber ,uint8 StageNumber);
-	void StartWordSelectionTimer(int TimeLimit);
-	void StartGameSession(int TimeLimit);
 
-	void OnGameSessionEnd();
-	void OnWordSelectionComplete();
+	// 1P가 단어 선택
+	void StartFirstWordSelectionTimer(int TimeLimit);
+	void OnFirstWordSelectionComplete();
+	void StartFirstGameSession(int TimeLimit);
+	void OnFirstGameSessionEnd();
+	void StartFirstAnswerSelectionTimer(int TimeLimit);
+	void OnFirstAnswerSelectionComplete();
+
+	// 2P가 단어 선택
+	void StartSecondWordSelectionTimer(int TimeLimit);
+	void OnSecondWordSelectionComplete();
+	void StartSecondGameSession(int TimeLimit);
+	void OnSecondGameSessionEnd();
+	void StartSecondAnswerSelectionTimer(int TimeLimit);
+	void OnSecondAnswerSelectionComplete();
+	
 
 protected:
 	virtual void BeginPlay() override;
 
 private:
+	const uint8 SelectionTime = 5;
+	const uint8 GameSessionTime = 5;
+
 	TSet<APlayerController*> InitializedHUDs;
 
 	uint8 CurrentMap;
@@ -40,8 +55,7 @@ private:
 	
 	uint8 CurrentPlayersCount;
 
-	FTimerHandle StageTransitionTimerHandle;
-	FTimerHandle SelectionUITimerHandle;
+	FTimerHandle SelectionUITimerHandle;	// 단어 선택 TimerHandler
 	FTimerHandle GameSessionTimerHandle;
 
 public:

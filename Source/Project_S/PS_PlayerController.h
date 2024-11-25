@@ -24,7 +24,22 @@ public:
 
     // UI를 통해 단어 선택
     UFUNCTION(Client, Reliable)
-    void ShowWordSelectionUI();
+    void ShowWordSelectionUI(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void ShowWordSelectionWaitUI(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void ShowAnswerSelectionUI(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void ShowAnswerSelectionWaitUI(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void ShowStageTimerUI(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void HideStageTimerUI();
 
     UFUNCTION(Server, Reliable)
     void ServerHUDInitialized();

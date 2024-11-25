@@ -16,22 +16,9 @@ void APS_HUD::BeginPlay()
 
 	if (PS_GameState)
 	{
-		UE_LOG(Project_S, Log, TEXT("Update Map, Stage, Life\n"));
 		CurrentMap = PS_GameState->GetCurrentMap();
 		CurrentStage = PS_GameState->GetCurrentStage();
 		CurrentLife = PS_GameState->GetCurrentLife();
-		/*
-		// Setup Delegates
-		PS_GameState->OnMapChanged.AddDynamic(this, &APS_HUD::OnMapChanged);
-		PS_GameState->OnStageChanged.AddDynamic(this, &APS_HUD::OnStageChanged);
-		PS_GameState->OnLifeChanged.AddDynamic(this, &APS_HUD::OnLifeChanged);
-		*/
-		//PS_GameState->CurrentHUDCount++;
-		PS_GameState->SetHUD(PS_GameState->GetCurrentHUD() + 1);
-	}
-	else
-	{
-		UE_LOG(Project_S, Log, TEXT("GameState is null\n"));
 	}
 	
 	UpdateVariables();

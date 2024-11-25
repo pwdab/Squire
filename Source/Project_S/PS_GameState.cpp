@@ -18,8 +18,7 @@ APS_GameState::APS_GameState()
     CurrentMap = 0;
     CurrentStage = 0;
     CurrentLife = 2;
-    CurrentHUD = 0;
-    //CurrentHUDCount = 0;
+    CurrentSelection = false;
 }
 
 void APS_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -31,7 +30,7 @@ void APS_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
     DOREPLIFETIME(APS_GameState, CurrentMap);
     DOREPLIFETIME(APS_GameState, CurrentStage);
     DOREPLIFETIME(APS_GameState, CurrentLife);
-    DOREPLIFETIME(APS_GameState, CurrentHUD);
+    DOREPLIFETIME(APS_GameState, CurrentSelection);
 }
 
 /*
@@ -122,9 +121,9 @@ void APS_GameState::OnRep_Life(uint8 OldValue) const
     OnLifeChanged.Broadcast(CurrentLife);
 }
 
-void APS_GameState::OnRep_HUD(uint8 OldValue) const
+void APS_GameState::OnRep_Selection(bool OldValue) const
 {
-    OnHUDChanged.Broadcast(CurrentHUD);
+    OnSelectionChanged.Broadcast(CurrentSelection);
 }
 
 void APS_GameState::UpdateGameState()
@@ -135,7 +134,6 @@ void APS_GameState::UpdateGameState()
     OnMapChanged.Broadcast(CurrentMap);
     OnStageChanged.Broadcast(CurrentStage);
     OnLifeChanged.Broadcast(CurrentLife);
-    OnHUDChanged.Broadcast(CurrentLife);
 }
 
 void APS_GameState::SetStage(int MapNumber, int StageNumber)
@@ -144,7 +142,6 @@ void APS_GameState::SetStage(int MapNumber, int StageNumber)
     CurrentStage = StageNumber;
 
     PS_LOG_S(Log);
-    UE_LOG(Project_S, Log, TEXT("Map - Stage = %d - %d\n"), CurrentMap, CurrentStage);
 
     OnMapChanged.Broadcast(CurrentMap);
     OnStageChanged.Broadcast(CurrentStage);
@@ -155,32 +152,17 @@ void APS_GameState::SetLife(int NewLife)
     CurrentLife = NewLife;
 
     PS_LOG_S(Log);
-    UE_LOG(Project_S, Log, TEXT("Life = %d\n"), CurrentLife);
 
     OnLifeChanged.Broadcast(CurrentLife);
 }
 
-void APS_GameState::SetHUD(int NewHUD)
+void APS_GameState::SetSelection(bool NewSelection)
 {
-    CurrentHUD = NewHUD;
+    CurrentSelection = NewSelection;
 
     PS_LOG_S(Log);
-    UE_LOG(Project_S, Log, TEXT("HUD = %d\n"), CurrentHUD);
 
-    OnHUDChanged.Broadcast(CurrentHUD);
-
-    if (CurrentHUD == 2)
-    {
-        APS_GameMode* PS_GameMode = Cast<APS_GameMode>(GetWorld()->GetAuthGameMode());
-        if (PS_GameMode)
-        {
-            PS_GameMode->StartWordSelectionTimer(10);
-        }
-        else
-        {
-            UE_LOG(Project_S, Log, TEXT("PS_GameMode is null\n"));
-        }
-    }
+    OnSelectionChanged.Broadcast(CurrentSelection);
 }
 
 /*
@@ -190,16 +172,32 @@ FTimespan APS_GameState::GetRemainingTime() const
 }
 */
 
-bool APS_GameState::AllPlayersSelected() const
+void APS_GameState::AllPlayersWordSelected_Implementation()
 {
     PS_LOG_S(Log);
+    bool temp = true;
     for (APlayerState* PlayerState : PlayerArray)
     {
         APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PlayerState);
         if (PS_PlayerState && !PS_PlayerState->HasSelectedWord())
         {
-            return false;
+            temp = false;
         }
     }
-    return true;
+    SetSelection(temp);
+}
+
+void APS_GameState::AllPlayersAnswerSelected_Implementation()
+{
+    PS_LOG_S(Log);
+    bool temp = true;
+    for (APlayerState* PlayerState : PlayerArray)
+    {
+        APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PlayerState);
+        if (PS_PlayerState && !PS_PlayerState->HasSelectedWord())
+        {
+            temp = false;
+        }
+    }
+    SetSelection(temp);
 }

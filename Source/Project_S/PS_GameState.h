@@ -16,7 +16,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMapChanged, uint8, NewMap);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStageChanged, uint8, NewStage);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLifeChanged, uint8, NewLife);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHUDChanged, uint8, NewHUD);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSelectionChanged, bool, NewBool);
 
 UCLASS()
 class PROJECT_S_API APS_GameState : public AGameState
@@ -31,8 +31,13 @@ public:
     void UpdateGameState();
     void SetStage(int MapNumber, int StageNumber);
     void SetLife(int NewLife);
-    void SetHUD(int NewHUD);
-    bool AllPlayersSelected() const;
+    void SetSelection(bool NewSelection);
+
+    UFUNCTION(Client, Reliable)
+    void AllPlayersWordSelected();
+
+    UFUNCTION(Client, Reliable)
+    void AllPlayersAnswerSelected();
 
     // Declare Delegate Functions
     /*
@@ -50,9 +55,7 @@ public:
     FOnLifeChanged OnLifeChanged;
 
     UPROPERTY(BlueprintAssignable, Category = "Events")
-    FOnHUDChanged OnHUDChanged;
-
-    //uint8 CurrentHUDCount;
+    FOnSelectionChanged OnSelectionChanged;
 
     /*
     UFUNCTION(BlueprintCallable, Category = "Timer")
@@ -95,8 +98,8 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = "OnRep_Life", Category = "HUD")
     uint8 CurrentLife;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = "OnRep_HUD", Category = "HUD")
-    uint8 CurrentHUD;
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, ReplicatedUsing = "OnRep_Selection", Category = "HUD")
+    bool CurrentSelection;
 
     /*
     UFUNCTION()
@@ -113,12 +116,12 @@ protected:
     void OnRep_Life(uint8 OldValue) const;
 
     UFUNCTION()
-    void OnRep_HUD(uint8 OldValue) const;
+    void OnRep_Selection(bool OldValue) const;
 
 public:
     // Getter functions
     FORCEINLINE uint8 GetCurrentMap() const { return CurrentMap; }
     FORCEINLINE uint8 GetCurrentStage() const { return CurrentStage; }
     FORCEINLINE uint8 GetCurrentLife() const { return CurrentLife; }
-    FORCEINLINE uint8 GetCurrentHUD() const { return CurrentHUD; }
+    FORCEINLINE bool GetCurrentSelection() const { return CurrentSelection; }
 };

@@ -20,6 +20,33 @@ public:
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void ToggleSelection();
 
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ToggleSelectionWait();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ToggleAnswer();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ToggleAnswerWait();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetSelectionTimer(FTimerHandle TimerHandle);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetSelectionWaitTimer(FTimerHandle TimerHandle);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetAnswerTimer(FTimerHandle TimerHandle);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetAnswerWaitTimer(FTimerHandle TimerHandle);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetStageTimer(FTimerHandle TimerHandle);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ClearStageTimer();
+
 protected:
     virtual void BeginPlay() override;
 
