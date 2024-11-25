@@ -22,7 +22,6 @@ void APS_PlayerController::ShowWordSelectionUI_Implementation(FTimerHandle Timer
     if (PS_HUD)
     {
         PS_HUD->ToggleSelection();
-        //FTimespan Timespan = FTimespan::FromSeconds(GetWorldTimerManager().GetTimerRemaining(TimerHandle));
         PS_HUD->SetSelectionTimer(TimerHandle);
     }
 }
@@ -45,7 +44,6 @@ void APS_PlayerController::ShowAnswerSelectionUI_Implementation(FTimerHandle Tim
     if (PS_HUD)
     {
         PS_HUD->ToggleAnswer();
-        //FTimespan Timespan = FTimespan::FromSeconds(GetWorldTimerManager().GetTimerRemaining(TimerHandle));
         PS_HUD->SetAnswerTimer(TimerHandle);
     }
 }
@@ -78,6 +76,46 @@ void APS_PlayerController::HideStageTimerUI_Implementation()
     if (PS_HUD)
     {
         PS_HUD->ClearStageTimer();
+    }
+}
+
+void APS_PlayerController::ShowStageWordUI_Implementation()
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->ShowStageWord();
+    }
+}
+
+void APS_PlayerController::HideStageWordUI_Implementation()
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->HideStageWord();
+    }
+}
+
+void APS_PlayerController::SetSelectionButtonWords_Implementation(const TArray<FString>& SelectedWords)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->SetSelectionButtonWords(SelectedWords);
+    }
+}
+
+void APS_PlayerController::SetAnswerSelectionButtonWords_Implementation(const TArray<FString>& SelectedWords)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->SetAnswerSelectionButtonWords(SelectedWords);
     }
 }
 

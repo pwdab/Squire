@@ -44,6 +44,9 @@ public:
 	UFUNCTION(Server, Reliable, Category = "HUD")
 	void UpdateSelectedWord_Server(const FString& Word);
 
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "HUD")
+	FString GetSelectedWord();
+
 	bool HasSelectedWord() const;
 
 protected:
@@ -51,6 +54,5 @@ protected:
 
 public:
 	// Getter functions
-	FORCEINLINE FString GetSelectedWord() const { return SelectedWord; }
 	FORCEINLINE bool GetHasSelectedWord() const { return bHasSelectedWord; }
 };

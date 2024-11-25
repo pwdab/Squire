@@ -5,9 +5,9 @@
 
 UPS_GameInstance::UPS_GameInstance()
 {
-    Map = 0;
-    Stage = 0;
-    Life = 2;
+    Map = 1;
+    Stage = 1;
+    Life = 3;
 }
 
 void UPS_GameInstance::SetMap(uint8 InMap)

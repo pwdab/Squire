@@ -15,9 +15,6 @@ APS_GameState::APS_GameState()
     //TimerHandler.Invalidate();
     //bForward = true;
 
-    CurrentMap = 0;
-    CurrentStage = 0;
-    CurrentLife = 2;
     CurrentSelection = false;
 }
 

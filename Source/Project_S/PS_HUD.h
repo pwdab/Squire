@@ -47,6 +47,18 @@ public:
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void ClearStageTimer();
 
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ShowStageWord();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void HideStageWord();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetSelectionButtonWords(const TArray<FString>& SelectedWords);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetAnswerSelectionButtonWords(const TArray<FString>& SelectedWords);
+
 protected:
     virtual void BeginPlay() override;
 

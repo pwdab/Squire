@@ -7,20 +7,22 @@
 #include "PS_GameInstance.h"
 #include "PS_Character.h"
 #include "PS_HUD.h"
+#include "PS_Words.h"
+#include "Algo/RandomShuffle.h"
 #include "UObject/ConstructorHelpers.h"
 
 
 APS_GameMode::APS_GameMode()
 {
-	GameStateClass = APS_GameState::StaticClass();
-	PlayerStateClass = APS_PlayerState::StaticClass();
-	//PlayerControllerClass = APS_PlayerController::StaticClass();
+    GameStateClass = APS_GameState::StaticClass();
+    PlayerStateClass = APS_PlayerState::StaticClass();
+    //PlayerControllerClass = APS_PlayerController::StaticClass();
 
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprints/BP_Character"));
-	if (PlayerPawnBPClass.Class != nullptr)
-	{
-		DefaultPawnClass = PlayerPawnBPClass.Class;
-	}
+    static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/Blueprints/BP_Character"));
+    if (PlayerPawnBPClass.Class != nullptr)
+    {
+        DefaultPawnClass = PlayerPawnBPClass.Class;
+    }
 
     static ConstructorHelpers::FClassFinder<APS_HUD> HUDBPClass(TEXT("/Game/Blueprints/BP_HUD"));
     if (HUDBPClass.Class != nullptr)
@@ -36,6 +38,26 @@ APS_GameMode::APS_GameMode()
 
     CurrentPlayersCount = 0;
     bUseSeamlessTravel = true;
+
+    static ConstructorHelpers::FObjectFinder<UDataTable> DataTable(TEXT("/Game/Blueprints/WordDataTable"));
+    if (DataTable.Succeeded())
+    {
+        WordDataTable = DataTable.Object;
+    }
+    else
+    {
+        UE_LOG(Project_S, Error, TEXT("Failed to load WordDataTable."));
+    }
+
+    UE_LOG(Project_S, Warning, TEXT(" "));
+    UE_LOG(Project_S, Warning, TEXT(" "));
+    UE_LOG(Project_S, Warning, TEXT(" "));
+    UE_LOG(Project_S, Warning, TEXT(" "));
+    UE_LOG(Project_S, Warning, TEXT("Debug.. Game Started"));
+    UE_LOG(Project_S, Warning, TEXT(" "));
+    UE_LOG(Project_S, Warning, TEXT(" "));
+    UE_LOG(Project_S, Warning, TEXT(" "));
+    UE_LOG(Project_S, Warning, TEXT(" "));
 }
 
 void APS_GameMode::BeginPlay()
@@ -46,6 +68,7 @@ void APS_GameMode::BeginPlay()
     {
         CurrentMap = PS_GameInstance->GetMap();
         CurrentStage = PS_GameInstance->GetStage();
+        CurrentLife = PS_GameInstance->GetLife();
     }
 
     PS_LOG_S(Log);
@@ -54,8 +77,75 @@ void APS_GameMode::BeginPlay()
     if (PS_GameState)
     {
         PS_GameState->SetStage(CurrentMap, CurrentStage);
+        PS_GameState->SetLife(CurrentLife);
         //PS_GameState->CurrentHUDCount = 0;
     }
+
+    // 사용된 제시어 초기화
+    UsedWords.Empty();
+}
+
+TArray<FString> APS_GameMode::InitializeWords(uint8 Map, uint8 Stage, uint8 Num)
+{
+    PS_LOG_S(Log);
+
+    uint8 Difficulty;
+    if (1 <= Stage && Stage < 4)
+    {
+        Difficulty = 1;
+    }
+    else if (4 <= Stage && Stage < 8)
+    {
+        Difficulty = 2;
+    }
+    else
+    {
+        Difficulty = 3;
+    }
+    TArray<FString> AvailableWords;
+    TArray<FString> SelectedWords;
+
+    if (WordDataTable)
+    {
+        TArray<FName> RowNames = WordDataTable->GetRowNames();
+        WordList.Empty();
+
+        // 데이터 테이블의 모든 행 가져오기
+        for (const FName& RowName : RowNames)
+        {
+            // 데이터 테이블의 특정 행 가져오기
+            FPS_Words* RowData = WordDataTable->FindRow<FPS_Words>(RowName, TEXT("InitializeWordData"));
+            if (RowData)
+            {
+                // 필터 조건에 맞는지 확인
+                if (RowData->MapNum == Map && RowData->Difficulty == Difficulty)
+                {
+                    WordList.Add(*RowData);
+                    //UE_LOG(Project_S, Log, TEXT("Filtered MapNum : %d, Difficulty : %d, Word : %s"), RowData->MapNum, RowData->Difficulty, *RowData->Word);
+                }
+            }
+        }
+
+        // 중복되지 않는 단어만 AvailableWords에 추가
+        for (const FPS_Words& Word : WordList)
+        {
+            if (!UsedWords.Contains(Word.Word))
+            {
+                AvailableWords.Add(Word.Word);
+            }
+        }
+
+        // 랜덤으로 Num개만큼 선택
+        while (SelectedWords.Num() < Num)
+        {
+            int32 RandomIndex = FMath::RandRange(0, AvailableWords.Num() - 1);
+            SelectedWords.Add(AvailableWords[RandomIndex]);
+            //UsedWords.Add(AvailableWords[RandomIndex]);
+            AvailableWords.RemoveAt(RandomIndex);
+        }
+    }
+
+    return SelectedWords;
 }
 
 void APS_GameMode::PostLogin(APlayerController* NewPlayer)
@@ -133,6 +223,8 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
     }
     */
 
+    ButtonWords = InitializeWords(CurrentMap, CurrentStage, 3);
+
     // 타이머 설정
     GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstWordSelectionComplete, TimeLimit, false);
 
@@ -142,6 +234,7 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
     if (PS_PlayerController)
     {
         PS_PlayerController->ShowWordSelectionUI(SelectionUITimerHandle);
+        PS_PlayerController->SetSelectionButtonWords(ButtonWords);
     }
 
     // 두번째 PlayerController에 대기 UI 추가
@@ -172,8 +265,13 @@ void APS_GameMode::OnFirstWordSelectionComplete()
         // 선택하지 않았으면 랜덤으로 선택
         if (!PS_PlayerState->GetHasSelectedWord())
         {
-            PS_PlayerState->UpdateSelectedWord_Server(FString(TEXT("Not Selected.. \n")));
+            UE_LOG(Project_S, Log, TEXT("Randomly Selected..\n"));
+            int32 RandomIndex = FMath::RandRange(0, ButtonWords.Num() - 1);
+            PS_PlayerState->UpdateSelectedWord_Server(ButtonWords[RandomIndex]);
         }
+        
+        // 사용된 제시어 목록에 추가
+        UsedWords.Add(PS_PlayerState->GetSelectedWord());
     }
 
     // 두번째 PlayerController에 대기 UI 제거
@@ -226,10 +324,23 @@ void APS_GameMode::StartFirstGameSession(int TimeLimit)
     PS_LOG_S(Log);
     GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnFirstGameSessionEnd, TimeLimit, false);
 
+    // 첫번째 PlayerController에 선택한 단어 노출
+    APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(GetWorld()->GetPlayerControllerIterator()->Get());
+    if (PS_PlayerController)
+    {
+        PS_PlayerController->ShowStageWordUI();
+
+        APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PS_PlayerController->PlayerState);
+        if (PS_PlayerState)
+        {
+            UE_LOG(Project_S, Log, TEXT("Owner : %s, Selected Word : %s\n"), *PS_PlayerController->GetName(), *PS_PlayerState->GetSelectedWord());
+        }
+    }
+
     // 모든 Player에 Timer UI 추가
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
-        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
             PS_PlayerController->ShowStageTimerUI(GameSessionTimerHandle);
@@ -240,10 +351,18 @@ void APS_GameMode::StartFirstGameSession(int TimeLimit)
 void APS_GameMode::OnFirstGameSessionEnd()
 {
     PS_LOG_S(Log);
+
+    // 첫번째 PlayerController에 선택한 단어 제거
+    APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(GetWorld()->GetPlayerControllerIterator()->Get());
+    if (PS_PlayerController)
+    {
+        PS_PlayerController->HideStageWordUI();
+    }
+
     // 모든 Player에 Timer UI 제거
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
-        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
             PS_PlayerController->HideStageTimerUI();
@@ -273,6 +392,18 @@ void APS_GameMode::StartFirstAnswerSelectionTimer(int TimeLimit)
     if (PS_PlayerController)
     {
         PS_PlayerController->ShowAnswerSelectionUI(SelectionUITimerHandle);
+
+        TArray<FString> AnswerLists = InitializeWords(CurrentMap, CurrentStage, 2);
+        APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>((It - 1)->Get()->PlayerState);
+        if (PS_PlayerState)
+        {
+            AnswerLists.Add(PS_PlayerState->GetSelectedWord());
+
+            // 랜덤으로 섞음
+            Algo::RandomShuffle(AnswerLists);
+        }
+        
+        PS_PlayerController->SetAnswerSelectionButtonWords(AnswerLists);
     }
 }
 
@@ -300,51 +431,56 @@ void APS_GameMode::OnFirstAnswerSelectionComplete()
     APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PS_PlayerController->PlayerState);
     if (PS_PlayerState)
     {
-        UE_LOG(Project_S, Log, TEXT("Player 2 has selected : %s"), *PS_PlayerState->GetSelectedWord());
-        // 정답
         if (PS_PlayerState->GetHasSelectedWord())
         {
-            UE_LOG(Project_S, Log, TEXT("Player 2 has selected : %s"), *PS_PlayerState->GetSelectedWord());
+            // 정답
+            if (UsedWords.Last().Equals(PS_PlayerState->GetSelectedWord()))
+            {
+                UE_LOG(Project_S, Log, TEXT("Correct!\n"));
+            }
+            // 오답
+            else
+            {
+                UE_LOG(Project_S, Log, TEXT("Wrong!\n"));
+                if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+                {
+                    PS_GameInstance->DeductLife();
+
+                    APS_GameState* PS_GameState = GetGameState<APS_GameState>();
+                    if (PS_GameState)
+                    {
+                        PS_GameState->SetLife(--CurrentLife);
+                    }
+                }
+            }
         }
         // 오답
         else
         {
+            UE_LOG(Project_S, Log, TEXT("Wrong!\n"));
             if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
             {
                 PS_GameInstance->DeductLife();
+
+                APS_GameState* PS_GameState = GetGameState<APS_GameState>();
+                if (PS_GameState)
+                {
+                    PS_GameState->SetLife(--CurrentLife);
+                }
             }
         }
 
-        CurrentStage++;
-        if (CurrentStage > 10)
-        {
-            CurrentMap++;
-            CurrentStage -= 10;
+        // Life가 0이면 게임 종료
 
-            if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
-            {
-                PS_GameInstance->SetMap(CurrentMap);
-                PS_GameInstance->SetStage(CurrentStage);
-
-                TransitionToStage(CurrentMap, CurrentStage);
-            }
-        }
-        else
-        {
-            if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
-            {
-                PS_GameInstance->SetMap(CurrentMap);
-                PS_GameInstance->SetStage(CurrentStage);
-
-                StartSecondWordSelectionTimer(SelectionTime);
-            }
-        }
+        StartSecondWordSelectionTimer(SelectionTime);
     }
 }
 
 void APS_GameMode::StartSecondWordSelectionTimer(int TimeLimit)
 {
     PS_LOG_S(Log);
+
+    ButtonWords = InitializeWords(CurrentMap, CurrentStage, 3);
 
     // 타이머 설정
     GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondWordSelectionComplete, TimeLimit, false);
@@ -363,6 +499,7 @@ void APS_GameMode::StartSecondWordSelectionTimer(int TimeLimit)
     if (PS_PlayerController)
     {
         PS_PlayerController->ShowWordSelectionUI(SelectionUITimerHandle);
+        PS_PlayerController->SetSelectionButtonWords(ButtonWords);
     }
 }
 
@@ -393,8 +530,12 @@ void APS_GameMode::OnSecondWordSelectionComplete()
         // 선택하지 않았으면 랜덤으로 선택
         if (!PS_PlayerState->GetHasSelectedWord())
         {
-            PS_PlayerState->UpdateSelectedWord_Server(FString(TEXT("Not Selected.. \n")));
+            int32 RandomIndex = FMath::RandRange(0, ButtonWords.Num() - 1);
+            PS_PlayerState->UpdateSelectedWord_Server(ButtonWords[RandomIndex]);
         }
+
+        // 사용된 제시어 목록에 추가
+        UsedWords.Add(PS_PlayerState->GetSelectedWord());
     }
 
     // 게임 시작
@@ -406,10 +547,19 @@ void APS_GameMode::StartSecondGameSession(int TimeLimit)
     PS_LOG_S(Log);
     GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnSecondGameSessionEnd, TimeLimit, false);
 
+    // 두번째 PlayerController에 선택한 단어 노출
+    FConstPlayerControllerIterator It_ = GetWorld()->GetPlayerControllerIterator();
+    It_++;
+    APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
+    if (PS_PlayerController)
+    {
+        PS_PlayerController->ShowStageWordUI();
+    }
+
     // 모든 Player에 Timer UI 추가
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
-        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
             PS_PlayerController->ShowStageTimerUI(GameSessionTimerHandle);
@@ -420,10 +570,19 @@ void APS_GameMode::StartSecondGameSession(int TimeLimit)
 void APS_GameMode::OnSecondGameSessionEnd()
 {
     PS_LOG_S(Log);
-    // 모든 Player에 Timer UI 제거
-    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    // 두번째 PlayerController에 선택한 단어 제거
+    FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
+    It++;
+    APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+    if (PS_PlayerController)
     {
-        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        PS_PlayerController->HideStageWordUI();
+    }
+
+    // 모든 Player에 Timer UI 제거
+    for (FConstPlayerControllerIterator It_ = GetWorld()->GetPlayerControllerIterator(); It_; It_++)
+    {
+        PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
         if (PS_PlayerController)
         {
             PS_PlayerController->HideStageTimerUI();
@@ -445,6 +604,18 @@ void APS_GameMode::StartSecondAnswerSelectionTimer(int TimeLimit)
     if (PS_PlayerController)
     {
         PS_PlayerController->ShowAnswerSelectionUI(SelectionUITimerHandle);
+
+        TArray<FString> AnswerLists = InitializeWords(CurrentMap, CurrentStage, 2);
+        APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>((It + 1)->Get()->PlayerState);
+        if (PS_PlayerState)
+        {
+            AnswerLists.Add(PS_PlayerState->GetSelectedWord());
+
+            // 랜덤으로 섞음
+            Algo::RandomShuffle(AnswerLists);
+        }
+
+        PS_PlayerController->SetAnswerSelectionButtonWords(AnswerLists);
     }
 
     // 두번째 PlayerController에 대기 UI 추가
@@ -484,7 +655,26 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
         // 정답
         if (PS_PlayerState->GetHasSelectedWord())
         {
-            PS_PlayerState->UpdateSelectedWord_Server(FString(TEXT("Not Selected.. \n")));
+            // 정답
+            if (UsedWords.Last().Equals(PS_PlayerState->GetSelectedWord()))
+            {
+                UE_LOG(Project_S, Log, TEXT("Correct!\n"));
+            }
+            // 오답
+            else
+            {
+                UE_LOG(Project_S, Log, TEXT("Wrong!\n"));
+                if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+                {
+                    PS_GameInstance->DeductLife();
+
+                    APS_GameState* PS_GameState = GetGameState<APS_GameState>();
+                    if (PS_GameState)
+                    {
+                        PS_GameState->SetLife(--CurrentLife);
+                    }
+                }
+            }
         }
         // 오답
         else
@@ -492,8 +682,16 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
             if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
             {
                 PS_GameInstance->DeductLife();
+
+                APS_GameState* PS_GameState = GetGameState<APS_GameState>();
+                if (PS_GameState)
+                {
+                    PS_GameState->SetLife(--CurrentLife);
+                }
             }
         }
+
+        // Life가 0 이면 게임 종료
 
         CurrentStage++;
         if (CurrentStage > 10)
@@ -505,6 +703,14 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
             {
                 PS_GameInstance->SetMap(CurrentMap);
                 PS_GameInstance->SetStage(CurrentStage);
+                PS_GameInstance->SetLife(CurrentLife);
+
+                APS_GameState* PS_GameState = GetGameState<APS_GameState>();
+                if (PS_GameState)
+                {
+                    PS_GameState->SetStage(CurrentMap, CurrentStage);
+                    PS_GameState->SetLife(CurrentLife);
+                }
 
                 TransitionToStage(CurrentMap, CurrentStage);
             }
@@ -515,6 +721,14 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
             {
                 PS_GameInstance->SetMap(CurrentMap);
                 PS_GameInstance->SetStage(CurrentStage);
+                PS_GameInstance->SetLife(CurrentLife);
+
+                APS_GameState* PS_GameState = GetGameState<APS_GameState>();
+                if (PS_GameState)
+                {
+                    PS_GameState->SetStage(CurrentMap, CurrentStage);
+                    PS_GameState->SetLife(CurrentLife);
+                }
             }
 
             StartFirstWordSelectionTimer(SelectionTime);

@@ -7,6 +7,14 @@
 void APS_PlayerState::BeginPlay()
 {
 	PS_LOG_S(Log);
+	if (GetOwner())
+	{
+		UE_LOG(Project_S, Log, TEXT("PlayerState Owner : %s\n"), *GetOwner()->GetName());
+	}
+	else
+	{
+		UE_LOG(Project_S, Log, TEXT("PlayerState Owner is null\n"));
+	}
 }
 
 void APS_PlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -37,12 +45,27 @@ void APS_PlayerState::UpdateSelectedWord_Implementation(const FString& Word)
 void APS_PlayerState::UpdateSelectedWord_Server_Implementation(const FString& Word)
 {
 	PS_LOG_S(Log);
-	UE_LOG(Project_S, Log, TEXT("Selected Word : %s"), *Word);
+	
 	SelectedWord = Word;
 	bHasSelectedWord = true;
 
+	UE_LOG(Project_S, Log, TEXT("Selected Word : %s"), *Word);
+	if (bHasSelectedWord)
+	{
+		UE_LOG(Project_S, Log, TEXT("bHasSelectedWord : true"));
+	}
+	else
+	{
+		UE_LOG(Project_S, Log, TEXT("bHasSelectedWord : false"));
+	}
+
 	OnWordChanged.Broadcast(SelectedWord);
 	OnWordSelected.Broadcast(bHasSelectedWord);
+}
+
+FString APS_PlayerState::GetSelectedWord_Implementation()
+{
+	return SelectedWord;
 }
 
 bool APS_PlayerState::HasSelectedWord() const
