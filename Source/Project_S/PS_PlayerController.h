@@ -22,12 +22,39 @@ public:
     void OnExitWordSelectionZone();
     void OnSelectWord(FString Word);
 
-    // UI를 통해 단어 선택
-    UFUNCTION(Client, Reliable)
-    void ShowWordSelectionUI();
-
     UFUNCTION(Server, Reliable)
     void ServerHUDInitialized();
+
+    // UI
+    UFUNCTION(Client, Reliable)
+    void ShowWordSelectionUI(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void ShowWordSelectionWaitUI(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void ShowAnswerSelectionUI(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void ShowAnswerSelectionWaitUI(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void ShowStageTimerUI(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void HideStageTimerUI();
+
+    UFUNCTION(Client, Reliable)
+    void ShowStageWordUI();
+
+    UFUNCTION(Client, Reliable)
+    void HideStageWordUI();
+
+    UFUNCTION(Client, Reliable)
+    void SetSelectionButtonWords(const TArray<FString>& SelectedWords);
+
+    UFUNCTION(Client, Reliable)
+    void SetAnswerSelectionButtonWords(const TArray<FString>& SelectedWords);
 
 protected:
     // Word selection widget class, settable in editor

@@ -20,6 +20,45 @@ public:
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void ToggleSelection();
 
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ToggleSelectionWait();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ToggleAnswer();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ToggleAnswerWait();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetSelectionTimer(FTimerHandle TimerHandle);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetSelectionWaitTimer(FTimerHandle TimerHandle);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetAnswerTimer(FTimerHandle TimerHandle);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetAnswerWaitTimer(FTimerHandle TimerHandle);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetStageTimer(FTimerHandle TimerHandle);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ClearStageTimer();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ShowStageWord();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void HideStageWord();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetSelectionButtonWords(const TArray<FString>& SelectedWords);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetAnswerSelectionButtonWords(const TArray<FString>& SelectedWords);
+
 protected:
     virtual void BeginPlay() override;
 

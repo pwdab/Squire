@@ -7,17 +7,115 @@
 #include "PS_HUD.h"
 #include "Blueprint/UserWidget.h"
 
-void APS_PlayerController::ShowWordSelectionUI_Implementation()
+void APS_PlayerController::ServerHUDInitialized_Implementation()
+{
+    if (APS_GameMode* PS_GameMode = Cast<APS_GameMode>(GetWorld()->GetAuthGameMode()))
+    {
+        PS_GameMode->OnHUDInitialized();
+    }
+}
+
+void APS_PlayerController::ShowWordSelectionUI_Implementation(FTimerHandle TimerHandle)
 {
     PS_LOG_S(Log);
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
         PS_HUD->ToggleSelection();
+        PS_HUD->SetSelectionTimer(TimerHandle);
     }
-    else
+}
+
+void APS_PlayerController::ShowWordSelectionWaitUI_Implementation(FTimerHandle TimerHandle)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
     {
-        UE_LOG(Project_S, Log, TEXT("PS_HUD is Null\n"));
+        PS_HUD->ToggleSelectionWait();
+        PS_HUD->SetSelectionWaitTimer(TimerHandle);
+    }
+}
+
+void APS_PlayerController::ShowAnswerSelectionUI_Implementation(FTimerHandle TimerHandle)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->ToggleAnswer();
+        PS_HUD->SetAnswerTimer(TimerHandle);
+    }
+}
+
+void APS_PlayerController::ShowAnswerSelectionWaitUI_Implementation(FTimerHandle TimerHandle)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->ToggleAnswerWait();
+        PS_HUD->SetAnswerWaitTimer(TimerHandle);
+    }
+}
+
+void APS_PlayerController::ShowStageTimerUI_Implementation(FTimerHandle TimerHandle)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->SetStageTimer(TimerHandle);
+    }
+}
+
+void APS_PlayerController::HideStageTimerUI_Implementation()
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->ClearStageTimer();
+    }
+}
+
+void APS_PlayerController::ShowStageWordUI_Implementation()
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->ShowStageWord();
+    }
+}
+
+void APS_PlayerController::HideStageWordUI_Implementation()
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->HideStageWord();
+    }
+}
+
+void APS_PlayerController::SetSelectionButtonWords_Implementation(const TArray<FString>& SelectedWords)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->SetSelectionButtonWords(SelectedWords);
+    }
+}
+
+void APS_PlayerController::SetAnswerSelectionButtonWords_Implementation(const TArray<FString>& SelectedWords)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->SetAnswerSelectionButtonWords(SelectedWords);
     }
 }
 
@@ -32,10 +130,3 @@ void APS_PlayerController::OnSelectWord(FString Word)
     WordSelectionWidget->RemoveFromViewport();
 }
 
-void APS_PlayerController::ServerHUDInitialized_Implementation()
-{
-    if (APS_GameMode* PS_GameMode = Cast<APS_GameMode>(GetWorld()->GetAuthGameMode()))
-    {
-        PS_GameMode->OnHUDInitialized();
-    }
-}
