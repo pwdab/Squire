@@ -336,6 +336,7 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(DodgeDirectionStartAction, ETriggerEvent::Triggered, this, &APS_Character::DodgeDirectionStart);
 		EnhancedInputComponent->BindAction(DodgeDirectionEndAction, ETriggerEvent::Completed, this, &APS_Character::DodgeDirectionEnd);
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &APS_Character::Dodge);
+		EnhancedInputComponent->BindAction(MouseWheelClickAction, ETriggerEvent::Triggered, this, &APS_Character::OnMouseWheelClick);
 	}
 }
 
@@ -1040,3 +1041,60 @@ void APS_Character::SetWeapon(APS_Weapon* NewWeapon, EHand NewHand)
 		}
 	}
 }
+
+
+//최연구 작성중---------
+
+void APS_Character::OnMouseWheelClick(const FInputActionValue& Value)
+{
+	if (HasAuthority())
+	{
+		// 서버에서 직접 호출
+		SpawnObject_Server();
+	}
+	else
+	{
+		// 클라이언트에서 서버로 RPC 호출
+		SpawnObject_Server();
+	}
+}
+
+void APS_Character::SpawnObject_Server_Implementation()
+{
+	if (SpawnableObjectClass)
+	{
+		FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 200.0f; // 캐릭터 앞 위치
+		FRotator SpawnRotation = GetActorRotation();
+
+		// 서버에서 오브젝트 생성
+		AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(SpawnableObjectClass, SpawnLocation, SpawnRotation);
+
+		if (SpawnedActor)
+		{
+			// 오브젝트가 클라이언트에서 보이도록 리플리케이션 활성화
+			SpawnedActor->SetReplicates(true);
+			SpawnedActor->SetReplicateMovement(true); // 이동도 동기화
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SpawnableObjectClass is not assigned!"));
+	}
+}
+
+bool APS_Character::SpawnObject_Server_Validate()
+{
+	// 기본적으로 true 반환. 추가 검증 로직이 필요하면 여기에 작성.
+	return true;
+}
+
+void APS_Character::SpawnObject_Client_Implementation(const FVector& SpawnLocation, const FRotator& SpawnRotation)
+{
+	if (SpawnableObjectClass)
+	{
+		// 클라이언트에서 오브젝트 생성 (시각적 동기화)
+		GetWorld()->SpawnActor<AActor>(SpawnableObjectClass, SpawnLocation, SpawnRotation);
+	}
+}
+
+//--------최연구 작성중

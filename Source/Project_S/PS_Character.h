@@ -42,6 +42,14 @@ public:
 	bool CanSetWeapon(EHand Hand);
 	void SetWeapon(class APS_Weapon* NewWeapon, EHand NewHand);
 
+	// Server RPC for spawning object
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SpawnObject_Server();
+
+	// Client-side visual spawn
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnObject_Client(const FVector& SpawnLocation, const FRotator& SpawnRotation);
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -147,6 +155,13 @@ protected:
 	// Dodge variables
 	EDirection Dodge_Direction;
 
+	// 오브젝트 클래스 (Blueprint 또는 C++ 클래스)
+	UPROPERTY(EditDefaultsOnly, Category = "Spawn")
+	TSubclassOf<AActor> SpawnableObjectClass;
+
+	// Input Action Binding
+	void OnMouseWheelClick(const FInputActionValue& Value);
+
 private:
 	// Component variables
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (AllowPrivateAccess = "true"))
@@ -188,6 +203,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UInputAction> DodgeAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> MouseWheelClickAction;
 
 	// Data table reference variables
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CharacterData", meta = (AllowPrivateAccess = "true"))
