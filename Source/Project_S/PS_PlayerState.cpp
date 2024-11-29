@@ -36,6 +36,23 @@ void APS_PlayerState::OnRep_WordSelected(bool OldValue) const
 	OnWordSelected.Broadcast(bHasSelectedWord);
 }
 
+void APS_PlayerState::InitSelectedWord_Implementation()
+{
+	PS_LOG_S(Log);
+	InitSelectedWord_Server();
+}
+
+void APS_PlayerState::InitSelectedWord_Server_Implementation()
+{
+	PS_LOG_S(Log);
+
+	SelectedWord = "";
+	bHasSelectedWord = false;
+
+	OnWordChanged.Broadcast(SelectedWord);
+	OnWordSelected.Broadcast(bHasSelectedWord);
+}
+
 void APS_PlayerState::UpdateSelectedWord_Implementation(const FString& Word)
 {
 	PS_LOG_S(Log);

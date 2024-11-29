@@ -65,10 +65,6 @@ protected:
     UPROPERTY()
     UUserWidget* WordSelectionWidget;
 
-    
-
-    
-
 private:
     bool bIsInZone;
     bool bHasSelectedWord;

@@ -233,6 +233,11 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
+        APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PS_PlayerController->PlayerState);
+        if (PS_PlayerState)
+        {
+            PS_PlayerState->InitSelectedWord();
+        }
         PS_PlayerController->ShowWordSelectionUI(SelectionUITimerHandle);
         PS_PlayerController->SetSelectionButtonWords(ButtonWords);
     }
@@ -391,10 +396,15 @@ void APS_GameMode::StartFirstAnswerSelectionTimer(int TimeLimit)
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
+        APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PS_PlayerController->PlayerState);
+        if (PS_PlayerState)
+        {
+            PS_PlayerState->InitSelectedWord();
+        }
         PS_PlayerController->ShowAnswerSelectionUI(SelectionUITimerHandle);
 
         TArray<FString> AnswerLists = InitializeWords(CurrentMap, CurrentStage, 2);
-        APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>((It - 1)->Get()->PlayerState);
+        PS_PlayerState = Cast<APS_PlayerState>((It - 1)->Get()->PlayerState);
         if (PS_PlayerState)
         {
             AnswerLists.Add(PS_PlayerState->GetSelectedWord());
@@ -441,6 +451,7 @@ void APS_GameMode::OnFirstAnswerSelectionComplete()
             // 오답
             else
             {
+                UE_LOG(Project_S, Log, TEXT("Answer is not selected!\n"));
                 UE_LOG(Project_S, Log, TEXT("Wrong!\n"));
                 if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
                 {
@@ -457,6 +468,7 @@ void APS_GameMode::OnFirstAnswerSelectionComplete()
         // 오답
         else
         {
+            UE_LOG(Project_S, Log, TEXT("Answer : %s\n"), *PS_PlayerState->GetSelectedWord());
             UE_LOG(Project_S, Log, TEXT("Wrong!\n"));
             if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
             {
@@ -498,6 +510,11 @@ void APS_GameMode::StartSecondWordSelectionTimer(int TimeLimit)
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
+        APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PS_PlayerController->PlayerState);
+        if (PS_PlayerState)
+        {
+            PS_PlayerState->InitSelectedWord();
+        }
         PS_PlayerController->ShowWordSelectionUI(SelectionUITimerHandle);
         PS_PlayerController->SetSelectionButtonWords(ButtonWords);
     }
@@ -603,10 +620,15 @@ void APS_GameMode::StartSecondAnswerSelectionTimer(int TimeLimit)
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
+        APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PS_PlayerController->PlayerState);
+        if (PS_PlayerState)
+        {
+            PS_PlayerState->InitSelectedWord();
+        }
         PS_PlayerController->ShowAnswerSelectionUI(SelectionUITimerHandle);
 
         TArray<FString> AnswerLists = InitializeWords(CurrentMap, CurrentStage, 2);
-        APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>((It + 1)->Get()->PlayerState);
+        PS_PlayerState = Cast<APS_PlayerState>((It + 1)->Get()->PlayerState);
         if (PS_PlayerState)
         {
             AnswerLists.Add(PS_PlayerState->GetSelectedWord());
@@ -663,6 +685,7 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
             // 오답
             else
             {
+                UE_LOG(Project_S, Log, TEXT("Answer is not selected!\n"));
                 UE_LOG(Project_S, Log, TEXT("Wrong!\n"));
                 if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
                 {
@@ -679,6 +702,8 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
         // 오답
         else
         {
+            UE_LOG(Project_S, Log, TEXT("Answer : %s\n"), *PS_PlayerState->GetSelectedWord());
+            UE_LOG(Project_S, Log, TEXT("Wrong!\n"));
             if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
             {
                 PS_GameInstance->DeductLife();
