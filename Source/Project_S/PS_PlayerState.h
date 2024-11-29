@@ -39,10 +39,17 @@ public:
 	void OnRep_WordSelected(bool OldValue) const;
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "HUD")
+	void InitSelectedWord();
+
+	UFUNCTION(Server, Reliable, Category = "HUD")
+	void InitSelectedWord_Server();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "HUD")
 	void UpdateSelectedWord(const FString& Word);
 
 	UFUNCTION(Server, Reliable, Category = "HUD")
 	void UpdateSelectedWord_Server(const FString& Word);
+
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "HUD")
 	FString GetSelectedWord();

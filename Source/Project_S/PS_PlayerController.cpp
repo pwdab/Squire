@@ -107,6 +107,11 @@ void APS_PlayerController::SetSelectionButtonWords_Implementation(const TArray<F
     {
         PS_HUD->SetSelectionButtonWords(SelectedWords);
     }
+
+    for (const FString& Word : SelectedWords)
+    {
+        UE_LOG(Project_S, Log, TEXT("Button Word : %s\n"), *Word);
+    }
 }
 
 void APS_PlayerController::SetAnswerSelectionButtonWords_Implementation(const TArray<FString>& SelectedWords)
