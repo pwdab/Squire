@@ -54,6 +54,12 @@ public:
     void HideStageWord();
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ShowTimer();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void HideTimer();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void SetSelectionButtonWords(const TArray<FString>& SelectedWords);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")

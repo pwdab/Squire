@@ -15,6 +15,28 @@ void APS_PlayerController::ServerHUDInitialized_Implementation()
     }
 }
 
+void APS_PlayerController::ReadyStartGame_Implementation(FTimerHandle TimerHandle)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->SetStageTimer(TimerHandle);
+        PS_HUD->ShowTimer();
+    }
+}
+
+void APS_PlayerController::CancelStartGame_Implementation()
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->ClearStageTimer();
+        PS_HUD->HideTimer();
+    }
+}
+
 void APS_PlayerController::ShowWordSelectionUI_Implementation(FTimerHandle TimerHandle)
 {
     PS_LOG_S(Log);

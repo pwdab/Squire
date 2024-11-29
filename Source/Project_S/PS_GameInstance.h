@@ -21,13 +21,16 @@ public:
 	void SetStage(uint8 InStage);
 	void SetLife(uint8 InLife);
 	void DeductLife();
+	void SetIsGameStart(bool NewBool);
 
 	uint8 GetMap() const;
 	uint8 GetStage() const;
 	uint8 GetLife() const;
+	bool IsGameStart() const;
 
 private:
 	uint8 Map;
 	uint8 Stage;
 	uint8 Life;
+	bool bIsGameStart;
 };

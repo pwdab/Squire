@@ -38,6 +38,7 @@ APS_GameMode::APS_GameMode()
 
     CurrentPlayersCount = 0;
     bUseSeamlessTravel = true;
+    bIsGameStart = false;
 
     static ConstructorHelpers::FObjectFinder<UDataTable> DataTable(TEXT("/Game/Blueprints/WordDataTable"));
     if (DataTable.Succeeded())
@@ -69,6 +70,7 @@ void APS_GameMode::BeginPlay()
         CurrentMap = PS_GameInstance->GetMap();
         CurrentStage = PS_GameInstance->GetStage();
         CurrentLife = PS_GameInstance->GetLife();
+        bIsGameStart = PS_GameInstance->IsGameStart();
     }
 
     PS_LOG_S(Log);
@@ -194,9 +196,10 @@ void APS_GameMode::PostSeamlessTravel()
     {
         CurrentMap = PS_GameInstance->GetMap();
         CurrentStage = PS_GameInstance->GetStage();
+        CurrentLife = PS_GameInstance->GetLife();
 
         PS_GameState->SetStage(CurrentMap, CurrentStage);
-        PS_GameState->SetLife(PS_GameInstance->GetLife());
+        PS_GameState->SetLife(CurrentLife);
     }
 }
 
@@ -205,10 +208,71 @@ void APS_GameMode::OnHUDInitialized()
     CurrentPlayersCount++;
     UE_LOG(Project_S, Log, TEXT("CurrentPlayersCount = %d\n"), CurrentPlayersCount);
 
-    if (CurrentPlayersCount == 2)
+    if (bIsGameStart)
+    {
+        UE_LOG(Project_S, Log, TEXT("bIsGameStart is true\n"));
+    }
+    else
+    {
+        UE_LOG(Project_S, Log, TEXT("bIsGameStart is false\n"));
+    }
+
+    if (bIsGameStart && CurrentPlayersCount == 2)
     {
         StartFirstWordSelectionTimer(SelectionTime);
     }
+}
+
+void APS_GameMode::StartGameAfter5Seconds()
+{
+    // 타이머 설정
+    GetWorldTimerManager().SetTimer(StartGameTimerHandle, this, &APS_GameMode::OnStartGameAfter5SecondsComplete, GameStartWaitTime, false);
+
+    // 모든 Player의 Stage UI 수정
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            PS_PlayerController->ReadyStartGame(StartGameTimerHandle);
+        }
+    }
+}
+
+void APS_GameMode::ClearStartGameTimer()
+{
+    // 모든 Player의 Stage UI 수정
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            PS_PlayerController->CancelStartGame();
+        }
+    }
+}
+
+void APS_GameMode::OnStartGameAfter5SecondsComplete()
+{
+    PS_LOG_S(Log);
+    bIsGameStart = true;
+
+    // 모든 Player의 Stage UI 수정
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            PS_PlayerController->HideStageTimerUI();
+        }
+    }
+
+    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+    {
+        PS_GameInstance->SetIsGameStart(bIsGameStart);
+    }
+
+    TransitionToStage(1, 1);
 }
 
 void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)

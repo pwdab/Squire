@@ -25,6 +25,13 @@ public:
     UFUNCTION(Server, Reliable)
     void ServerHUDInitialized();
 
+    // Start Game
+    UFUNCTION(Client, Reliable)
+    void ReadyStartGame(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void CancelStartGame();
+
     // UI
     UFUNCTION(Client, Reliable)
     void ShowWordSelectionUI(FTimerHandle TimerHandle);
