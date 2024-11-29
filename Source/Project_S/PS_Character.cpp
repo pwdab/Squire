@@ -1063,7 +1063,9 @@ void APS_Character::SpawnObject_Server_Implementation()
 {
 	if (SpawnableObjectClass)
 	{
-		FVector SpawnLocation = GetActorLocation() + GetActorForwardVector() * 200.0f; // 캐릭터 앞 위치
+		FVector SpawnLocation = GetActorLocation()
+			+ GetActorForwardVector() * 50.0f
+			- GetActorRightVector() * 100.0f;
 		FRotator SpawnRotation = GetActorRotation();
 
 		// 서버에서 오브젝트 생성
