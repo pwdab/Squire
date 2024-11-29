@@ -32,6 +32,8 @@ public:
 	void OnFirstGameSessionEnd();
 	void StartFirstAnswerSelectionTimer(int TimeLimit);
 	void OnFirstAnswerSelectionComplete();
+	void FirstAnswerShow(int TimeLimit);
+	void OnFirstAnswerShowComplete();
 
 	// 2P가 단어 선택
 	void StartSecondWordSelectionTimer(int TimeLimit);
@@ -40,6 +42,8 @@ public:
 	void OnSecondGameSessionEnd();
 	void StartSecondAnswerSelectionTimer(int TimeLimit);
 	void OnSecondAnswerSelectionComplete();
+	void SecondAnswerShow(int TimeLimit);
+	void OnSecondAnswerShowComplete();
 	
 
 protected:
@@ -76,6 +80,10 @@ private:
 
 	FTimerHandle SelectionUITimerHandle;	// 단어 선택 TimerHandler
 	FTimerHandle GameSessionTimerHandle;
+
+	bool bIsCorrect;
+	FString Answer;
+	FString SelectedWord;
 
 public:
 	// Getter functions

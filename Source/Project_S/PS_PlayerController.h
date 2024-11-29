@@ -45,7 +45,7 @@ public:
     void HideStageTimerUI();
 
     UFUNCTION(Client, Reliable)
-    void ShowStageWordUI();
+    void ShowStageWordUI(const FString& Answer);
 
     UFUNCTION(Client, Reliable)
     void HideStageWordUI();
@@ -55,6 +55,12 @@ public:
 
     UFUNCTION(Client, Reliable)
     void SetAnswerSelectionButtonWords(const TArray<FString>& SelectedWords);
+
+    UFUNCTION(Client, Reliable)
+    void ToggleCorrectUI(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord);
+
+    UFUNCTION(Client, Reliable)
+    void ToggleWrongUI(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord);
 
 protected:
     // Word selection widget class, settable in editor
@@ -68,5 +74,4 @@ protected:
 private:
     bool bIsInZone;
     bool bHasSelectedWord;
-    FString SelectedWord;
 };

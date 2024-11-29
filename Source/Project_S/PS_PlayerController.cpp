@@ -79,13 +79,13 @@ void APS_PlayerController::HideStageTimerUI_Implementation()
     }
 }
 
-void APS_PlayerController::ShowStageWordUI_Implementation()
+void APS_PlayerController::ShowStageWordUI_Implementation(const FString& Answer)
 {
     PS_LOG_S(Log);
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
-        PS_HUD->ShowStageWord();
+        PS_HUD->ShowStageWord(Answer);
     }
 }
 
@@ -121,6 +121,26 @@ void APS_PlayerController::SetAnswerSelectionButtonWords_Implementation(const TA
     if (PS_HUD)
     {
         PS_HUD->SetAnswerSelectionButtonWords(SelectedWords);
+    }
+}
+
+void APS_PlayerController::ToggleCorrectUI_Implementation(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->ToggleCorrectUI(TimerHandle, Answer, SelectedWord);
+    }
+}
+
+void APS_PlayerController::ToggleWrongUI_Implementation(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->ToggleWrongUI(TimerHandle, Answer, SelectedWord);
     }
 }
 
