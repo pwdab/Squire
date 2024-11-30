@@ -25,6 +25,13 @@ public:
     UFUNCTION(Server, Reliable)
     void ServerHUDInitialized();
 
+    // Start Game
+    UFUNCTION(Client, Reliable)
+    void ReadyStartGame(FTimerHandle TimerHandle);
+
+    UFUNCTION(Client, Reliable)
+    void CancelStartGame();
+
     // UI
     UFUNCTION(Client, Reliable)
     void ShowWordSelectionUI(FTimerHandle TimerHandle);
@@ -45,7 +52,7 @@ public:
     void HideStageTimerUI();
 
     UFUNCTION(Client, Reliable)
-    void ShowStageWordUI();
+    void ShowStageWordUI(const FString& Answer);
 
     UFUNCTION(Client, Reliable)
     void HideStageWordUI();
@@ -55,6 +62,12 @@ public:
 
     UFUNCTION(Client, Reliable)
     void SetAnswerSelectionButtonWords(const TArray<FString>& SelectedWords);
+
+    UFUNCTION(Client, Reliable)
+    void ToggleCorrectUI(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord);
+
+    UFUNCTION(Client, Reliable)
+    void ToggleWrongUI(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord);
 
 protected:
     // Word selection widget class, settable in editor
@@ -68,5 +81,4 @@ protected:
 private:
     bool bIsInZone;
     bool bHasSelectedWord;
-    FString SelectedWord;
 };

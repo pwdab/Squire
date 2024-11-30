@@ -25,6 +25,14 @@ public:
 	// 로비 및 스테이지 전환 관리
 	void TransitionToStage(uint8 MapNumber ,uint8 StageNumber);
 
+	UFUNCTION(BlueprintCallable)
+	void StartGameAfter5Seconds();
+
+	UFUNCTION(BlueprintCallable)
+	void ClearStartGameTimer();
+
+	void OnStartGameAfter5SecondsComplete();
+
 	// 1P가 단어 선택
 	void StartFirstWordSelectionTimer(int TimeLimit);
 	void OnFirstWordSelectionComplete();
@@ -32,6 +40,8 @@ public:
 	void OnFirstGameSessionEnd();
 	void StartFirstAnswerSelectionTimer(int TimeLimit);
 	void OnFirstAnswerSelectionComplete();
+	void FirstAnswerShow(int TimeLimit);
+	void OnFirstAnswerShowComplete();
 
 	// 2P가 단어 선택
 	void StartSecondWordSelectionTimer(int TimeLimit);
@@ -40,7 +50,16 @@ public:
 	void OnSecondGameSessionEnd();
 	void StartSecondAnswerSelectionTimer(int TimeLimit);
 	void OnSecondAnswerSelectionComplete();
+	void SecondAnswerShow(int TimeLimit);
+	void OnSecondAnswerShowComplete();
 	
+	FTimerHandle StartGameTimerHandle;
+
+	UFUNCTION(BlueprintCallable)
+	FTimerHandle GetStartGameTimerHandle() { return StartGameTimerHandle; }
+
+	UFUNCTION(BlueprintCallable)
+	bool IsGameStart() { return bIsGameStart; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -65,6 +84,7 @@ private:
 	UPROPERTY(BlueprintReadOnly, Category = "Words", meta = (AllowPrivateAccess = "true"))
 	TArray<FString> ButtonWords;
 
+	const uint8 GameStartWaitTime = 5;
 	const uint8 SelectionTime = 5;
 	const uint8 GameSessionTime = 5;
 
@@ -76,6 +96,11 @@ private:
 
 	FTimerHandle SelectionUITimerHandle;	// 단어 선택 TimerHandler
 	FTimerHandle GameSessionTimerHandle;
+
+	bool bIsGameStart;
+	bool bIsCorrect;
+	FString Answer;
+	FString SelectedWord;
 
 public:
 	// Getter functions

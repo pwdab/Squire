@@ -44,3 +44,23 @@ uint8 UPS_GameInstance::GetLife() const
 {
     return Life;
 }
+
+bool UPS_GameInstance::IsGameStart() const
+{
+    return bIsGameStart;
+}
+
+void UPS_GameInstance::SetIsGameStart(bool NewBool)
+{
+    PS_LOG_S(Log);
+    bIsGameStart = NewBool;
+
+    if (bIsGameStart)
+    {
+        UE_LOG(Project_S, Log, TEXT("bIsGameStart is true\n"));
+    }
+    else
+    {
+        UE_LOG(Project_S, Log, TEXT("bIsGameStart is false\n"));
+    }
+}

@@ -48,16 +48,28 @@ public:
     void ClearStageTimer();
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
-    void ShowStageWord();
+    void ShowStageWord(const FString& Answer);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void HideStageWord();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ShowTimer();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void HideTimer();
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void SetSelectionButtonWords(const TArray<FString>& SelectedWords);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void SetAnswerSelectionButtonWords(const TArray<FString>& SelectedWords);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ToggleCorrectUI(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ToggleWrongUI(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord);
 
 protected:
     virtual void BeginPlay() override;
