@@ -65,6 +65,8 @@ void APS_GameMode::BeginPlay()
 {
     Super::BeginPlay(); 
 
+    PS_LOG_S(Log);
+
     if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
     {
         CurrentMap = PS_GameInstance->GetMap();
@@ -73,14 +75,12 @@ void APS_GameMode::BeginPlay()
         bIsGameStart = PS_GameInstance->IsGameStart();
     }
 
-    PS_LOG_S(Log);
-    
-    APS_GameState* PS_GameState = GetGameState<APS_GameState>();
-    if (PS_GameState)
+    if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
     {
         PS_GameState->SetStage(CurrentMap, CurrentStage);
         PS_GameState->SetLife(CurrentLife);
-        //PS_GameState->CurrentHUDCount = 0;
+        PS_GameState->SetGameStart(bIsGameStart);
+        //PS_GameState->SetRemainingTime(0);
     }
 
     // 사용된 제시어 초기화
@@ -192,7 +192,8 @@ void APS_GameMode::PostSeamlessTravel()
         }
     }
 
-    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+    UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance());
+    if (PS_GameInstance)
     {
         CurrentMap = PS_GameInstance->GetMap();
         CurrentStage = PS_GameInstance->GetStage();
@@ -234,13 +235,16 @@ void APS_GameMode::StartGameAfter5Seconds()
         APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
-            PS_PlayerController->ReadyStartGame(StartGameTimerHandle);
+            PS_PlayerController->ReadyStartGame(GetWorld()->GetTimerManager().GetTimerRemaining(StartGameTimerHandle));
         }
     }
 }
 
 void APS_GameMode::ClearStartGameTimer()
 {
+    GetWorldTimerManager().ClearTimer(StartGameTimerHandle);
+    //StartGameTimerHandle.Invalidate();
+
     // 모든 Player의 Stage UI 수정
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
@@ -278,19 +282,11 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
 void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
 {
     PS_LOG_S(Log);
-    /*
-    // GameState의 bAllPlayerSelected 초기화
-    APS_GameState* PS_GameState = GetGameState<APS_GameState>();
-    if (PS_GameState)
-    {
-        PS_GameState->SetSelection(false);
-    }
-    */
 
     ButtonWords = InitializeWords(CurrentMap, CurrentStage, 3);
 
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstWordSelectionComplete, TimeLimit, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstWordSelectionComplete, GameStartWaitTime, false);
 
     // 첫번째 PlayerController에 단어 선택 UI 추가
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
@@ -302,7 +298,7 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
         {
             PS_PlayerState->InitSelectedWord();
         }
-        PS_PlayerController->ShowWordSelectionUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowWordSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
         PS_PlayerController->SetSelectionButtonWords(ButtonWords);
     }
 
@@ -311,20 +307,19 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowWordSelectionWaitUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowWordSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 }
 
 void APS_GameMode::OnFirstWordSelectionComplete()
 {
     PS_LOG_S(Log);
-
     // 첫번째 PlayerController에 단어 선택 UI 제거
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowWordSelectionUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowWordSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
     // 첫번째 PlayerController의 bHasSelectedWord가 true인지 검사
@@ -338,7 +333,7 @@ void APS_GameMode::OnFirstWordSelectionComplete()
             int32 RandomIndex = FMath::RandRange(0, ButtonWords.Num() - 1);
             PS_PlayerState->UpdateSelectedWord_Server(ButtonWords[RandomIndex]);
         }
-        
+
         // 사용된 제시어 목록에 추가
         UsedWords.Add(PS_PlayerState->GetSelectedWord());
         Answer = PS_PlayerState->GetSelectedWord();
@@ -349,7 +344,7 @@ void APS_GameMode::OnFirstWordSelectionComplete()
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowWordSelectionWaitUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowWordSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
     /*
@@ -392,7 +387,6 @@ void APS_GameMode::OnFirstWordSelectionComplete()
 void APS_GameMode::StartFirstGameSession(int TimeLimit)
 {
     PS_LOG_S(Log);
-    GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnFirstGameSessionEnd, TimeLimit, false);
 
     // 첫번째 PlayerController에 선택한 단어 노출
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(GetWorld()->GetPlayerControllerIterator()->Get());
@@ -407,13 +401,17 @@ void APS_GameMode::StartFirstGameSession(int TimeLimit)
         }
     }
 
+    
+    // 타이머 설정
+    GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnFirstGameSessionEnd, GameStartWaitTime, false);
+
     // 모든 Player에 Timer UI 추가
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
         PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
-            PS_PlayerController->ShowStageTimerUI(GameSessionTimerHandle);
+            PS_PlayerController->ShowStageTimerUI(GetWorld()->GetTimerManager().GetTimerRemaining(GameSessionTimerHandle));
         }
     }
 }
@@ -438,6 +436,7 @@ void APS_GameMode::OnFirstGameSessionEnd()
             PS_PlayerController->HideStageTimerUI();
         }
     }
+
     StartFirstAnswerSelectionTimer(SelectionTime);
 }
 
@@ -446,14 +445,14 @@ void APS_GameMode::StartFirstAnswerSelectionTimer(int TimeLimit)
     PS_LOG_S(Log);
 
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstAnswerSelectionComplete, TimeLimit, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstAnswerSelectionComplete, GameStartWaitTime, false);
 
     // 첫번째 PlayerController에 대기 UI 추가
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowAnswerSelectionWaitUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowAnswerSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
     // 두번째 PlayerController에 정답 선택 UI 추가
@@ -466,7 +465,7 @@ void APS_GameMode::StartFirstAnswerSelectionTimer(int TimeLimit)
         {
             PS_PlayerState->InitSelectedWord();
         }
-        PS_PlayerController->ShowAnswerSelectionUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowAnswerSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
 
         TArray<FString> AnswerLists = InitializeWords(CurrentMap, CurrentStage, 2);
         PS_PlayerState = Cast<APS_PlayerState>((It - 1)->Get()->PlayerState);
@@ -477,7 +476,7 @@ void APS_GameMode::StartFirstAnswerSelectionTimer(int TimeLimit)
             // 랜덤으로 섞음
             Algo::RandomShuffle(AnswerLists);
         }
-        
+
         PS_PlayerController->SetAnswerSelectionButtonWords(AnswerLists);
     }
 }
@@ -491,7 +490,7 @@ void APS_GameMode::OnFirstAnswerSelectionComplete()
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowAnswerSelectionWaitUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowAnswerSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
     // 두번째 PlayerController에 정답 선택 UI 제거
@@ -499,7 +498,7 @@ void APS_GameMode::OnFirstAnswerSelectionComplete()
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowAnswerSelectionUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowAnswerSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
     FirstAnswerShow(SelectionTime);
@@ -508,7 +507,8 @@ void APS_GameMode::OnFirstAnswerSelectionComplete()
 void APS_GameMode::FirstAnswerShow(int TimeLimit)
 {
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstAnswerShowComplete, TimeLimit, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstAnswerShowComplete, GameStartWaitTime, false);
+    float RemainingTime = GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle);
 
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     It++;
@@ -531,7 +531,7 @@ void APS_GameMode::FirstAnswerShow(int TimeLimit)
                     PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
                     if (PS_PlayerController)
                     {
-                        PS_PlayerController->ToggleCorrectUI(SelectionUITimerHandle, Answer, SelectedWord);
+                        PS_PlayerController->ToggleCorrectUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle), Answer, SelectedWord);
                     }
                 }
             }
@@ -557,7 +557,7 @@ void APS_GameMode::FirstAnswerShow(int TimeLimit)
                             PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
                             if (PS_PlayerController)
                             {
-                                PS_PlayerController->ToggleWrongUI(SelectionUITimerHandle, Answer, SelectedWord);
+                                PS_PlayerController->ToggleWrongUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle), Answer, SelectedWord);
                             }
                         }
                     }
@@ -586,14 +586,12 @@ void APS_GameMode::FirstAnswerShow(int TimeLimit)
                         PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
                         if (PS_PlayerController)
                         {
-                            PS_PlayerController->ToggleWrongUI(SelectionUITimerHandle, Answer, SelectedWord);
+                            PS_PlayerController->ToggleWrongUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle), Answer, SelectedWord);
                         }
                     }
                 }
             }
         }
-
-        //StartSecondWordSelectionTimer(SelectionTime);
     }
 }
 
@@ -607,7 +605,7 @@ void APS_GameMode::OnFirstAnswerShowComplete()
             APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
             if (PS_PlayerController)
             {
-                PS_PlayerController->ToggleCorrectUI(SelectionUITimerHandle, Answer, SelectedWord);
+                PS_PlayerController->ToggleCorrectUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle), Answer, SelectedWord);
             }
         }
     }
@@ -619,7 +617,7 @@ void APS_GameMode::OnFirstAnswerShowComplete()
             APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
             if (PS_PlayerController)
             {
-                PS_PlayerController->ToggleWrongUI(SelectionUITimerHandle, Answer, SelectedWord);
+                PS_PlayerController->ToggleWrongUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle), Answer, SelectedWord);
             }
         }
     }
@@ -641,14 +639,14 @@ void APS_GameMode::StartSecondWordSelectionTimer(int TimeLimit)
     ButtonWords = InitializeWords(CurrentMap, CurrentStage, 3);
 
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondWordSelectionComplete, TimeLimit, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondWordSelectionComplete, GameStartWaitTime, false);
 
     // 첫번째 PlayerController에 대기 UI 추가
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowWordSelectionWaitUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowWordSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
     // 두번째 PlayerController에 단어 선택 UI 추가
@@ -661,7 +659,7 @@ void APS_GameMode::StartSecondWordSelectionTimer(int TimeLimit)
         {
             PS_PlayerState->InitSelectedWord();
         }
-        PS_PlayerController->ShowWordSelectionUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowWordSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
         PS_PlayerController->SetSelectionButtonWords(ButtonWords);
     }
 }
@@ -675,7 +673,7 @@ void APS_GameMode::OnSecondWordSelectionComplete()
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowWordSelectionWaitUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowWordSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
     // 두번째 PlayerController에 단어 선택 UI 제거
@@ -683,7 +681,7 @@ void APS_GameMode::OnSecondWordSelectionComplete()
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowWordSelectionUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowWordSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
     // 두번째 PlayerController의 bHasSelectedWord가 true인지 검사
@@ -702,14 +700,12 @@ void APS_GameMode::OnSecondWordSelectionComplete()
         Answer = PS_PlayerState->GetSelectedWord();
     }
 
-    // 게임 시작
     StartSecondGameSession(GameSessionTime);
 }
 
 void APS_GameMode::StartSecondGameSession(int TimeLimit)
 {
     PS_LOG_S(Log);
-    GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnSecondGameSessionEnd, TimeLimit, false);
 
     // 두번째 PlayerController에 선택한 단어 노출
     FConstPlayerControllerIterator It_ = GetWorld()->GetPlayerControllerIterator();
@@ -720,13 +716,16 @@ void APS_GameMode::StartSecondGameSession(int TimeLimit)
         PS_PlayerController->ShowStageWordUI(Answer);
     }
 
+    // 타이머 설정
+    GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnSecondGameSessionEnd, GameStartWaitTime, false);
+
     // 모든 Player에 Timer UI 추가
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
         PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
-            PS_PlayerController->ShowStageTimerUI(GameSessionTimerHandle);
+            PS_PlayerController->ShowStageTimerUI(GetWorld()->GetTimerManager().GetTimerRemaining(GameSessionTimerHandle));
         }
     }
 }
@@ -752,6 +751,7 @@ void APS_GameMode::OnSecondGameSessionEnd()
             PS_PlayerController->HideStageTimerUI();
         }
     }
+    
     StartSecondAnswerSelectionTimer(SelectionTime);
 }
 
@@ -760,7 +760,7 @@ void APS_GameMode::StartSecondAnswerSelectionTimer(int TimeLimit)
     PS_LOG_S(Log);
 
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondAnswerSelectionComplete, TimeLimit, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondAnswerSelectionComplete, GameStartWaitTime, false);
 
     // 첫번째 PlayerController에 정답 선택 UI 추가
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
@@ -772,7 +772,7 @@ void APS_GameMode::StartSecondAnswerSelectionTimer(int TimeLimit)
         {
             PS_PlayerState->InitSelectedWord();
         }
-        PS_PlayerController->ShowAnswerSelectionUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowAnswerSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
 
         TArray<FString> AnswerLists = InitializeWords(CurrentMap, CurrentStage, 2);
         PS_PlayerState = Cast<APS_PlayerState>((It + 1)->Get()->PlayerState);
@@ -792,7 +792,7 @@ void APS_GameMode::StartSecondAnswerSelectionTimer(int TimeLimit)
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowAnswerSelectionWaitUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowAnswerSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 }
 
@@ -805,7 +805,7 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowAnswerSelectionUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowAnswerSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
     // 두번째 PlayerController에 대기 UI 제거
@@ -813,7 +813,7 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->ShowAnswerSelectionWaitUI(SelectionUITimerHandle);
+        PS_PlayerController->ShowAnswerSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
     SecondAnswerShow(SelectionTime);
@@ -822,7 +822,7 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
 void APS_GameMode::SecondAnswerShow(int TimeLimit)
 {
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondAnswerShowComplete, TimeLimit, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondAnswerShowComplete, GameStartWaitTime, false);
 
     // 첫번째 PlayerController의 bHasSelectedWord가 true인지 검사
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
@@ -845,7 +845,7 @@ void APS_GameMode::SecondAnswerShow(int TimeLimit)
                     PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
                     if (PS_PlayerController)
                     {
-                        PS_PlayerController->ToggleCorrectUI(SelectionUITimerHandle, Answer, SelectedWord);
+                        PS_PlayerController->ToggleCorrectUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle), Answer, SelectedWord);
                     }
                 }
             }
@@ -871,7 +871,7 @@ void APS_GameMode::SecondAnswerShow(int TimeLimit)
                             PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
                             if (PS_PlayerController)
                             {
-                                PS_PlayerController->ToggleWrongUI(SelectionUITimerHandle, Answer, SelectedWord);
+                                PS_PlayerController->ToggleWrongUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle), Answer, SelectedWord);
                             }
                         }
                     }
@@ -900,7 +900,7 @@ void APS_GameMode::SecondAnswerShow(int TimeLimit)
                         PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
                         if (PS_PlayerController)
                         {
-                            PS_PlayerController->ToggleWrongUI(SelectionUITimerHandle, Answer, SelectedWord);
+                            PS_PlayerController->ToggleWrongUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle), Answer, SelectedWord);
                         }
                     }
                 }
@@ -919,7 +919,7 @@ void APS_GameMode::OnSecondAnswerShowComplete()
             APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
             if (PS_PlayerController)
             {
-                PS_PlayerController->ToggleCorrectUI(SelectionUITimerHandle, Answer, SelectedWord);
+                PS_PlayerController->ToggleCorrectUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle), Answer, SelectedWord);
             }
         }
     }
@@ -931,7 +931,7 @@ void APS_GameMode::OnSecondAnswerShowComplete()
             APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
             if (PS_PlayerController)
             {
-                PS_PlayerController->ToggleWrongUI(SelectionUITimerHandle, Answer, SelectedWord);
+                PS_PlayerController->ToggleWrongUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle), Answer, SelectedWord);
             }
         }
     }

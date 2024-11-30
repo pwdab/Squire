@@ -30,22 +30,19 @@ public:
     void ToggleAnswerWait();
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
-    void SetSelectionTimer(FTimerHandle TimerHandle);
+    void SetSelectionTimer(float RemainingTime);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
-    void SetSelectionWaitTimer(FTimerHandle TimerHandle);
+    void SetSelectionWaitTimer(float RemainingTime);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
-    void SetAnswerTimer(FTimerHandle TimerHandle);
+    void SetAnswerTimer(float RemainingTime);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
-    void SetAnswerWaitTimer(FTimerHandle TimerHandle);
+    void SetAnswerWaitTimer(float RemainingTime);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
-    void SetStageTimer(FTimerHandle TimerHandle);
-
-    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
-    void ClearStageTimer();
+    void SetStageTimer(float RemainingTime);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void ShowStageWord(const FString& Answer);
@@ -66,10 +63,10 @@ public:
     void SetAnswerSelectionButtonWords(const TArray<FString>& SelectedWords);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
-    void ToggleCorrectUI(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord);
+    void ToggleCorrectUI(float RemainingTime, const FString& Answer, const FString& SelectedWord);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
-    void ToggleWrongUI(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord);
+    void ToggleWrongUI(float RemainingTime, const FString& Answer, const FString& SelectedWord);
 
 protected:
     virtual void BeginPlay() override;

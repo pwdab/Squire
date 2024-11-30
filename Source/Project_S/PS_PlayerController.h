@@ -27,26 +27,26 @@ public:
 
     // Start Game
     UFUNCTION(Client, Reliable)
-    void ReadyStartGame(FTimerHandle TimerHandle);
+    void ReadyStartGame(float RemainingTime);
 
     UFUNCTION(Client, Reliable)
     void CancelStartGame();
 
     // UI
     UFUNCTION(Client, Reliable)
-    void ShowWordSelectionUI(FTimerHandle TimerHandle);
+    void ShowWordSelectionUI(float RemainingTime);
 
     UFUNCTION(Client, Reliable)
-    void ShowWordSelectionWaitUI(FTimerHandle TimerHandle);
+    void ShowWordSelectionWaitUI(float RemainingTime);
 
     UFUNCTION(Client, Reliable)
-    void ShowAnswerSelectionUI(FTimerHandle TimerHandle);
+    void ShowAnswerSelectionUI(float RemainingTime);
 
     UFUNCTION(Client, Reliable)
-    void ShowAnswerSelectionWaitUI(FTimerHandle TimerHandle);
+    void ShowAnswerSelectionWaitUI(float RemainingTime);
 
     UFUNCTION(Client, Reliable)
-    void ShowStageTimerUI(FTimerHandle TimerHandle);
+    void ShowStageTimerUI(float RemainingTime);
 
     UFUNCTION(Client, Reliable)
     void HideStageTimerUI();
@@ -64,10 +64,10 @@ public:
     void SetAnswerSelectionButtonWords(const TArray<FString>& SelectedWords);
 
     UFUNCTION(Client, Reliable)
-    void ToggleCorrectUI(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord);
+    void ToggleCorrectUI(float RemainingTime, const FString& Answer, const FString& SelectedWord);
 
     UFUNCTION(Client, Reliable)
-    void ToggleWrongUI(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord);
+    void ToggleWrongUI(float RemainingTime, const FString& Answer, const FString& SelectedWord);
 
 protected:
     // Word selection widget class, settable in editor

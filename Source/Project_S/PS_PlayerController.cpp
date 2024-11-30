@@ -15,13 +15,13 @@ void APS_PlayerController::ServerHUDInitialized_Implementation()
     }
 }
 
-void APS_PlayerController::ReadyStartGame_Implementation(FTimerHandle TimerHandle)
+void APS_PlayerController::ReadyStartGame_Implementation(float RemainingTime)
 {
     PS_LOG_S(Log);
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
-        PS_HUD->SetStageTimer(TimerHandle);
+        PS_HUD->SetStageTimer(RemainingTime);
         PS_HUD->ShowTimer();
     }
 }
@@ -32,62 +32,61 @@ void APS_PlayerController::CancelStartGame_Implementation()
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
-        PS_HUD->ClearStageTimer();
         PS_HUD->HideTimer();
     }
 }
 
-void APS_PlayerController::ShowWordSelectionUI_Implementation(FTimerHandle TimerHandle)
+void APS_PlayerController::ShowWordSelectionUI_Implementation(float RemainingTime)
 {
     PS_LOG_S(Log);
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
         PS_HUD->ToggleSelection();
-        PS_HUD->SetSelectionTimer(TimerHandle);
+        PS_HUD->SetSelectionTimer(RemainingTime);
     }
 }
 
-void APS_PlayerController::ShowWordSelectionWaitUI_Implementation(FTimerHandle TimerHandle)
+void APS_PlayerController::ShowWordSelectionWaitUI_Implementation(float RemainingTime)
 {
     PS_LOG_S(Log);
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
         PS_HUD->ToggleSelectionWait();
-        PS_HUD->SetSelectionWaitTimer(TimerHandle);
+        PS_HUD->SetSelectionWaitTimer(RemainingTime);
     }
 }
 
-void APS_PlayerController::ShowAnswerSelectionUI_Implementation(FTimerHandle TimerHandle)
+void APS_PlayerController::ShowAnswerSelectionUI_Implementation(float RemainingTime)
 {
     PS_LOG_S(Log);
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
         PS_HUD->ToggleAnswer();
-        PS_HUD->SetAnswerTimer(TimerHandle);
+        PS_HUD->SetAnswerTimer(RemainingTime);
     }
 }
 
-void APS_PlayerController::ShowAnswerSelectionWaitUI_Implementation(FTimerHandle TimerHandle)
+void APS_PlayerController::ShowAnswerSelectionWaitUI_Implementation(float RemainingTime)
 {
     PS_LOG_S(Log);
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
         PS_HUD->ToggleAnswerWait();
-        PS_HUD->SetAnswerWaitTimer(TimerHandle);
+        PS_HUD->SetAnswerWaitTimer(RemainingTime);
     }
 }
 
-void APS_PlayerController::ShowStageTimerUI_Implementation(FTimerHandle TimerHandle)
+void APS_PlayerController::ShowStageTimerUI_Implementation(float RemainingTime)
 {
     PS_LOG_S(Log);
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
-        PS_HUD->SetStageTimer(TimerHandle);
+        PS_HUD->SetStageTimer(RemainingTime);
     }
 }
 
@@ -97,7 +96,7 @@ void APS_PlayerController::HideStageTimerUI_Implementation()
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
-        PS_HUD->ClearStageTimer();
+        PS_HUD->HideTimer();
     }
 }
 
@@ -146,23 +145,23 @@ void APS_PlayerController::SetAnswerSelectionButtonWords_Implementation(const TA
     }
 }
 
-void APS_PlayerController::ToggleCorrectUI_Implementation(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord)
+void APS_PlayerController::ToggleCorrectUI_Implementation(float RemainingTime, const FString& Answer, const FString& SelectedWord)
 {
     PS_LOG_S(Log);
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
-        PS_HUD->ToggleCorrectUI(TimerHandle, Answer, SelectedWord);
+        PS_HUD->ToggleCorrectUI(RemainingTime, Answer, SelectedWord);
     }
 }
 
-void APS_PlayerController::ToggleWrongUI_Implementation(FTimerHandle TimerHandle, const FString& Answer, const FString& SelectedWord)
+void APS_PlayerController::ToggleWrongUI_Implementation(float RemainingTime, const FString& Answer, const FString& SelectedWord)
 {
     PS_LOG_S(Log);
     APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
     if (PS_HUD)
     {
-        PS_HUD->ToggleWrongUI(TimerHandle, Answer, SelectedWord);
+        PS_HUD->ToggleWrongUI(RemainingTime, Answer, SelectedWord);
     }
 }
 
