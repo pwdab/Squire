@@ -28,6 +28,8 @@ void APS_GameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
     DOREPLIFETIME(APS_GameState, CurrentStage);
     DOREPLIFETIME(APS_GameState, CurrentLife);
     DOREPLIFETIME(APS_GameState, CurrentSelection);
+    DOREPLIFETIME(APS_GameState, GameStart);
+    //DOREPLIFETIME(APS_GameState, RemainingTime);
 }
 
 /*
@@ -123,6 +125,19 @@ void APS_GameState::OnRep_Selection(bool OldValue) const
     OnSelectionChanged.Broadcast(CurrentSelection);
 }
 
+void APS_GameState::OnRep_GameStart(bool OldValue) const
+{
+    OnGameStartChanged.Broadcast(GameStart);
+}
+
+/*
+void APS_GameState::OnRep_RemainingTime(float OldValue) const
+{
+    PS_LOG_S(Log);
+    OnRemainingTimeChanged.Broadcast(RemainingTime);
+}
+*/
+
 void APS_GameState::UpdateGameState()
 {
     PS_LOG_S(Log);
@@ -137,9 +152,6 @@ void APS_GameState::SetStage(int MapNumber, int StageNumber)
 {
     CurrentMap = MapNumber;
     CurrentStage = StageNumber;
-
-    PS_LOG_S(Log);
-
     OnMapChanged.Broadcast(CurrentMap);
     OnStageChanged.Broadcast(CurrentStage);
 }
@@ -147,21 +159,30 @@ void APS_GameState::SetStage(int MapNumber, int StageNumber)
 void APS_GameState::SetLife(int NewLife)
 {
     CurrentLife = NewLife;
-
-    PS_LOG_S(Log);
-
     OnLifeChanged.Broadcast(CurrentLife);
 }
 
 void APS_GameState::SetSelection(bool NewSelection)
 {
     CurrentSelection = NewSelection;
-
-    PS_LOG_S(Log);
-
     OnSelectionChanged.Broadcast(CurrentSelection);
 }
 
+void APS_GameState::SetGameStart(bool NewGameStart)
+{
+    GameStart = NewGameStart;
+    OnSelectionChanged.Broadcast(CurrentSelection);
+}
+
+/*
+void APS_GameState::SetRemainingTime(float NewRemainingTime)
+{
+    PS_LOG_S(Log);
+    RemainingTime = NewRemainingTime;
+    OnRemainingTimeChanged.Broadcast(RemainingTime);
+    UE_LOG(Project_S, Log, TEXT("RemainingTime = %f"), RemainingTime);
+}
+*/
 /*
 FTimespan APS_GameState::GetRemainingTime() const
 {
@@ -171,7 +192,6 @@ FTimespan APS_GameState::GetRemainingTime() const
 
 void APS_GameState::AllPlayersWordSelected_Implementation()
 {
-    PS_LOG_S(Log);
     bool temp = true;
     for (APlayerState* PlayerState : PlayerArray)
     {
@@ -186,7 +206,6 @@ void APS_GameState::AllPlayersWordSelected_Implementation()
 
 void APS_GameState::AllPlayersAnswerSelected_Implementation()
 {
-    PS_LOG_S(Log);
     bool temp = true;
     for (APlayerState* PlayerState : PlayerArray)
     {

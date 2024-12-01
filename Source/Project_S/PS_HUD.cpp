@@ -5,7 +5,6 @@
 #include "PS_GameMode.h"
 #include "PS_GameState.h"
 #include "PS_PlayerController.h"
-#include "BaseWidgetBlueprint.h"
 
 void APS_HUD::BeginPlay()
 {
