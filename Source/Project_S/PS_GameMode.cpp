@@ -235,6 +235,7 @@ void APS_GameMode::StartGameAfter5Seconds()
         APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
+            PS_PlayerController->SetStageTextUI(FString(TEXT("잠시 후 게임 스테이지로 이동합니다")));
             PS_PlayerController->ReadyStartGame(GetWorld()->GetTimerManager().GetTimerRemaining(StartGameTimerHandle));
         }
     }
@@ -251,6 +252,7 @@ void APS_GameMode::ClearStartGameTimer()
         APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
+            PS_PlayerController->SetStageTextUI(FString(TEXT("시작 대기중입니다")));
             PS_PlayerController->CancelStartGame();
         }
     }
@@ -267,6 +269,7 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
         APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
+            PS_PlayerController->SetStageTextUI(FString(TEXT("잠시 후 게임이 시작됩니다")));
             PS_PlayerController->HideStageTimerUI();
         }
     }
@@ -277,6 +280,33 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
     }
 
     TransitionToStage(1, 1);
+}
+
+void APS_GameMode::ReloadGame()
+{
+    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+    {
+        CurrentMap = PS_GameInstance->GetMap();
+        CurrentStage = 1;
+        PS_GameInstance->SetStage(CurrentStage);
+        CurrentLife = 3;
+        PS_GameInstance->SetLife(CurrentLife);
+        bIsGameStart = true;
+        PS_GameInstance->SetIsGameStart(bIsGameStart);
+    }
+
+    if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
+    {
+        PS_GameState->SetStage(CurrentMap, CurrentStage);
+        PS_GameState->SetLife(CurrentLife);
+        PS_GameState->SetGameStart(bIsGameStart);
+        //PS_GameState->SetRemainingTime(0);
+    }
+
+    // 사용된 제시어 초기화
+    UsedWords.Empty();
+
+    TransitionToStage(CurrentMap, CurrentStage);
 }
 
 void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
@@ -298,6 +328,7 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
         {
             PS_PlayerState->InitSelectedWord();
         }
+        PS_PlayerController->SetStageTextUI(FString(TEXT("")));
         PS_PlayerController->ShowWordSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
         PS_PlayerController->SetSelectionButtonWords(ButtonWords);
     }
@@ -307,6 +338,7 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
+        PS_PlayerController->SetStageTextUI(FString(TEXT("")));
         PS_PlayerController->ShowWordSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 }
@@ -629,6 +661,17 @@ void APS_GameMode::OnFirstAnswerShowComplete()
     else
     {
         // 게임 오버
+        bIsGameStart = false;
+
+        // 모든 Player에 게임 오버 추가
+        for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+        {
+            APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+            if (PS_PlayerController)
+            {
+                PS_PlayerController->SetStageTextUI(FString(TEXT("게임 오버")));
+            }
+        }
     }
 }
 
@@ -982,54 +1025,16 @@ void APS_GameMode::OnSecondAnswerShowComplete()
     else
     {
         // 게임 오버
-    }
-}
+        bIsGameStart = false;
 
-/*
-void APS_GameMode::OnWordSelectionComplete()
-{
-    PS_LOG_S(Log);
-
-    // 모든 PlayerController에 단어 선택 UI 제거
-    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-    {
-        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
-        if (PS_PlayerController)
+        // 모든 Player에 게임 오버 추가
+        for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
         {
-            PS_PlayerController->ShowWordSelectionUI(SelectionUITimerHandle);
-        }
-    }
-
-    APS_GameState* PS_GameState = GetGameState<APS_GameState>();
-    // GameState의 bAllPlayerSelected가 true인지 검사
-    if (PS_GameState)
-    {
-        PS_GameState->AllPlayersSelected();
-
-        if (PS_GameState->GetCurrentSelection())
-        {
-            StartGameSession(120); // Start 2 min game session
-        }
-        else
-        {
-            // Move to Next Level
-            CurrentStage++;
-            if (CurrentStage > 10)
+            APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+            if (PS_PlayerController)
             {
-                CurrentMap++;
-                CurrentStage -= 10;
+                PS_PlayerController->SetStageTextUI(FString(TEXT("게임 오버")));
             }
-
-            if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
-            {
-                PS_GameInstance->SetMap(CurrentMap);
-                PS_GameInstance->SetStage(CurrentStage);
-                PS_GameInstance->DeductLife();
-            }
-
-            //TransitionToStage(CurrentMap, CurrentStage);
         }
     }
 }
-*/
-

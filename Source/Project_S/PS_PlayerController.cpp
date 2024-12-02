@@ -80,6 +80,16 @@ void APS_PlayerController::ShowAnswerSelectionWaitUI_Implementation(float Remain
     }
 }
 
+void APS_PlayerController::SetStageTextUI(const FString& Text)
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->SetStageText(Text);
+    }
+}
+
 void APS_PlayerController::ShowStageTimerUI_Implementation(float RemainingTime)
 {
     PS_LOG_S(Log);

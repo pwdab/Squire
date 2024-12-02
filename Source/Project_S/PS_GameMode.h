@@ -37,6 +37,9 @@ public:
 	void ClearStartGameTimer();
 	void OnStartGameAfter5SecondsComplete();
 
+	//
+	void ReloadGame();
+
 	// 1P가 단어 선택
 	void StartFirstWordSelectionTimer(int TimeLimit);
 	void OnFirstWordSelectionComplete();
