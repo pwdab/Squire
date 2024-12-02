@@ -41,6 +41,8 @@ public:
 	void ReloadGame();
 
 	// 1P가 단어 선택
+	void PostStartFirstWordSelectionTimer(int TimeLimit);
+	void OnPostStartFirstWordSelectionTimerComplete();
 	void StartFirstWordSelectionTimer(int TimeLimit);
 	void OnFirstWordSelectionComplete();
 	void StartFirstGameSession(int TimeLimit);
@@ -51,6 +53,8 @@ public:
 	void OnFirstAnswerShowComplete();
 
 	// 2P가 단어 선택
+	void PostStartSecondWordSelectionTimer(int TimeLimit);
+	void OnPostStartSecondWordSelectionTimerComplete();
 	void StartSecondWordSelectionTimer(int TimeLimit);
 	void OnSecondWordSelectionComplete();
 	void StartSecondGameSession(int TimeLimit);

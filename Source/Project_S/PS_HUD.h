@@ -48,6 +48,9 @@ public:
     void SetStageText(const FString& Text);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void HideStageText();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void ShowStageWord(const FString& Answer);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")

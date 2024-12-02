@@ -220,7 +220,8 @@ void APS_GameMode::OnHUDInitialized()
 
     if (bIsGameStart && CurrentPlayersCount == 2)
     {
-        StartFirstWordSelectionTimer(SelectionTime);
+        //StartFirstWordSelectionTimer(SelectionTime);
+        PostStartFirstWordSelectionTimer(SelectionTime);
     }
 }
 
@@ -235,7 +236,7 @@ void APS_GameMode::StartGameAfter5Seconds()
         APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
-            PS_PlayerController->SetStageTextUI(FString(TEXT("잠시 후 게임 스테이지로 이동합니다")));
+            PS_PlayerController->ShowStageTextUI(FString(TEXT("잠시 후 게임 스테이지로 이동합니다")));
             PS_PlayerController->ReadyStartGame(GetWorld()->GetTimerManager().GetTimerRemaining(StartGameTimerHandle));
         }
     }
@@ -252,7 +253,7 @@ void APS_GameMode::ClearStartGameTimer()
         APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
-            PS_PlayerController->SetStageTextUI(FString(TEXT("시작 대기중입니다")));
+            PS_PlayerController->ShowStageTextUI(FString(TEXT("시작 대기중입니다")));
             PS_PlayerController->CancelStartGame();
         }
     }
@@ -269,7 +270,7 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
         APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
-            PS_PlayerController->SetStageTextUI(FString(TEXT("잠시 후 게임이 시작됩니다")));
+            PS_PlayerController->HideStageTextUI();
             PS_PlayerController->HideStageTimerUI();
         }
     }
@@ -309,6 +310,44 @@ void APS_GameMode::ReloadGame()
     TransitionToStage(CurrentMap, CurrentStage);
 }
 
+void APS_GameMode::PostStartFirstWordSelectionTimer(int TimeLimit)
+{
+    // 타이머 설정
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnPostStartFirstWordSelectionTimerComplete, GameStartWaitTime, false);
+
+    // 모든 Player에 대기 메시지 추가
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            if (CurrentStage == 1)
+            {
+                PS_PlayerController->ShowStageTextUI(FString(TEXT("잠시 후 게임이 시작됩니다")));
+            }
+            else
+            {
+                PS_PlayerController->ShowStageTextUI(FString(TEXT("플레이어 전환 대기 중입니다")));
+            }
+        }
+    }
+}
+
+void APS_GameMode::OnPostStartFirstWordSelectionTimerComplete()
+{
+    // 모든 Player에 대기 메시지 제거
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            PS_PlayerController->HideStageTextUI();
+        }
+    }
+
+    StartFirstWordSelectionTimer(SelectionTime);
+}
+
 void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
 {
     PS_LOG_S(Log);
@@ -328,7 +367,6 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
         {
             PS_PlayerState->InitSelectedWord();
         }
-        PS_PlayerController->SetStageTextUI(FString(TEXT("")));
         PS_PlayerController->ShowWordSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
         PS_PlayerController->SetSelectionButtonWords(ButtonWords);
     }
@@ -338,7 +376,7 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
-        PS_PlayerController->SetStageTextUI(FString(TEXT("")));
+        PS_PlayerController->ShowStageTextUI(FString(TEXT("")));
         PS_PlayerController->ShowWordSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 }
@@ -656,7 +694,7 @@ void APS_GameMode::OnFirstAnswerShowComplete()
 
     if (CurrentLife > 0)
     {
-        StartSecondWordSelectionTimer(SelectionTime);
+        PostStartSecondWordSelectionTimer(SelectionTime);
     }
     else
     {
@@ -669,10 +707,41 @@ void APS_GameMode::OnFirstAnswerShowComplete()
             APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
             if (PS_PlayerController)
             {
-                PS_PlayerController->SetStageTextUI(FString(TEXT("게임 오버")));
+                PS_PlayerController->ShowStageTextUI(FString(TEXT("게임 오버")));
             }
         }
     }
+}
+
+void APS_GameMode::PostStartSecondWordSelectionTimer(int TimeLimit)
+{
+    // 타이머 설정
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnPostStartSecondWordSelectionTimerComplete, GameStartWaitTime, false);
+
+    // 모든 Player에 대기 메시지 추가
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            PS_PlayerController->ShowStageTextUI(FString(TEXT("플레이어 전환 대기 중입니다")));
+        }
+    }
+}
+
+void APS_GameMode::OnPostStartSecondWordSelectionTimerComplete()
+{
+    // 모든 Player에 대기 메시지 제거
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            PS_PlayerController->ShowStageTextUI(FString(TEXT("")));
+        }
+    }
+
+    StartSecondWordSelectionTimer(SelectionTime);
 }
 
 void APS_GameMode::StartSecondWordSelectionTimer(int TimeLimit)
@@ -1019,7 +1088,7 @@ void APS_GameMode::OnSecondAnswerShowComplete()
                 }
             }
 
-            StartFirstWordSelectionTimer(SelectionTime);
+            PostStartFirstWordSelectionTimer(SelectionTime);
         }
     }
     else
@@ -1033,7 +1102,7 @@ void APS_GameMode::OnSecondAnswerShowComplete()
             APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
             if (PS_PlayerController)
             {
-                PS_PlayerController->SetStageTextUI(FString(TEXT("게임 오버")));
+                PS_PlayerController->ShowStageTextUI(FString(TEXT("게임 오버")));
             }
         }
     }
