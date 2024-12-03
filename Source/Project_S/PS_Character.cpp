@@ -1050,22 +1050,19 @@ void APS_Character::OnMouseWheelClick(const FInputActionValue& Value)
 	if (HasAuthority())
 	{
 		// 서버에서 직접 호출
-		FName ButtonInput = Value.Get<FName>(); // 입력된 버튼 이름 가져오기
-		SpawnObject_Server(ButtonInput);
+		SpawnObject_Server();
 	}
 	else
 	{
 		// 클라이언트에서 서버로 RPC 호출
-		FName ButtonInput = Value.Get<FName>();
-		SpawnObject_Server(ButtonInput);
+		SpawnObject_Server();
 	}
 }
 
-void APS_Character::SpawnObject_Server_Implementation(FName ButtonInput)
+void APS_Character::SpawnObject_Server_Implementation()
 {
-	if (SpawnableObjectClasses.Contains(ButtonInput))
+	if (SpawnableObjectClass)
 	{
-		TSubclassOf<AActor> SpawnableObjectClass = SpawnableObjectClasses[ButtonInput];
 		FVector SpawnLocation = GetActorLocation()
 			+ GetActorForwardVector() * 50.0f
 			- GetActorRightVector() * 100.0f;
@@ -1083,14 +1080,23 @@ void APS_Character::SpawnObject_Server_Implementation(FName ButtonInput)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No Spawnable Object is assigned for button: %s"), *ButtonInput.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("SpawnableObjectClass is not assigned!"));
 	}
 }
 
-bool APS_Character::SpawnObject_Server_Validate(FName ButtonInput)
+bool APS_Character::SpawnObject_Server_Validate()
 {
 	// 기본적으로 true 반환. 추가 검증 로직이 필요하면 여기에 작성.
 	return true;
+}
+
+void APS_Character::SpawnObject_Client_Implementation(const FVector& SpawnLocation, const FRotator& SpawnRotation)
+{
+	if (SpawnableObjectClass)
+	{
+		// 클라이언트에서 오브젝트 생성 (시각적 동기화)
+		GetWorld()->SpawnActor<AActor>(SpawnableObjectClass, SpawnLocation, SpawnRotation);
+	}
 }
 
 //--------최연구 작성중
