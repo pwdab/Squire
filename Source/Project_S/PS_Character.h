@@ -42,14 +42,6 @@ public:
 	bool CanSetWeapon(EHand Hand);
 	void SetWeapon(class APS_Weapon* NewWeapon, EHand NewHand);
 
-	// Server RPC for spawning object
-	UFUNCTION(Server, Reliable, WithValidation)
-	void SpawnObject_Server();
-
-	// Client-side visual spawn
-	UFUNCTION(NetMulticast, Reliable)
-	void SpawnObject_Client(const FVector& SpawnLocation, const FRotator& SpawnRotation);
-
 protected:
 	virtual void BeginPlay() override;
 
@@ -156,11 +148,18 @@ protected:
 	EDirection Dodge_Direction;
 
 	// 오브젝트 클래스 (Blueprint 또는 C++ 클래스)
-	UPROPERTY(EditDefaultsOnly, Category = "Spawn")
-	TSubclassOf<AActor> SpawnableObjectClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Spawning")
+	TMap<FName, TSubclassOf<AActor>> SpawnableObjectClasses; // 스폰 가능한 오브젝트 목록
 
 	// Input Action Binding
 	void OnMouseWheelClick(const FInputActionValue& Value);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SpawnObject_Server(FName ButtonInput); // 버튼 입력 값 추가
+
+	// Client-side visual spawn
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnObject_Client(const FVector& SpawnLocation, const FRotator& SpawnRotation);
 
 private:
 	// Component variables
