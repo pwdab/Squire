@@ -46,6 +46,12 @@ public:
     void ShowAnswerSelectionWaitUI(float RemainingTime);
 
     UFUNCTION(Client, Reliable)
+    void ShowStageTextUI(const FString& Text);
+
+    UFUNCTION(Client, Reliable)
+    void HideStageTextUI();
+
+    UFUNCTION(Client, Reliable)
     void ShowStageTimerUI(float RemainingTime);
 
     UFUNCTION(Client, Reliable)

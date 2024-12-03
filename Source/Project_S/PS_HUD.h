@@ -45,6 +45,12 @@ public:
     void SetStageTimer(float RemainingTime);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void SetStageText(const FString& Text);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void HideStageText();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void ShowStageWord(const FString& Answer);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")

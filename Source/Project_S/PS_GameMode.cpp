@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "PS_GameMode.h"
 #include "PS_GameState.h"
@@ -83,7 +83,7 @@ void APS_GameMode::BeginPlay()
         //PS_GameState->SetRemainingTime(0);
     }
 
-    // »ç¿ëµÈ Á¦½Ã¾î ÃÊ±âÈ­
+    // ì‚¬ìš©ëœ ì œì‹œì–´ ì´ˆê¸°í™”
     UsedWords.Empty();
 }
 
@@ -112,14 +112,14 @@ TArray<FString> APS_GameMode::InitializeWords(uint8 Map, uint8 Stage, uint8 Num)
         TArray<FName> RowNames = WordDataTable->GetRowNames();
         WordList.Empty();
 
-        // µ¥ÀÌÅÍ Å×ÀÌºíÀÇ ¸ğµç Çà °¡Á®¿À±â
+        // ë°ì´í„° í…Œì´ë¸”ì˜ ëª¨ë“  í–‰ ê°€ì ¸ì˜¤ê¸°
         for (const FName& RowName : RowNames)
         {
-            // µ¥ÀÌÅÍ Å×ÀÌºíÀÇ Æ¯Á¤ Çà °¡Á®¿À±â
+            // ë°ì´í„° í…Œì´ë¸”ì˜ íŠ¹ì • í–‰ ê°€ì ¸ì˜¤ê¸°
             FPS_Words* RowData = WordDataTable->FindRow<FPS_Words>(RowName, TEXT("InitializeWordData"));
             if (RowData)
             {
-                // ÇÊÅÍ Á¶°Ç¿¡ ¸Â´ÂÁö È®ÀÎ
+                // í•„í„° ì¡°ê±´ì— ë§ëŠ”ì§€ í™•ì¸
                 if (RowData->MapNum == Map && RowData->Difficulty == Difficulty)
                 {
                     WordList.Add(*RowData);
@@ -128,7 +128,7 @@ TArray<FString> APS_GameMode::InitializeWords(uint8 Map, uint8 Stage, uint8 Num)
             }
         }
 
-        // Áßº¹µÇÁö ¾Ê´Â ´Ü¾î¸¸ AvailableWords¿¡ Ãß°¡
+        // ì¤‘ë³µë˜ì§€ ì•ŠëŠ” ë‹¨ì–´ë§Œ AvailableWordsì— ì¶”ê°€
         for (const FPS_Words& Word : WordList)
         {
             if (!UsedWords.Contains(Word.Word))
@@ -137,7 +137,7 @@ TArray<FString> APS_GameMode::InitializeWords(uint8 Map, uint8 Stage, uint8 Num)
             }
         }
 
-        // ·£´ıÀ¸·Î Num°³¸¸Å­ ¼±ÅÃ
+        // ëœë¤ìœ¼ë¡œ Numê°œë§Œí¼ ì„ íƒ
         while (SelectedWords.Num() < Num)
         {
             int32 RandomIndex = FMath::RandRange(0, AvailableWords.Num() - 1);
@@ -166,7 +166,7 @@ void APS_GameMode::Logout(AController* Exiting)
 void APS_GameMode::TransitionToStage(uint8 MapNumber, uint8 StageNumber)
 {
     PS_LOG_S(Log);
-    // ¸Ê ÀÌ¸§À» »ı¼ºÇÏ°í ¸ÊÀ» ·Îµå
+    // ë§µ ì´ë¦„ì„ ìƒì„±í•˜ê³  ë§µì„ ë¡œë“œ
     FString MapName = FString::Printf(TEXT("/Game/Maps/Level_%d_%d?listen"), MapNumber, StageNumber);
 
     CurrentPlayersCount = 0;
@@ -220,21 +220,23 @@ void APS_GameMode::OnHUDInitialized()
 
     if (bIsGameStart && CurrentPlayersCount == 2)
     {
-        StartFirstWordSelectionTimer(SelectionTime);
+        //StartFirstWordSelectionTimer(SelectionTime);
+        PostStartFirstWordSelectionTimer(SelectionTime);
     }
 }
 
 void APS_GameMode::StartGameAfter5Seconds()
 {
-    // Å¸ÀÌ¸Ó ¼³Á¤
+    // íƒ€ì´ë¨¸ ì„¤ì •
     GetWorldTimerManager().SetTimer(StartGameTimerHandle, this, &APS_GameMode::OnStartGameAfter5SecondsComplete, GameStartWaitTime, false);
 
-    // ¸ğµç PlayerÀÇ Stage UI ¼öÁ¤
+    // ëª¨ë“  Playerì˜ Stage UI ìˆ˜ì •
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
         APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
+            PS_PlayerController->ShowStageTextUI(FString(TEXT("ì ì‹œ í›„ ê²Œì„ ìŠ¤í…Œì´ì§€ë¡œ ì´ë™í•©ë‹ˆë‹¤")));
             PS_PlayerController->ReadyStartGame(GetWorld()->GetTimerManager().GetTimerRemaining(StartGameTimerHandle));
         }
     }
@@ -245,12 +247,13 @@ void APS_GameMode::ClearStartGameTimer()
     GetWorldTimerManager().ClearTimer(StartGameTimerHandle);
     //StartGameTimerHandle.Invalidate();
 
-    // ¸ğµç PlayerÀÇ Stage UI ¼öÁ¤
+    // ëª¨ë“  Playerì˜ Stage UI ìˆ˜ì •
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
         APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
+            PS_PlayerController->ShowStageTextUI(FString(TEXT("ì‹œì‘ ëŒ€ê¸°ì¤‘ì…ë‹ˆë‹¤")));
             PS_PlayerController->CancelStartGame();
         }
     }
@@ -261,12 +264,13 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
     PS_LOG_S(Log);
     bIsGameStart = true;
 
-    // ¸ğµç PlayerÀÇ Stage UI ¼öÁ¤
+    // ëª¨ë“  Playerì˜ Stage UI ìˆ˜ì •
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
         APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
         if (PS_PlayerController)
         {
+            PS_PlayerController->HideStageTextUI();
             PS_PlayerController->HideStageTimerUI();
         }
     }
@@ -279,16 +283,81 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
     TransitionToStage(1, 1);
 }
 
+void APS_GameMode::ReloadGame()
+{
+    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+    {
+        CurrentMap = PS_GameInstance->GetMap();
+        CurrentStage = 1;
+        PS_GameInstance->SetStage(CurrentStage);
+        CurrentLife = 3;
+        PS_GameInstance->SetLife(CurrentLife);
+        bIsGameStart = true;
+        PS_GameInstance->SetIsGameStart(bIsGameStart);
+    }
+
+    if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
+    {
+        PS_GameState->SetStage(CurrentMap, CurrentStage);
+        PS_GameState->SetLife(CurrentLife);
+        PS_GameState->SetGameStart(bIsGameStart);
+        //PS_GameState->SetRemainingTime(0);
+    }
+
+    // ì‚¬ìš©ëœ ì œì‹œì–´ ì´ˆê¸°í™”
+    UsedWords.Empty();
+
+    TransitionToStage(CurrentMap, CurrentStage);
+}
+
+void APS_GameMode::PostStartFirstWordSelectionTimer(int TimeLimit)
+{
+    // íƒ€ì´ë¨¸ ì„¤ì •
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnPostStartFirstWordSelectionTimerComplete, GameStartWaitTime, false);
+
+    // ëª¨ë“  Playerì— ëŒ€ê¸° ë©”ì‹œì§€ ì¶”ê°€
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            if (CurrentStage == 1)
+            {
+                PS_PlayerController->ShowStageTextUI(FString(TEXT("ì ì‹œ í›„ ê²Œì„ì´ ì‹œì‘ë©ë‹ˆë‹¤")));
+            }
+            else
+            {
+                PS_PlayerController->ShowStageTextUI(FString(TEXT("í”Œë ˆì´ì–´ ì „í™˜ ëŒ€ê¸° ì¤‘ì…ë‹ˆë‹¤")));
+            }
+        }
+    }
+}
+
+void APS_GameMode::OnPostStartFirstWordSelectionTimerComplete()
+{
+    // ëª¨ë“  Playerì— ëŒ€ê¸° ë©”ì‹œì§€ ì œê±°
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            PS_PlayerController->HideStageTextUI();
+        }
+    }
+
+    StartFirstWordSelectionTimer(SelectionTime);
+}
+
 void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
 {
     PS_LOG_S(Log);
 
     ButtonWords = InitializeWords(CurrentMap, CurrentStage, 3);
 
-    // Å¸ÀÌ¸Ó ¼³Á¤
+    // íƒ€ì´ë¨¸ ì„¤ì •
     GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstWordSelectionComplete, GameStartWaitTime, false);
 
-    // Ã¹¹øÂ° PlayerController¿¡ ´Ü¾î ¼±ÅÃ UI Ãß°¡
+    // ì²«ë²ˆì§¸ PlayerControllerì— ë‹¨ì–´ ì„ íƒ UI ì¶”ê°€
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -302,11 +371,12 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
         PS_PlayerController->SetSelectionButtonWords(ButtonWords);
     }
 
-    // µÎ¹øÂ° PlayerController¿¡ ´ë±â UI Ãß°¡
+    // ë‘ë²ˆì§¸ PlayerControllerì— ëŒ€ê¸° UI ì¶”ê°€
     It++;
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
     {
+        PS_PlayerController->ShowStageTextUI(FString(TEXT("")));
         PS_PlayerController->ShowWordSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 }
@@ -314,7 +384,7 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
 void APS_GameMode::OnFirstWordSelectionComplete()
 {
     PS_LOG_S(Log);
-    // Ã¹¹øÂ° PlayerController¿¡ ´Ü¾î ¼±ÅÃ UI Á¦°Å
+    // ì²«ë²ˆì§¸ PlayerControllerì— ë‹¨ì–´ ì„ íƒ UI ì œê±°
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -322,11 +392,11 @@ void APS_GameMode::OnFirstWordSelectionComplete()
         PS_PlayerController->ShowWordSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
-    // Ã¹¹øÂ° PlayerControllerÀÇ bHasSelectedWord°¡ trueÀÎÁö °Ë»ç
+    // ì²«ë²ˆì§¸ PlayerControllerì˜ bHasSelectedWordê°€ trueì¸ì§€ ê²€ì‚¬
     APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PS_PlayerController->PlayerState);
     if (PS_PlayerState)
     {
-        // ¼±ÅÃÇÏÁö ¾Ê¾ÒÀ¸¸é ·£´ıÀ¸·Î ¼±ÅÃ
+        // ì„ íƒí•˜ì§€ ì•Šì•˜ìœ¼ë©´ ëœë¤ìœ¼ë¡œ ì„ íƒ
         if (!PS_PlayerState->GetHasSelectedWord())
         {
             UE_LOG(Project_S, Log, TEXT("Randomly Selected..\n"));
@@ -334,12 +404,12 @@ void APS_GameMode::OnFirstWordSelectionComplete()
             PS_PlayerState->UpdateSelectedWord_Server(ButtonWords[RandomIndex]);
         }
 
-        // »ç¿ëµÈ Á¦½Ã¾î ¸ñ·Ï¿¡ Ãß°¡
+        // ì‚¬ìš©ëœ ì œì‹œì–´ ëª©ë¡ì— ì¶”ê°€
         UsedWords.Add(PS_PlayerState->GetSelectedWord());
         Answer = PS_PlayerState->GetSelectedWord();
     }
 
-    // µÎ¹øÂ° PlayerController¿¡ ´ë±â UI Á¦°Å
+    // ë‘ë²ˆì§¸ PlayerControllerì— ëŒ€ê¸° UI ì œê±°
     It++;
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -349,7 +419,7 @@ void APS_GameMode::OnFirstWordSelectionComplete()
 
     /*
     APS_GameState* PS_GameState = GetGameState<APS_GameState>();
-    // GameStateÀÇ bAllPlayerSelected°¡ trueÀÎÁö °Ë»ç
+    // GameStateì˜ bAllPlayerSelectedê°€ trueì¸ì§€ ê²€ì‚¬
     if (PS_GameState)
     {
         PS_GameState->AllPlayersWordSelected();
@@ -380,7 +450,7 @@ void APS_GameMode::OnFirstWordSelectionComplete()
     }
     */
 
-    // °ÔÀÓ ½ÃÀÛ
+    // ê²Œì„ ì‹œì‘
     StartFirstGameSession(GameSessionTime);
 }
 
@@ -388,7 +458,7 @@ void APS_GameMode::StartFirstGameSession(int TimeLimit)
 {
     PS_LOG_S(Log);
 
-    // Ã¹¹øÂ° PlayerController¿¡ ¼±ÅÃÇÑ ´Ü¾î ³ëÃâ
+    // ì²«ë²ˆì§¸ PlayerControllerì— ì„ íƒí•œ ë‹¨ì–´ ë…¸ì¶œ
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(GetWorld()->GetPlayerControllerIterator()->Get());
     if (PS_PlayerController)
     {
@@ -402,10 +472,10 @@ void APS_GameMode::StartFirstGameSession(int TimeLimit)
     }
 
     
-    // Å¸ÀÌ¸Ó ¼³Á¤
+    // íƒ€ì´ë¨¸ ì„¤ì •
     GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnFirstGameSessionEnd, GameStartWaitTime, false);
 
-    // ¸ğµç Player¿¡ Timer UI Ãß°¡
+    // ëª¨ë“  Playerì— Timer UI ì¶”ê°€
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
         PS_PlayerController = Cast<APS_PlayerController>(It->Get());
@@ -420,14 +490,14 @@ void APS_GameMode::OnFirstGameSessionEnd()
 {
     PS_LOG_S(Log);
 
-    // Ã¹¹øÂ° PlayerController¿¡ ¼±ÅÃÇÑ ´Ü¾î Á¦°Å
+    // ì²«ë²ˆì§¸ PlayerControllerì— ì„ íƒí•œ ë‹¨ì–´ ì œê±°
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(GetWorld()->GetPlayerControllerIterator()->Get());
     if (PS_PlayerController)
     {
         PS_PlayerController->HideStageWordUI();
     }
 
-    // ¸ğµç Player¿¡ Timer UI Á¦°Å
+    // ëª¨ë“  Playerì— Timer UI ì œê±°
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
         PS_PlayerController = Cast<APS_PlayerController>(It->Get());
@@ -444,10 +514,10 @@ void APS_GameMode::StartFirstAnswerSelectionTimer(int TimeLimit)
 {
     PS_LOG_S(Log);
 
-    // Å¸ÀÌ¸Ó ¼³Á¤
+    // íƒ€ì´ë¨¸ ì„¤ì •
     GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstAnswerSelectionComplete, GameStartWaitTime, false);
 
-    // Ã¹¹øÂ° PlayerController¿¡ ´ë±â UI Ãß°¡
+    // ì²«ë²ˆì§¸ PlayerControllerì— ëŒ€ê¸° UI ì¶”ê°€
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -455,7 +525,7 @@ void APS_GameMode::StartFirstAnswerSelectionTimer(int TimeLimit)
         PS_PlayerController->ShowAnswerSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
-    // µÎ¹øÂ° PlayerController¿¡ Á¤´ä ¼±ÅÃ UI Ãß°¡
+    // ë‘ë²ˆì§¸ PlayerControllerì— ì •ë‹µ ì„ íƒ UI ì¶”ê°€
     It++;
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -473,7 +543,7 @@ void APS_GameMode::StartFirstAnswerSelectionTimer(int TimeLimit)
         {
             AnswerLists.Add(PS_PlayerState->GetSelectedWord());
 
-            // ·£´ıÀ¸·Î ¼¯À½
+            // ëœë¤ìœ¼ë¡œ ì„ìŒ
             Algo::RandomShuffle(AnswerLists);
         }
 
@@ -485,7 +555,7 @@ void APS_GameMode::OnFirstAnswerSelectionComplete()
 {
     PS_LOG_S(Log);
 
-    // Ã¹¹øÂ° PlayerController¿¡ ´ë±â UI Á¦°Å
+    // ì²«ë²ˆì§¸ PlayerControllerì— ëŒ€ê¸° UI ì œê±°
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -493,7 +563,7 @@ void APS_GameMode::OnFirstAnswerSelectionComplete()
         PS_PlayerController->ShowAnswerSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
-    // µÎ¹øÂ° PlayerController¿¡ Á¤´ä ¼±ÅÃ UI Á¦°Å
+    // ë‘ë²ˆì§¸ PlayerControllerì— ì •ë‹µ ì„ íƒ UI ì œê±°
     It++;
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -506,7 +576,7 @@ void APS_GameMode::OnFirstAnswerSelectionComplete()
 
 void APS_GameMode::FirstAnswerShow(int TimeLimit)
 {
-    // Å¸ÀÌ¸Ó ¼³Á¤
+    // íƒ€ì´ë¨¸ ì„¤ì •
     GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstAnswerShowComplete, GameStartWaitTime, false);
     float RemainingTime = GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle);
 
@@ -518,14 +588,14 @@ void APS_GameMode::FirstAnswerShow(int TimeLimit)
     {
         if (PS_PlayerState->GetHasSelectedWord())
         {
-            // Á¤´ä
+            // ì •ë‹µ
             if (UsedWords.Last().Equals(PS_PlayerState->GetSelectedWord()))
             {
                 UE_LOG(Project_S, Log, TEXT("Correct!\n"));
 
                 bIsCorrect = true;
                 SelectedWord = PS_PlayerState->GetSelectedWord();
-                // ¸ğµç Player¿¡ Wrong UI Ãß°¡
+                // ëª¨ë“  Playerì— Wrong UI ì¶”ê°€
                 for (FConstPlayerControllerIterator It_ = GetWorld()->GetPlayerControllerIterator(); It_; It_++)
                 {
                     PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
@@ -535,7 +605,7 @@ void APS_GameMode::FirstAnswerShow(int TimeLimit)
                     }
                 }
             }
-            // ¿À´ä
+            // ì˜¤ë‹µ
             else
             {
                 UE_LOG(Project_S, Log, TEXT("Answer : %s\n"), *PS_PlayerState->GetSelectedWord());
@@ -551,7 +621,7 @@ void APS_GameMode::FirstAnswerShow(int TimeLimit)
                     {
                         PS_GameState->SetLife(--CurrentLife);
 
-                        // ¸ğµç Player¿¡ Wrong UI Ãß°¡
+                        // ëª¨ë“  Playerì— Wrong UI ì¶”ê°€
                         for (FConstPlayerControllerIterator It_ = GetWorld()->GetPlayerControllerIterator(); It_; It_++)
                         {
                             PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
@@ -564,7 +634,7 @@ void APS_GameMode::FirstAnswerShow(int TimeLimit)
                 }
             }
         }
-        // ¿À´ä
+        // ì˜¤ë‹µ
         else
         {
             UE_LOG(Project_S, Log, TEXT("Answer is not selected!\n"));
@@ -580,7 +650,7 @@ void APS_GameMode::FirstAnswerShow(int TimeLimit)
                 {
                     PS_GameState->SetLife(--CurrentLife);
 
-                    // ¸ğµç Player¿¡ Wrong UI Ãß°¡
+                    // ëª¨ë“  Playerì— Wrong UI ì¶”ê°€
                     for (FConstPlayerControllerIterator It_ = GetWorld()->GetPlayerControllerIterator(); It_; It_++)
                     {
                         PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
@@ -599,7 +669,7 @@ void APS_GameMode::OnFirstAnswerShowComplete()
 {
     if (bIsCorrect)
     {
-        // ¸ğµç Player¿¡ Correct UI Á¦°Å
+        // ëª¨ë“  Playerì— Correct UI ì œê±°
         for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
         {
             APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
@@ -611,7 +681,7 @@ void APS_GameMode::OnFirstAnswerShowComplete()
     }
     else
     {
-        // ¸ğµç Player¿¡ Wrong UI Á¦°Å
+        // ëª¨ë“  Playerì— Wrong UI ì œê±°
         for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
         {
             APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
@@ -624,12 +694,54 @@ void APS_GameMode::OnFirstAnswerShowComplete()
 
     if (CurrentLife > 0)
     {
-        StartSecondWordSelectionTimer(SelectionTime);
+        PostStartSecondWordSelectionTimer(SelectionTime);
     }
     else
     {
-        // °ÔÀÓ ¿À¹ö
+        // ê²Œì„ ì˜¤ë²„
+        bIsGameStart = false;
+
+        // ëª¨ë“  Playerì— ê²Œì„ ì˜¤ë²„ ì¶”ê°€
+        for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+        {
+            APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+            if (PS_PlayerController)
+            {
+                PS_PlayerController->ShowStageTextUI(FString(TEXT("ê²Œì„ ì˜¤ë²„")));
+            }
+        }
     }
+}
+
+void APS_GameMode::PostStartSecondWordSelectionTimer(int TimeLimit)
+{
+    // íƒ€ì´ë¨¸ ì„¤ì •
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnPostStartSecondWordSelectionTimerComplete, GameStartWaitTime, false);
+
+    // ëª¨ë“  Playerì— ëŒ€ê¸° ë©”ì‹œì§€ ì¶”ê°€
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            PS_PlayerController->ShowStageTextUI(FString(TEXT("í”Œë ˆì´ì–´ ì „í™˜ ëŒ€ê¸° ì¤‘ì…ë‹ˆë‹¤")));
+        }
+    }
+}
+
+void APS_GameMode::OnPostStartSecondWordSelectionTimerComplete()
+{
+    // ëª¨ë“  Playerì— ëŒ€ê¸° ë©”ì‹œì§€ ì œê±°
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            PS_PlayerController->ShowStageTextUI(FString(TEXT("")));
+        }
+    }
+
+    StartSecondWordSelectionTimer(SelectionTime);
 }
 
 void APS_GameMode::StartSecondWordSelectionTimer(int TimeLimit)
@@ -638,10 +750,10 @@ void APS_GameMode::StartSecondWordSelectionTimer(int TimeLimit)
 
     ButtonWords = InitializeWords(CurrentMap, CurrentStage, 3);
 
-    // Å¸ÀÌ¸Ó ¼³Á¤
+    // íƒ€ì´ë¨¸ ì„¤ì •
     GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondWordSelectionComplete, GameStartWaitTime, false);
 
-    // Ã¹¹øÂ° PlayerController¿¡ ´ë±â UI Ãß°¡
+    // ì²«ë²ˆì§¸ PlayerControllerì— ëŒ€ê¸° UI ì¶”ê°€
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -649,7 +761,7 @@ void APS_GameMode::StartSecondWordSelectionTimer(int TimeLimit)
         PS_PlayerController->ShowWordSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
-    // µÎ¹øÂ° PlayerController¿¡ ´Ü¾î ¼±ÅÃ UI Ãß°¡
+    // ë‘ë²ˆì§¸ PlayerControllerì— ë‹¨ì–´ ì„ íƒ UI ì¶”ê°€
     It++;
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -668,7 +780,7 @@ void APS_GameMode::OnSecondWordSelectionComplete()
 {
     PS_LOG_S(Log);
 
-    // Ã¹¹øÂ° PlayerController¿¡ ´ë±â UI Á¦°Å
+    // ì²«ë²ˆì§¸ PlayerControllerì— ëŒ€ê¸° UI ì œê±°
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -676,7 +788,7 @@ void APS_GameMode::OnSecondWordSelectionComplete()
         PS_PlayerController->ShowWordSelectionWaitUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
-    // µÎ¹øÂ° PlayerController¿¡ ´Ü¾î ¼±ÅÃ UI Á¦°Å
+    // ë‘ë²ˆì§¸ PlayerControllerì— ë‹¨ì–´ ì„ íƒ UI ì œê±°
     It++;
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -684,18 +796,18 @@ void APS_GameMode::OnSecondWordSelectionComplete()
         PS_PlayerController->ShowWordSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
-    // µÎ¹øÂ° PlayerControllerÀÇ bHasSelectedWord°¡ trueÀÎÁö °Ë»ç
+    // ë‘ë²ˆì§¸ PlayerControllerì˜ bHasSelectedWordê°€ trueì¸ì§€ ê²€ì‚¬
     APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PS_PlayerController->PlayerState);
     if (PS_PlayerState)
     {
-        // ¼±ÅÃÇÏÁö ¾Ê¾ÒÀ¸¸é ·£´ıÀ¸·Î ¼±ÅÃ
+        // ì„ íƒí•˜ì§€ ì•Šì•˜ìœ¼ë©´ ëœë¤ìœ¼ë¡œ ì„ íƒ
         if (!PS_PlayerState->GetHasSelectedWord())
         {
             int32 RandomIndex = FMath::RandRange(0, ButtonWords.Num() - 1);
             PS_PlayerState->UpdateSelectedWord_Server(ButtonWords[RandomIndex]);
         }
 
-        // »ç¿ëµÈ Á¦½Ã¾î ¸ñ·Ï¿¡ Ãß°¡
+        // ì‚¬ìš©ëœ ì œì‹œì–´ ëª©ë¡ì— ì¶”ê°€
         UsedWords.Add(PS_PlayerState->GetSelectedWord());
         Answer = PS_PlayerState->GetSelectedWord();
     }
@@ -707,7 +819,7 @@ void APS_GameMode::StartSecondGameSession(int TimeLimit)
 {
     PS_LOG_S(Log);
 
-    // µÎ¹øÂ° PlayerController¿¡ ¼±ÅÃÇÑ ´Ü¾î ³ëÃâ
+    // ë‘ë²ˆì§¸ PlayerControllerì— ì„ íƒí•œ ë‹¨ì–´ ë…¸ì¶œ
     FConstPlayerControllerIterator It_ = GetWorld()->GetPlayerControllerIterator();
     It_++;
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
@@ -716,10 +828,10 @@ void APS_GameMode::StartSecondGameSession(int TimeLimit)
         PS_PlayerController->ShowStageWordUI(Answer);
     }
 
-    // Å¸ÀÌ¸Ó ¼³Á¤
+    // íƒ€ì´ë¨¸ ì„¤ì •
     GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnSecondGameSessionEnd, GameStartWaitTime, false);
 
-    // ¸ğµç Player¿¡ Timer UI Ãß°¡
+    // ëª¨ë“  Playerì— Timer UI ì¶”ê°€
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {
         PS_PlayerController = Cast<APS_PlayerController>(It->Get());
@@ -733,7 +845,7 @@ void APS_GameMode::StartSecondGameSession(int TimeLimit)
 void APS_GameMode::OnSecondGameSessionEnd()
 {
     PS_LOG_S(Log);
-    // µÎ¹øÂ° PlayerController¿¡ ¼±ÅÃÇÑ ´Ü¾î Á¦°Å
+    // ë‘ë²ˆì§¸ PlayerControllerì— ì„ íƒí•œ ë‹¨ì–´ ì œê±°
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     It++;
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
@@ -742,7 +854,7 @@ void APS_GameMode::OnSecondGameSessionEnd()
         PS_PlayerController->HideStageWordUI();
     }
 
-    // ¸ğµç Player¿¡ Timer UI Á¦°Å
+    // ëª¨ë“  Playerì— Timer UI ì œê±°
     for (FConstPlayerControllerIterator It_ = GetWorld()->GetPlayerControllerIterator(); It_; It_++)
     {
         PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
@@ -759,10 +871,10 @@ void APS_GameMode::StartSecondAnswerSelectionTimer(int TimeLimit)
 {
     PS_LOG_S(Log);
 
-    // Å¸ÀÌ¸Ó ¼³Á¤
+    // íƒ€ì´ë¨¸ ì„¤ì •
     GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondAnswerSelectionComplete, GameStartWaitTime, false);
 
-    // Ã¹¹øÂ° PlayerController¿¡ Á¤´ä ¼±ÅÃ UI Ãß°¡
+    // ì²«ë²ˆì§¸ PlayerControllerì— ì •ë‹µ ì„ íƒ UI ì¶”ê°€
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -780,14 +892,14 @@ void APS_GameMode::StartSecondAnswerSelectionTimer(int TimeLimit)
         {
             AnswerLists.Add(PS_PlayerState->GetSelectedWord());
 
-            // ·£´ıÀ¸·Î ¼¯À½
+            // ëœë¤ìœ¼ë¡œ ì„ìŒ
             Algo::RandomShuffle(AnswerLists);
         }
 
         PS_PlayerController->SetAnswerSelectionButtonWords(AnswerLists);
     }
 
-    // µÎ¹øÂ° PlayerController¿¡ ´ë±â UI Ãß°¡
+    // ë‘ë²ˆì§¸ PlayerControllerì— ëŒ€ê¸° UI ì¶”ê°€
     It++;
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -800,7 +912,7 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
 {
     PS_LOG_S(Log);
 
-    // Ã¹¹øÂ° PlayerController¿¡ Á¤´ä ¼±ÅÃ UI Á¦°Å
+    // ì²«ë²ˆì§¸ PlayerControllerì— ì •ë‹µ ì„ íƒ UI ì œê±°
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -808,7 +920,7 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
         PS_PlayerController->ShowAnswerSelectionUI(GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle));
     }
 
-    // µÎ¹øÂ° PlayerController¿¡ ´ë±â UI Á¦°Å
+    // ë‘ë²ˆì§¸ PlayerControllerì— ëŒ€ê¸° UI ì œê±°
     It++;
     PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     if (PS_PlayerController)
@@ -821,25 +933,25 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
 
 void APS_GameMode::SecondAnswerShow(int TimeLimit)
 {
-    // Å¸ÀÌ¸Ó ¼³Á¤
+    // íƒ€ì´ë¨¸ ì„¤ì •
     GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondAnswerShowComplete, GameStartWaitTime, false);
 
-    // Ã¹¹øÂ° PlayerControllerÀÇ bHasSelectedWord°¡ trueÀÎÁö °Ë»ç
+    // ì²«ë²ˆì§¸ PlayerControllerì˜ bHasSelectedWordê°€ trueì¸ì§€ ê²€ì‚¬
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
     APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
     APS_PlayerState* PS_PlayerState = Cast<APS_PlayerState>(PS_PlayerController->PlayerState);
     if (PS_PlayerState)
     {
-        // Á¤´ä
+        // ì •ë‹µ
         if (PS_PlayerState->GetHasSelectedWord())
         {
-            // Á¤´ä
+            // ì •ë‹µ
             if (UsedWords.Last().Equals(PS_PlayerState->GetSelectedWord()))
             {
                 UE_LOG(Project_S, Log, TEXT("Correct!\n"));
                 bIsCorrect = true;
                 SelectedWord = PS_PlayerState->GetSelectedWord();
-                // ¸ğµç Player¿¡ Correct UI Ãß°¡
+                // ëª¨ë“  Playerì— Correct UI ì¶”ê°€
                 for (FConstPlayerControllerIterator It_ = GetWorld()->GetPlayerControllerIterator(); It_; It_++)
                 {
                     PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
@@ -849,7 +961,7 @@ void APS_GameMode::SecondAnswerShow(int TimeLimit)
                     }
                 }
             }
-            // ¿À´ä
+            // ì˜¤ë‹µ
             else
             {
                 UE_LOG(Project_S, Log, TEXT("Answer : %s\n"), *PS_PlayerState->GetSelectedWord());
@@ -865,7 +977,7 @@ void APS_GameMode::SecondAnswerShow(int TimeLimit)
                     {
                         PS_GameState->SetLife(--CurrentLife);
 
-                        // ¸ğµç Player¿¡ Wrong UI Ãß°¡
+                        // ëª¨ë“  Playerì— Wrong UI ì¶”ê°€
                         for (FConstPlayerControllerIterator It_ = GetWorld()->GetPlayerControllerIterator(); It_; It_++)
                         {
                             PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
@@ -878,7 +990,7 @@ void APS_GameMode::SecondAnswerShow(int TimeLimit)
                 }
             }
         }
-        // ¿À´ä
+        // ì˜¤ë‹µ
         else
         {
             UE_LOG(Project_S, Log, TEXT("Answer is not selected!\n"));
@@ -894,7 +1006,7 @@ void APS_GameMode::SecondAnswerShow(int TimeLimit)
                 {
                     PS_GameState->SetLife(--CurrentLife);
 
-                    // ¸ğµç Player¿¡ Wrong UI Ãß°¡
+                    // ëª¨ë“  Playerì— Wrong UI ì¶”ê°€
                     for (FConstPlayerControllerIterator It_ = GetWorld()->GetPlayerControllerIterator(); It_; It_++)
                     {
                         PS_PlayerController = Cast<APS_PlayerController>(It_->Get());
@@ -913,7 +1025,7 @@ void APS_GameMode::OnSecondAnswerShowComplete()
 {
     if (bIsCorrect)
     {
-        // ¸ğµç Player¿¡ Correct UI Á¦°Å
+        // ëª¨ë“  Playerì— Correct UI ì œê±°
         for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
         {
             APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
@@ -925,7 +1037,7 @@ void APS_GameMode::OnSecondAnswerShowComplete()
     }
     else
     {
-        // ¸ğµç Player¿¡ Wrong UI Á¦°Å
+        // ëª¨ë“  Playerì— Wrong UI ì œê±°
         for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
         {
             APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
@@ -976,60 +1088,22 @@ void APS_GameMode::OnSecondAnswerShowComplete()
                 }
             }
 
-            StartFirstWordSelectionTimer(SelectionTime);
+            PostStartFirstWordSelectionTimer(SelectionTime);
         }
     }
     else
     {
-        // °ÔÀÓ ¿À¹ö
-    }
-}
+        // ê²Œì„ ì˜¤ë²„
+        bIsGameStart = false;
 
-/*
-void APS_GameMode::OnWordSelectionComplete()
-{
-    PS_LOG_S(Log);
-
-    // ¸ğµç PlayerController¿¡ ´Ü¾î ¼±ÅÃ UI Á¦°Å
-    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
-    {
-        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
-        if (PS_PlayerController)
+        // ëª¨ë“  Playerì— ê²Œì„ ì˜¤ë²„ ì¶”ê°€
+        for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
         {
-            PS_PlayerController->ShowWordSelectionUI(SelectionUITimerHandle);
-        }
-    }
-
-    APS_GameState* PS_GameState = GetGameState<APS_GameState>();
-    // GameStateÀÇ bAllPlayerSelected°¡ trueÀÎÁö °Ë»ç
-    if (PS_GameState)
-    {
-        PS_GameState->AllPlayersSelected();
-
-        if (PS_GameState->GetCurrentSelection())
-        {
-            StartGameSession(120); // Start 2 min game session
-        }
-        else
-        {
-            // Move to Next Level
-            CurrentStage++;
-            if (CurrentStage > 10)
+            APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+            if (PS_PlayerController)
             {
-                CurrentMap++;
-                CurrentStage -= 10;
+                PS_PlayerController->ShowStageTextUI(FString(TEXT("ê²Œì„ ì˜¤ë²„")));
             }
-
-            if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
-            {
-                PS_GameInstance->SetMap(CurrentMap);
-                PS_GameInstance->SetStage(CurrentStage);
-                PS_GameInstance->DeductLife();
-            }
-
-            //TransitionToStage(CurrentMap, CurrentStage);
         }
     }
 }
-*/
-
