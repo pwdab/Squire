@@ -185,30 +185,6 @@ void APS_PlayerController::ToggleWrongUI_Implementation(float RemainingTime, con
     }
 }
 
-void APS_PlayerController::ShowGameOverUI_Implementation(bool IsServer)
-{
-    PS_LOG_S(Log);
-    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
-    if (PS_HUD)
-    {
-        PS_HUD->ToggleGameOverUI(IsServer);
-    }
-}
-
-void APS_PlayerController::TransitionToStage_Implementation()
-{
-    PS_LOG_S(Log);
-    APS_GameMode* PS_GameMode = Cast<APS_GameMode>(GetWorld()->GetAuthGameMode());
-    if (PS_GameMode)
-    {
-        PS_GameMode->TransitionToStage(0, 0);
-    }
-    else
-    {
-        UE_LOG(Project_S, Log, TEXT("Cast failed"));
-    }
-}
-
 void APS_PlayerController::OnSelectWord(FString Word)
 {
     PS_LOG_S(Log);

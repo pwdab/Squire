@@ -28,8 +28,6 @@ public:
 
 	// 스테이지 전환
 	void OnHUDInitialized();
-
-	UFUNCTION(BlueprintCallable)
 	void TransitionToStage(uint8 MapNumber, uint8 StageNumber);
 
 	// 로비
@@ -38,6 +36,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ClearStartGameTimer();
 	void OnStartGameAfter5SecondsComplete();
+
+	//
+	void ReloadGame();
 
 	// 1P가 단어 선택
 	void PostStartFirstWordSelectionTimer(int TimeLimit);
@@ -96,9 +97,9 @@ private:
 	TArray<FString> ButtonWords;
 
 	// 타이머 시간
-	const uint8 GameStartWaitTime = 1;
-	const uint8 SelectionTime = 1;
-	const uint8 GameSessionTime = 1;
+	const uint8 GameStartWaitTime = 5;
+	const uint8 SelectionTime = 5;
+	const uint8 GameSessionTime = 5;
 
 	// Stage 변수
 	uint8 CurrentMap;

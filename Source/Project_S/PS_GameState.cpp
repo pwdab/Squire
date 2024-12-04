@@ -171,7 +171,7 @@ void APS_GameState::SetSelection(bool NewSelection)
 void APS_GameState::SetGameStart(bool NewGameStart)
 {
     GameStart = NewGameStart;
-    OnGameStartChanged.Broadcast(GameStart);
+    OnSelectionChanged.Broadcast(CurrentSelection);
 }
 
 /*
