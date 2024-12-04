@@ -170,8 +170,32 @@ void APS_GameMode::TransitionToStage(uint8 MapNumber, uint8 StageNumber)
     FString MapName = FString::Printf(TEXT("/Game/Maps/Level_%d_%d?listen"), MapNumber, StageNumber);
 
     CurrentPlayersCount = 0;
-    //GetWorld()->ServerTravel(MapName, true);
-    GetWorld()->ServerTravel(TEXT("/Game/Maps/Level_0_new?listen"), true);
+    if (MapNumber == 0)
+    {
+        CurrentMap = 1;
+        CurrentStage = 1;
+        CurrentLife = 3;
+        bIsGameStart = false;
+        if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+        {
+            PS_GameInstance->SetMap(CurrentMap);
+            PS_GameInstance->SetStage(CurrentStage);
+            PS_GameInstance->SetLife(CurrentLife);
+            PS_GameInstance->SetIsGameStart(bIsGameStart);
+        }
+        if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
+        {
+            PS_GameState->SetStage(CurrentMap, CurrentStage);
+            PS_GameState->SetLife(CurrentLife);
+            PS_GameState->SetGameStart(bIsGameStart);
+        }
+        GetWorld()->ServerTravel(TEXT("/Game/Maps/Level_Test?listen"), true);
+    }
+    else
+    {
+        //GetWorld()->ServerTravel(MapName, true);
+        GetWorld()->ServerTravel(TEXT("/Game/Maps/Level_0_new?listen"), true);
+    }
 }
 
 void APS_GameMode::PostSeamlessTravel()
@@ -263,6 +287,14 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
 {
     PS_LOG_S(Log);
     bIsGameStart = true;
+    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+    {
+        PS_GameInstance->SetIsGameStart(bIsGameStart);
+    }
+    if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
+    {
+        PS_GameState->SetGameStart(bIsGameStart);
+    }
 
     // 모든 Player의 Stage UI 수정
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
@@ -281,33 +313,6 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
     }
 
     TransitionToStage(1, 1);
-}
-
-void APS_GameMode::ReloadGame()
-{
-    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
-    {
-        CurrentMap = PS_GameInstance->GetMap();
-        CurrentStage = 1;
-        PS_GameInstance->SetStage(CurrentStage);
-        CurrentLife = 3;
-        PS_GameInstance->SetLife(CurrentLife);
-        bIsGameStart = true;
-        PS_GameInstance->SetIsGameStart(bIsGameStart);
-    }
-
-    if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
-    {
-        PS_GameState->SetStage(CurrentMap, CurrentStage);
-        PS_GameState->SetLife(CurrentLife);
-        PS_GameState->SetGameStart(bIsGameStart);
-        //PS_GameState->SetRemainingTime(0);
-    }
-
-    // 사용된 제시어 초기화
-    UsedWords.Empty();
-
-    TransitionToStage(CurrentMap, CurrentStage);
 }
 
 void APS_GameMode::PostStartFirstWordSelectionTimer(int TimeLimit)
@@ -700,6 +705,14 @@ void APS_GameMode::OnFirstAnswerShowComplete()
     {
         // 게임 오버
         bIsGameStart = false;
+        if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+        {
+            PS_GameInstance->SetIsGameStart(bIsGameStart);
+        }
+        if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
+        {
+            PS_GameState->SetGameStart(bIsGameStart);
+        }
 
         // 모든 Player에 게임 오버 추가
         for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
@@ -708,6 +721,14 @@ void APS_GameMode::OnFirstAnswerShowComplete()
             if (PS_PlayerController)
             {
                 PS_PlayerController->ShowStageTextUI(FString(TEXT("게임 오버")));
+                if (It == GetWorld()->GetPlayerControllerIterator())
+                {
+                    PS_PlayerController->ShowGameOverUI(true);
+                }
+                else
+                {
+                    PS_PlayerController->ShowGameOverUI(false);
+                }
             }
         }
     }
@@ -1095,6 +1116,14 @@ void APS_GameMode::OnSecondAnswerShowComplete()
     {
         // 게임 오버
         bIsGameStart = false;
+        if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+        {
+            PS_GameInstance->SetIsGameStart(bIsGameStart);
+        }
+        if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
+        {
+            PS_GameState->SetGameStart(bIsGameStart);
+        }
 
         // 모든 Player에 게임 오버 추가
         for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
@@ -1103,6 +1132,14 @@ void APS_GameMode::OnSecondAnswerShowComplete()
             if (PS_PlayerController)
             {
                 PS_PlayerController->ShowStageTextUI(FString(TEXT("게임 오버")));
+                if (It == GetWorld()->GetPlayerControllerIterator())
+                {
+                    PS_PlayerController->ShowGameOverUI(true);
+                }
+                else
+                {
+                    PS_PlayerController->ShowGameOverUI(false);
+                }
             }
         }
     }
