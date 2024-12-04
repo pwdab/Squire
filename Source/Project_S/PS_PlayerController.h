@@ -75,6 +75,12 @@ public:
     UFUNCTION(Client, Reliable)
     void ToggleWrongUI(float RemainingTime, const FString& Answer, const FString& SelectedWord);
 
+    UFUNCTION(Client, Reliable)
+    void ShowGameOverUI(bool IsServer);
+
+    UFUNCTION(BlueprintCallable, Server, Reliable)
+    void TransitionToStage();
+
 protected:
     // Word selection widget class, settable in editor
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
