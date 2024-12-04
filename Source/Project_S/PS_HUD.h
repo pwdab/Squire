@@ -74,6 +74,9 @@ public:
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void ToggleWrongUI(float RemainingTime, const FString& Answer, const FString& SelectedWord);
 
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ToggleGameOverUI(bool IsHost);
+
 protected:
     virtual void BeginPlay() override;
 
