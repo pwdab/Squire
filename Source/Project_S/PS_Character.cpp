@@ -1165,6 +1165,7 @@ void APS_Character::Emotion6(const FInputActionValue& Value)
 
 void APS_Character::SpawnEmotion()
 {
+	UE_LOG(LogTemp, Warning, TEXT("SpawnEmotion have been called"));
 	if (HasAuthority())
 	{
 		// 서버에서 직접 호출
@@ -1186,7 +1187,7 @@ void APS_Character::SpawnObject_Server_Implementation()
 			+ GetActorForwardVector() * 50.0f
 			- GetActorRightVector() * 100.0f;
 		FRotator SpawnRotation = GetActorRotation();
-
+		 
 		// 서버에서 생성 후 클라이언트와 동기화
 		SpawnObject(SpawnLocation, SpawnRotation, SpawnableObjectClass);
 	}
@@ -1204,13 +1205,14 @@ bool APS_Character::SpawnObject_Server_Validate()
 
 void APS_Character::SpawnObject_Implementation(const FVector& SpawnLocation, const FRotator& SpawnRotation, TSubclassOf<AActor> ObjectClass)
 {
-	if (ObjectClass)
+	if (ObjectClass && HasAuthority())
 	{
 		AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(ObjectClass, SpawnLocation, SpawnRotation);
 		if (SpawnedActor)
 		{
 			SpawnedActor->SetReplicates(true);
 			SpawnedActor->SetReplicateMovement(true); // 이동 동기화
+			UE_LOG(LogTemp, Warning, TEXT("Emotion Spawned"));
 		}
 	}
 	else

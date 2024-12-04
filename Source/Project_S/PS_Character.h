@@ -43,7 +43,7 @@ public:
 	void SetWeapon(class APS_Weapon* NewWeapon, EHand NewHand);
 	void SetEmotionID(int NewEmotionID);
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	//virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 	virtual void BeginPlay() override;
