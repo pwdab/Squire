@@ -18,6 +18,11 @@ class PROJECT_S_API APS_PlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+    void HandleNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString);
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Session")
+    void DestroyCurrentSession();
+
     void OnEnterWordSelectionZone();
     void OnExitWordSelectionZone();
     void OnSelectWord(FString Word);
@@ -81,7 +86,14 @@ public:
     UFUNCTION(BlueprintCallable, Server, Reliable)
     void TransitionToStage();
 
+    UFUNCTION(BlueprintCallable)
+    void TransitionToMainMenu();
+
+    void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
+
 protected:
+    virtual void BeginPlay() override;
+
     // Word selection widget class, settable in editor
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
     TSubclassOf<UUserWidget> WordSelectionWidgetClass;

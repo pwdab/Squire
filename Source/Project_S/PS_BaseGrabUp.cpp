@@ -64,7 +64,7 @@ void APS_BaseGrabUp::Tick(float DeltaTime)
 		FRotator NewRotation = FRotator(0.0f, Owner->GetControlRotation().Yaw, 0.0f) + PrimitiveRotation;
 		//SetActorRotation(NewRotation);
 
-		SetActorLocationandRotation(GetOwner()->GetActorLocation() + ViewVector * 500.0f + FVector(0.0f, 0.0f, 25.0f), NewRotation);
+		SetActorLocationandRotation(GetOwner()->GetActorLocation() + ViewVector * 250.0f + FVector(0.0f, 0.0f, 25.0f), NewRotation);
 	}
 }
 

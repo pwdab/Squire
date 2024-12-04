@@ -6,6 +6,44 @@
 #include "PS_GameMode.h"
 #include "PS_HUD.h"
 #include "Blueprint/UserWidget.h"
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
+
+void APS_PlayerController::BeginPlay()
+{
+    Super::BeginPlay();
+
+    if (GEngine)
+    {
+        // OnNetworkFailure 이벤트 바인딩
+        GEngine->OnNetworkFailure().AddUObject(this, &APS_PlayerController::HandleNetworkFailure);
+    }
+}
+
+void APS_PlayerController::HandleNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString)
+{
+    UE_LOG(Project_S, Warning, TEXT("Network Failure Detected: %s"), *ErrorString);
+
+    /*
+    // 네트워크 실패 유형에 따른 처리
+    if (FailureType == ENetworkFailure::FailureReceived || FailureType == ENetworkFailure::ConnectionLost)
+    {
+        UE_LOG(Project_S, Warning, TEXT("Handling Network Failure: Returning to Main Menu"));
+
+        // 세션 종료 처리
+        IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+        if (OnlineSubsystem)
+        {
+            IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
+            if (SessionInterface.IsValid())
+            {
+                SessionInterface->DestroySession(NAME_GameSession);
+            }
+        }
+    }
+    */
+    DestroyCurrentSession();
+}
 
 void APS_PlayerController::ServerHUDInitialized_Implementation()
 {
@@ -203,10 +241,44 @@ void APS_PlayerController::TransitionToStage_Implementation()
     {
         PS_GameMode->TransitionToStage(0, 0);
     }
+}
+
+void APS_PlayerController::TransitionToMainMenu()
+{
+    PS_LOG_S(Log);
+    
+    IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
+    if (OnlineSubsystem)
+    {
+        IOnlineSessionPtr SessionInterface = OnlineSubsystem->GetSessionInterface();
+        if (SessionInterface.IsValid())
+        {
+            // 세션 종료
+            SessionInterface->DestroySession(NAME_GameSession, FOnDestroySessionCompleteDelegate::CreateUObject(this, &APS_PlayerController::OnDestroySessionComplete));
+        }
+    }
     else
     {
-        UE_LOG(Project_S, Log, TEXT("Cast failed"));
+        // 세션 없이 직접 이동
+        ClientTravel(TEXT("/Game/Maps/Level_MainMenu"), ETravelType::TRAVEL_Absolute);
     }
+}
+
+void APS_PlayerController::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
+{
+    PS_LOG_S(Log);
+
+    if (bWasSuccessful)
+    {
+        UE_LOG(Project_S, Log, TEXT("Session destroyed successfully. Transitioning to MainMenu."));
+    }
+    else
+    {
+        UE_LOG(Project_S, Warning, TEXT("Failed to destroy session. Transitioning to MainMenu anyway."));
+    }
+
+    // 메인 메뉴로 이동
+    ClientTravel(TEXT("/Game/Maps/Level_MainMenu"), ETravelType::TRAVEL_Absolute);
 }
 
 void APS_PlayerController::OnSelectWord(FString Word)

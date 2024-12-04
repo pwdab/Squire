@@ -96,9 +96,9 @@ private:
 	TArray<FString> ButtonWords;
 
 	// 타이머 시간
-	const uint8 GameStartWaitTime = 1;
-	const uint8 SelectionTime = 1;
-	const uint8 GameSessionTime = 1;
+	const uint8 GameStartWaitTime = 5;
+	const uint8 SelectionTime = 10;
+	const uint8 GameSessionTime = 45;
 
 	// Stage 변수
 	uint8 CurrentMap;
