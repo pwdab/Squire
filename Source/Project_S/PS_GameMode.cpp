@@ -318,7 +318,7 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
 void APS_GameMode::PostStartFirstWordSelectionTimer(int TimeLimit)
 {
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnPostStartFirstWordSelectionTimerComplete, GameStartWaitTime, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnPostStartFirstWordSelectionTimerComplete, TimeLimit, false);
 
     // 모든 Player에 대기 메시지 추가
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
@@ -360,7 +360,7 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
     ButtonWords = InitializeWords(CurrentMap, CurrentStage, 3);
 
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstWordSelectionComplete, GameStartWaitTime, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstWordSelectionComplete, TimeLimit, false);
 
     // 첫번째 PlayerController에 단어 선택 UI 추가
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
@@ -478,7 +478,7 @@ void APS_GameMode::StartFirstGameSession(int TimeLimit)
 
     
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnFirstGameSessionEnd, GameStartWaitTime, false);
+    GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnFirstGameSessionEnd, TimeLimit, false);
 
     // 모든 Player에 Timer UI 추가
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
@@ -520,7 +520,7 @@ void APS_GameMode::StartFirstAnswerSelectionTimer(int TimeLimit)
     PS_LOG_S(Log);
 
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstAnswerSelectionComplete, GameStartWaitTime, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstAnswerSelectionComplete, TimeLimit, false);
 
     // 첫번째 PlayerController에 대기 UI 추가
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
@@ -582,7 +582,7 @@ void APS_GameMode::OnFirstAnswerSelectionComplete()
 void APS_GameMode::FirstAnswerShow(int TimeLimit)
 {
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstAnswerShowComplete, GameStartWaitTime, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstAnswerShowComplete, TimeLimit, false);
     float RemainingTime = GetWorld()->GetTimerManager().GetTimerRemaining(SelectionUITimerHandle);
 
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
@@ -737,7 +737,7 @@ void APS_GameMode::OnFirstAnswerShowComplete()
 void APS_GameMode::PostStartSecondWordSelectionTimer(int TimeLimit)
 {
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnPostStartSecondWordSelectionTimerComplete, GameStartWaitTime, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnPostStartSecondWordSelectionTimerComplete, TimeLimit, false);
 
     // 모든 Player에 대기 메시지 추가
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
@@ -772,7 +772,7 @@ void APS_GameMode::StartSecondWordSelectionTimer(int TimeLimit)
     ButtonWords = InitializeWords(CurrentMap, CurrentStage, 3);
 
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondWordSelectionComplete, GameStartWaitTime, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondWordSelectionComplete, TimeLimit, false);
 
     // 첫번째 PlayerController에 대기 UI 추가
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
@@ -850,7 +850,7 @@ void APS_GameMode::StartSecondGameSession(int TimeLimit)
     }
 
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnSecondGameSessionEnd, GameStartWaitTime, false);
+    GetWorldTimerManager().SetTimer(GameSessionTimerHandle, this, &APS_GameMode::OnSecondGameSessionEnd, TimeLimit, false);
 
     // 모든 Player에 Timer UI 추가
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
@@ -893,7 +893,7 @@ void APS_GameMode::StartSecondAnswerSelectionTimer(int TimeLimit)
     PS_LOG_S(Log);
 
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondAnswerSelectionComplete, GameStartWaitTime, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondAnswerSelectionComplete, TimeLimit, false);
 
     // 첫번째 PlayerController에 정답 선택 UI 추가
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
@@ -955,7 +955,7 @@ void APS_GameMode::OnSecondAnswerSelectionComplete()
 void APS_GameMode::SecondAnswerShow(int TimeLimit)
 {
     // 타이머 설정
-    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondAnswerShowComplete, GameStartWaitTime, false);
+    GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnSecondAnswerShowComplete, TimeLimit, false);
 
     // 첫번째 PlayerController의 bHasSelectedWord가 true인지 검사
     FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator();
