@@ -305,7 +305,7 @@ void APS_Character::PostInitializeComponents()
 void APS_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
+	DOREPLIFETIME(APS_Character, EmotionID);
 	// Setup Replication variables
 	//DOREPLIFETIME_CONDITION(APS_Character, Dodge_Direction, COND_OwnerOnly);
 	/*
@@ -336,7 +336,12 @@ void APS_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(DodgeDirectionStartAction, ETriggerEvent::Triggered, this, &APS_Character::DodgeDirectionStart);
 		EnhancedInputComponent->BindAction(DodgeDirectionEndAction, ETriggerEvent::Completed, this, &APS_Character::DodgeDirectionEnd);
 		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &APS_Character::Dodge);
-		EnhancedInputComponent->BindAction(MouseWheelClickAction, ETriggerEvent::Triggered, this, &APS_Character::OnMouseWheelClick);
+		EnhancedInputComponent->BindAction(Emotion1Action, ETriggerEvent::Triggered, this, &APS_Character::Emotion1);
+		EnhancedInputComponent->BindAction(Emotion2Action, ETriggerEvent::Triggered, this, &APS_Character::Emotion2);
+		EnhancedInputComponent->BindAction(Emotion3Action, ETriggerEvent::Triggered, this, &APS_Character::Emotion3);
+		EnhancedInputComponent->BindAction(Emotion4Action, ETriggerEvent::Triggered, this, &APS_Character::Emotion4);
+		EnhancedInputComponent->BindAction(Emotion5Action, ETriggerEvent::Triggered, this, &APS_Character::Emotion5);
+		EnhancedInputComponent->BindAction(Emotion6Action, ETriggerEvent::Triggered, this, &APS_Character::Emotion6);
 	}
 }
 
@@ -1044,9 +1049,123 @@ void APS_Character::SetWeapon(APS_Weapon* NewWeapon, EHand NewHand)
 
 
 //최연구 작성중---------
-
-void APS_Character::OnMouseWheelClick(const FInputActionValue& Value)
+/*
+void APS_Character::SetEmotionID(int NewEmotionID)
 {
+	if (SpawnableObjectClasses.IsValidIndex(NewEmotionID))
+	{
+		EmotionID = NewEmotionID;
+		UE_LOG(LogTemp, Log, TEXT("EmotionID set to: %d"), EmotionID);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid EmotionID: %d"), NewEmotionID);
+	}
+}
+
+void APS_Character::SetEmotionID(int NewEmotionID)
+{
+	if (HasAuthority())
+	{
+		// 서버에서 직접 설정
+		if (SpawnableObjectClasses.IsValidIndex(NewEmotionID))
+		{
+			EmotionID = NewEmotionID;
+			UE_LOG(LogTemp, Log, TEXT("EmotionID set to: %d"), EmotionID);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Invalid EmotionID: %d"), NewEmotionID);
+		}
+	}
+	else
+	{
+		// 클라이언트에서 서버로 요청
+		SetEmotionID_Server(NewEmotionID);
+	}
+}
+
+// 서버 RPC 함수
+void APS_Character::SetEmotionID_Server_Implementation(int NewEmotionID)
+{
+	SetEmotionID(NewEmotionID);
+}
+
+bool APS_Character::SetEmotionID_Server_Validate(int NewEmotionID)
+{
+	// EmotionID가 유효한지 확인
+	return SpawnableObjectClasses.IsValidIndex(NewEmotionID);
+}
+*/
+void APS_Character::SetEmotionID(int NewEmotionID)
+{
+	if (HasAuthority())
+	{
+		// 서버일 경우 EmotionID를 직접 설정
+		EmotionID = NewEmotionID;
+		UE_LOG(LogTemp, Log, TEXT("EmotionID set to: %d on Server"), EmotionID);
+	}
+	else
+	{
+		// 클라이언트일 경우 서버로 전달
+		SetEmotionID_Server(NewEmotionID);
+	}
+}
+
+
+void APS_Character::SetEmotionID_Server_Implementation(int NewEmotionID)
+{
+	// 서버에서 EmotionID를 설정
+	SetEmotionID(NewEmotionID);
+}
+
+bool APS_Character::SetEmotionID_Server_Validate(int NewEmotionID)
+{
+	// 유효성 검사: EmotionID가 배열 범위 내에 있는지 확인
+	return SpawnableObjectClasses.IsValidIndex(NewEmotionID);
+}
+
+
+
+void APS_Character::Emotion1(const FInputActionValue& Value)
+{
+	SetEmotionID(0);
+	SpawnEmotion();
+}
+
+void APS_Character::Emotion2(const FInputActionValue& Value)
+{
+	SetEmotionID(1);
+	SpawnEmotion();
+}
+
+void APS_Character::Emotion3(const FInputActionValue& Value)
+{
+	SetEmotionID(2);
+	SpawnEmotion();
+}
+
+void APS_Character::Emotion4(const FInputActionValue& Value)
+{
+	SetEmotionID(3);
+	SpawnEmotion();
+}
+
+void APS_Character::Emotion5(const FInputActionValue& Value)
+{
+	SetEmotionID(4);
+	SpawnEmotion();
+}
+
+void APS_Character::Emotion6(const FInputActionValue& Value)
+{
+	SetEmotionID(5);
+	SpawnEmotion();
+}
+
+void APS_Character::SpawnEmotion()
+{
+	UE_LOG(LogTemp, Warning, TEXT("SpawnEmotion have been called"));
 	if (HasAuthority())
 	{
 		// 서버에서 직접 호출
@@ -1061,41 +1180,44 @@ void APS_Character::OnMouseWheelClick(const FInputActionValue& Value)
 
 void APS_Character::SpawnObject_Server_Implementation()
 {
-	if (SpawnableObjectClass)
+	if (SpawnableObjectClasses.IsValidIndex(EmotionID))
 	{
+		TSubclassOf<AActor> SpawnableObjectClass = SpawnableObjectClasses[EmotionID];
 		FVector SpawnLocation = GetActorLocation()
 			+ GetActorForwardVector() * 50.0f
 			- GetActorRightVector() * 100.0f;
 		FRotator SpawnRotation = GetActorRotation();
-
-		// 서버에서 오브젝트 생성
-		AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(SpawnableObjectClass, SpawnLocation, SpawnRotation);
-
-		if (SpawnedActor)
-		{
-			// 오브젝트가 클라이언트에서 보이도록 리플리케이션 활성화
-			SpawnedActor->SetReplicates(true);
-			SpawnedActor->SetReplicateMovement(true); // 이동도 동기화
-		}
+		 
+		// 서버에서 생성 후 클라이언트와 동기화
+		SpawnObject(SpawnLocation, SpawnRotation, SpawnableObjectClass);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SpawnableObjectClass is not assigned!"));
+		UE_LOG(LogTemp, Warning, TEXT("Invalid EmotionID: %d"), EmotionID);
 	}
 }
 
 bool APS_Character::SpawnObject_Server_Validate()
 {
-	// 기본적으로 true 반환. 추가 검증 로직이 필요하면 여기에 작성.
-	return true;
+	// EmotionID가 유효한지 확인
+	return SpawnableObjectClasses.IsValidIndex(EmotionID);
 }
 
-void APS_Character::SpawnObject_Client_Implementation(const FVector& SpawnLocation, const FRotator& SpawnRotation)
+void APS_Character::SpawnObject_Implementation(const FVector& SpawnLocation, const FRotator& SpawnRotation, TSubclassOf<AActor> ObjectClass)
 {
-	if (SpawnableObjectClass)
+	if (ObjectClass && HasAuthority())
 	{
-		// 클라이언트에서 오브젝트 생성 (시각적 동기화)
-		GetWorld()->SpawnActor<AActor>(SpawnableObjectClass, SpawnLocation, SpawnRotation);
+		AActor* SpawnedActor = GetWorld()->SpawnActor<AActor>(ObjectClass, SpawnLocation, SpawnRotation);
+		if (SpawnedActor)
+		{
+			SpawnedActor->SetReplicates(true);
+			SpawnedActor->SetReplicateMovement(true); // 이동 동기화
+			UE_LOG(LogTemp, Warning, TEXT("Emotion Spawned"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid ObjectClass for spawning."));
 	}
 }
 

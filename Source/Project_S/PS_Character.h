@@ -41,14 +41,9 @@ public:
 	void UpdateCharacterStats();
 	bool CanSetWeapon(EHand Hand);
 	void SetWeapon(class APS_Weapon* NewWeapon, EHand NewHand);
+	void SetEmotionID(int NewEmotionID);
 
-	// Server RPC for spawning object
-	UFUNCTION(Server, Reliable, WithValidation)
-	void SpawnObject_Server();
-
-	// Client-side visual spawn
-	UFUNCTION(NetMulticast, Reliable)
-	void SpawnObject_Client(const FVector& SpawnLocation, const FRotator& SpawnRotation);
+	//virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -155,12 +150,37 @@ protected:
 	// Dodge variables
 	EDirection Dodge_Direction;
 
-	// 오브젝트 클래스 (Blueprint 또는 C++ 클래스)
-	UPROPERTY(EditDefaultsOnly, Category = "Spawn")
-	TSubclassOf<AActor> SpawnableObjectClass;
+	void Emotion1(const FInputActionValue& Value);
+	void Emotion2(const FInputActionValue& Value);
+	void Emotion3(const FInputActionValue& Value);
+	void Emotion4(const FInputActionValue& Value);
+	void Emotion5(const FInputActionValue& Value);
+	void Emotion6(const FInputActionValue& Value);
 
-	// Input Action Binding
-	void OnMouseWheelClick(const FInputActionValue& Value);
+	// EmotionID 변수 (Replicated)
+	UPROPERTY(Replicated)
+	int EmotionID = 0;
+
+	// 오브젝트 클래스 배열
+	UPROPERTY(EditDefaultsOnly, Category = "Spawn")
+	TArray<TSubclassOf<AActor>> SpawnableObjectClasses;
+
+	// 서버에서 EmotionID를 설정하는 함수
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SetEmotionID_Server(int NewEmotionID);
+
+	// 감정(Emotion)과 관련된 오브젝트를 스폰하는 함수
+	UFUNCTION(BlueprintCallable, Category = "Spawning")
+	void SpawnEmotion();
+
+	// 서버에서 Emotion을 기반으로 스폰하는 함수
+	UFUNCTION(NetMulticast, Reliable)
+	void SpawnObject(const FVector& SpawnLocation, const FRotator& SpawnRotation, TSubclassOf<AActor> ObjectClass);
+
+	// 서버에서 EmotionID를 기반으로 오브젝트를 스폰하는 함수
+	UFUNCTION(Server, Reliable, WithValidation)
+	void SpawnObject_Server();
+
 
 private:
 	// Component variables
@@ -205,7 +225,24 @@ private:
 	TObjectPtr<class UInputAction> DodgeAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UInputAction> MouseWheelClickAction;
+	TObjectPtr<class UInputAction> Emotion1Action;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> Emotion2Action;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> Emotion3Action;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> Emotion4Action;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> Emotion5Action;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> Emotion6Action;
+
+
 
 	// Data table reference variables
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "CharacterData", meta = (AllowPrivateAccess = "true"))
