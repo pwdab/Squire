@@ -75,6 +75,10 @@ void APS_GameMode::BeginPlay()
         bIsGameStart = PS_GameInstance->IsGameStart();
     }
 
+    GetWorldTimerManager().ClearTimer(StartGameTimerHandle);
+    GetWorldTimerManager().ClearTimer(SelectionUITimerHandle);
+    GetWorldTimerManager().ClearTimer(GameSessionTimerHandle);
+
     if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
     {
         PS_GameState->SetStage(CurrentMap, CurrentStage);
@@ -170,6 +174,7 @@ void APS_GameMode::TransitionToStage(uint8 MapNumber, uint8 StageNumber)
     FString MapName = FString::Printf(TEXT("/Game/Maps/Level_%d_%d?listen"), MapNumber, StageNumber);
 
     CurrentPlayersCount = 0;
+    // 로비로 이동
     if (MapNumber == 0)
     {
         CurrentMap = 1;
@@ -193,6 +198,19 @@ void APS_GameMode::TransitionToStage(uint8 MapNumber, uint8 StageNumber)
     }
     else
     {
+        if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+        {
+            PS_GameInstance->SetMap(CurrentMap);
+            PS_GameInstance->SetStage(CurrentStage);
+            PS_GameInstance->SetLife(CurrentLife);
+            PS_GameInstance->SetIsGameStart(bIsGameStart);
+        }
+        if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
+        {
+            PS_GameState->SetStage(CurrentMap, CurrentStage);
+            PS_GameState->SetLife(CurrentLife);
+            PS_GameState->SetGameStart(bIsGameStart);
+        }
         //GetWorld()->ServerTravel(MapName, true);
         GetWorld()->ServerTravel(TEXT("/Game/Maps/Level_0_new?listen"), true);
     }
@@ -222,9 +240,33 @@ void APS_GameMode::PostSeamlessTravel()
         CurrentMap = PS_GameInstance->GetMap();
         CurrentStage = PS_GameInstance->GetStage();
         CurrentLife = PS_GameInstance->GetLife();
+        bIsGameStart = PS_GameInstance->IsGameStart();
 
         PS_GameState->SetStage(CurrentMap, CurrentStage);
         PS_GameState->SetLife(CurrentLife);
+        PS_GameState->SetGameStart(bIsGameStart);
+    }
+}
+
+void APS_GameMode::InitVariables()
+{
+    CurrentMap = 1;
+    CurrentStage = 1;
+    CurrentLife = 3;
+    bIsGameStart = false;
+
+    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+    {
+        PS_GameInstance->SetMap(CurrentMap);
+        PS_GameInstance->SetStage(CurrentStage);
+        PS_GameInstance->SetLife(CurrentLife);
+        PS_GameInstance->SetIsGameStart(bIsGameStart);
+    }
+    if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
+    {
+        PS_GameState->SetStage(CurrentMap, CurrentStage);
+        PS_GameState->SetLife(CurrentLife);
+        PS_GameState->SetGameStart(bIsGameStart);
     }
 }
 
@@ -240,6 +282,17 @@ void APS_GameMode::OnHUDInitialized()
     else
     {
         UE_LOG(Project_S, Log, TEXT("bIsGameStart is false\n"));
+    }
+
+    // 모든 Player의 Stage UI 수정
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            PS_PlayerController->HideStageUI();
+            PS_PlayerController->ShowStageTextUI(FString(TEXT("시작 대기중입니다")));
+        }
     }
 
     if (bIsGameStart && CurrentPlayersCount == 2)
@@ -307,11 +360,6 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
         }
     }
 
-    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
-    {
-        PS_GameInstance->SetIsGameStart(bIsGameStart);
-    }
-
     TransitionToStage(1, 1);
 }
 
@@ -358,6 +406,16 @@ void APS_GameMode::StartFirstWordSelectionTimer(int TimeLimit)
     PS_LOG_S(Log);
 
     ButtonWords = InitializeWords(CurrentMap, CurrentStage, 3);
+
+    // 모든 Player에 Stage UI 추가
+    for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
+    {
+        APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
+        if (PS_PlayerController)
+        {
+            PS_PlayerController->ShowStageUI();
+        }
+    }
 
     // 타이머 설정
     GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnFirstWordSelectionComplete, TimeLimit, false);

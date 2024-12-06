@@ -27,6 +27,8 @@ public:
 	virtual void PostSeamlessTravel() override;
 
 	// 스테이지 전환
+	UFUNCTION(BlueprintCallable)
+	void InitVariables();
 	void OnHUDInitialized();
 
 	UFUNCTION(BlueprintCallable)

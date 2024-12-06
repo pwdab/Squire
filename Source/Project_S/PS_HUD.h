@@ -42,6 +42,12 @@ public:
     void SetAnswerWaitTimer(float RemainingTime);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void ShowStageUI();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
+    void HideStageUI();
+
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")
     void SetStageTimer(float RemainingTime);
 
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "HUD")

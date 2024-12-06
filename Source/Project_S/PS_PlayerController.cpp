@@ -42,6 +42,16 @@ void APS_PlayerController::HandleNetworkFailure(UWorld* World, UNetDriver* NetDr
         }
     }
     */
+
+    // √ ±‚»≠
+    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+    {
+        PS_GameInstance->SetMap(1);
+        PS_GameInstance->SetStage(1);
+        PS_GameInstance->SetLife(3);
+        PS_GameInstance->SetIsGameStart(false);
+    }
+
     DestroyCurrentSession();
 }
 
@@ -115,6 +125,26 @@ void APS_PlayerController::ShowAnswerSelectionWaitUI_Implementation(float Remain
     {
         PS_HUD->ToggleAnswerWait();
         PS_HUD->SetAnswerWaitTimer(RemainingTime);
+    }
+}
+
+void APS_PlayerController::ShowStageUI_Implementation()
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->ShowStageUI();
+    }
+}
+
+void APS_PlayerController::HideStageUI_Implementation()
+{
+    PS_LOG_S(Log);
+    APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
+    if (PS_HUD)
+    {
+        PS_HUD->HideStageUI();
     }
 }
 
