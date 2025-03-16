@@ -27,6 +27,25 @@
     - 네트워크 제어
     - UI 제작
     - 게임 플레이 구현
+
+<br>
+
+---
+
+<br>
+
+## 데모
+- **플레이 방법**
+  - Project_S.uproject를 우클릭하고 드롭다운 메뉴에서 Launch game를 누릅니다.
+  - 아래와 같은 창이 뜨면 Yes를 눌러 다시 빌드합니다.   
+    ![빌드 메뉴](images/how_to_play1.png)
+  - 몇 분 기다리면 빌드가 완료되고, 게임이 실행됩니다.
+- **참고 사항**   
+  - **같은 네트워크** 안의 **최소 2인의 플레이어**가 필요한 게임입니다.  
+  - **다른 네트워크**에서 플레이하고 싶다면 하마치와 같은 **외부 프로그램**이 필요합니다.  
+- **YouTube 링크**   
+  [![Project SQ 테스트 영상](https://img.youtube.com/vi/AIy8zwr5r8M/0.jpg)](https://www.youtube.com/watch?v=AIy8zwr5r8M)
+
 <br>
 
 ---
@@ -35,7 +54,8 @@
 
 ## 프로젝트 구조
 ```plaintext
-├── Source/
+Source/
+├── Project_S/
 │   ├── Project_S.h
 │   ├── Project_S.cpp                       # 커스텀 로그 카테고리 선언
 │   ├── PS_AnimInstance.h
@@ -66,24 +86,24 @@
 │   ├── PS_PlayerState.cpp                  # 클라이언트의 상태(SelectedWord)를 저장하고 서버와 클라이언트 간에 상태를 동기화
 │   ├── PS_TimeUtility.h
 │   ├── PS_TimeUtility.cpp                  # 블루프린트의 커스텀 노드를 선언 및 정의
-│   ├── PS_Words.h                          # DataTable의 Row를 커스텀으로 정의하기 위한 구조체
-├── Content/
-│   ├── Blueprints/
-│   │   ├── Grabup/
-│   │   │   ├── BP_Grabup.uasset            # PS_BaseGrabUp을 상속 받는 Base 애셋
-│   │   │   ├── BP_Grabup_*.uasset          # BP_Grabup을 상속 받아 구현한 애셋들
-│   │   ├── Pickup/
-│   │   │   ├── BP_Pickup_Weapon.uasset     # (미사용) PS_BasePickup을 상속 받는 Base 애셋
-│   │   │   ├── BP_Pickup_*.uasset          # (미사용) BP_Pickup_Weapon을 상속 받아 구현한 애셋들
-│   │   ├── UI/
-│   │   │   ├── MainMenu/
-│   │   │   │   ├── WB_MainMenu_*.uasset    # 메인 메뉴에서 사용하는 UI들
-│   │   │   ├── Session/
-│   │   │   │   ├── WB_Session_*.uasset     # 세션 메뉴에서 사용하는 UI들
-│   │   ├── WB_*_HUD.uasset                 # 게임 내에서 사용하는 UI들
-│   ├── Inputs/
-│   │   ├── IA_*.uasset                     # 각 Action에 대한 값과 트리거를 설정
-│   │   ├── IMC_Default.uasset              # InputAction과 키를 매핑
+└── └── PS_Words.h                          # DataTable의 Row를 커스텀으로 정의하기 위한 구조체
+Content/
+├── Blueprints/
+│   ├── Grabup/
+│   │   ├── BP_Grabup.uasset            # PS_BaseGrabUp을 상속 받는 Base 애셋
+│   │   ├── BP_Grabup_*.uasset          # BP_Grabup을 상속 받아 구현한 애셋들
+│   ├── Pickup/
+│   │   ├── BP_Pickup_Weapon.uasset     # (미사용) PS_BasePickup을 상속 받는 Base 애셋
+│   │   ├── BP_Pickup_*.uasset          # (미사용) BP_Pickup_Weapon을 상속 받아 구현한 애셋들
+│   ├── UI/
+│   │   ├── MainMenu/
+│   │   │   ├── WB_MainMenu_*.uasset    # 메인 메뉴에서 사용하는 UI들
+│   │   ├── Session/
+│   │   │   ├── WB_Session_*.uasset     # 세션 메뉴에서 사용하는 UI들
+│   ├── WB_*_HUD.uasset                 # 게임 내에서 사용하는 UI들
+├── Inputs/
+│   ├── IA_*.uasset                     # 각 Action에 대한 값과 트리거를 설정
+└── └── IMC_Default.uasset              # InputAction과 키를 매핑
 ```
                               
 <br>
@@ -325,12 +345,3 @@
   처음은 무난하게 시작했다고 생각했다. 하지만 서적이나 구글링을 통해서도 쉽게 알아내지 못하는 내용들이 계속 튀어나왔고, 기획마저 엎어지니 내가 이 프로젝트를 시간 안에 개발 완료할 수 있을지 두려웠다. 괜히 무리해서 생소한 분야로의 프로그래밍을 추진했나 싶기도 했다. 그래도 팀원을 생각하며 꾸역꾸역 개발을 이어나갔고, 결과적으로 만족스럽지는 않지만 나름 게임이라고 부를 만한 결과물이 나왔다.  
  
   어디가서 자랑스럽게 내보일 결과물은 아닐지라도 나름 의미 깊은 프로젝트이지 않았나 싶다. 처음 목표로 했던 네트워크 기반의 게임 개발을 충분히 경험했고, 게임 개발 이외의 영역에서 많은 것들을 경험할 수 있었다. 팀 프로젝트에서의 팀원과의 협력이나 갈등 해결, 프로젝트 관리 측면에서의 계획 수립, 목표 달성 등.. 처음 이 프로젝트를 시작해야겠다고 마음 먹은 나 자신이 너무 순진해 보일 정도로 지금의 나는 게임 개발자로서 한 걸음 더 성장한 것 같다.
-<br>
-
----
-
-<br>
-
-## 데모
-- **YouTube 링크**:   
-  [![Project SQ 테스트 영상](https://img.youtube.com/vi/AIy8zwr5r8M/0.jpg)](https://www.youtube.com/watch?v=AIy8zwr5r8M)
