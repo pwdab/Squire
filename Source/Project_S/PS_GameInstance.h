@@ -4,6 +4,9 @@
 
 #include "Project_S.h"
 #include "Engine/GameInstance.h"
+#include "OnlineSubsystem.h"
+#include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSessionSettings.h"
 #include "PS_GameInstance.generated.h"
 
 /**
@@ -17,6 +20,7 @@ class PROJECT_S_API UPS_GameInstance : public UGameInstance
 	UPS_GameInstance();
 	
 public:
+	virtual void Init() override;
 	void SetMap(uint8 InMap);
 	void SetStage(uint8 InStage);
 	void SetLife(uint8 InLife);
@@ -33,4 +37,7 @@ private:
 	uint8 Stage;
 	uint8 Life;
 	bool bIsGameStart;
+
+	IOnlineSessionPtr SessionInterface;
+	TSharedPtr<class FOnlineSessionSearch> SessionSearch;
 };
