@@ -60,7 +60,12 @@ void UPS_GameInstance::CreateSession()
         const auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession); // 
         if (ExistingSession != nullptr)
         {
+            UE_LOG(Project_S, Log, TEXT("There is Existing Session.. Destroying.."));
             SessionInterface->DestroySession(NAME_GameSession);
+        }
+        else
+        {
+            UE_LOG(Project_S, Log, TEXT("There is no Existing Session.."));
         }
 
         TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
@@ -147,6 +152,19 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SesionName, bool bWasSucces
     if (bWasSuccessful)
     {
         // 技记 积己 己傍
+        UE_LOG(Project_S, Log, TEXT("Create Session Complete Successfully"));
+        bool IsSuccessful = SessionInterface->StartSession(NAME_GameSession);
+
+        if (IsSuccessful)
+        {
+            UE_LOG(Project_S, Log, TEXT("Start Session Complete"));
+        }
+        else
+        {
+            UE_LOG(Project_S, Log, TEXT("Start Session Fail"));
+        }
+        
+
     }
     else
     {
