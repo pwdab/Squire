@@ -7,7 +7,10 @@
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "OnlineSessionSettings.h"
+#include "FindSessionsCallbackProxy.h"
 #include "PS_GameInstance.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBlueprintFindSessionsCompleteDelegate, const TArray<FBlueprintSessionResult>&, Results);
 
 /**
  * 
@@ -32,12 +35,39 @@ public:
 	uint8 GetLife() const;
 	bool IsGameStart() const;
 
+	IOnlineSessionPtr SessionInterface;
+	TSharedPtr<class FOnlineSessionSearch> SessionSearch;
+
+	// Delegates
+	FOnCreateSessionCompleteDelegate OnCreateSesionCompleteDelegate;
+	FOnDestroySessionCompleteDelegate OnDestroySessionCompleteDelegate;
+	FOnFindSessionsCompleteDelegate OnFindSessionsCompleteDelegate;
+	FOnJoinSessionCompleteDelegate OnJoinSessionCompleteDelegate;
+
+	UPROPERTY(BlueprintAssignable, Category = "Sessions")
+	FBlueprintFindSessionsCompleteDelegate BlueprintFindSessionsCompleteDelegate;
+
+protected:
+	UFUNCTION(BlueprintCallable)
+	void CreateSession();
+
+	UFUNCTION(BlueprintCallable)
+	void DestroySession();
+
+	UFUNCTION(BlueprintCallable)
+	void FindSession();
+
+	UFUNCTION(BlueprintCallable)
+	void JoinSession();
+
+	void OnCreateSessionComplete(FName SesionName, bool bWasSuccessful);
+	void OnDestroySessionComplete(FName SesionName, bool bWasSuccessful);
+	void OnFindSessionsComplete(bool bWasSuccessful);
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
+
 private:
 	uint8 Map;
 	uint8 Stage;
 	uint8 Life;
 	bool bIsGameStart;
-
-	IOnlineSessionPtr SessionInterface;
-	TSharedPtr<class FOnlineSessionSearch> SessionSearch;
 };

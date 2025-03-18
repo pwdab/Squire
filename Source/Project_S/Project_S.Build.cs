@@ -8,7 +8,7 @@ public class Project_S : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "NavigationSystem", "AIModule", "OnlineSubsystem", "OnlineSubsystemSteam" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "NavigationSystem", "AIModule", "OnlineSubsystem", "OnlineSubsystemSteam", "OnlineSubsystemUtils" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
