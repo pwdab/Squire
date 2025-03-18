@@ -175,11 +175,14 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
         // ¼º°ø
         if (SessionSearch.IsValid())
         {
+            int cnt = 1;
             TArray<FBlueprintSessionResult> BlueprintSessionResults;
             for (const auto& Result : SessionSearch->SearchResults)
             {
                 if (Result.IsValid())
                 {
+                    UE_LOG(Project_S, Warning, TEXT("cnt = %d"), cnt);
+                    cnt++;
                     FBlueprintSessionResult BlueprintSessionResult;
                     BlueprintSessionResult.OnlineResult = Result;
                     BlueprintSessionResults.Add(BlueprintSessionResult);
@@ -190,6 +193,7 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
                 }
             }
 
+            UE_LOG(Project_S, Warning, TEXT("BlueprintSessionResults.size() = %d"), BlueprintSessionResults.Num());
             BlueprintFindSessionsCompleteDelegate.Broadcast(BlueprintSessionResults);
         }
         else
