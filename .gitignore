@@ -6,6 +6,7 @@ Saved
 .vs
 /MyBuilds
 /Build
+/Windows
 *.VC.db
 *.opensdf
 *.opendb
