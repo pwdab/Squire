@@ -35,13 +35,13 @@
 <br>
 
 ## 데모
+
 - **플레이 방법**
-  - Project_S.uproject를 우클릭하고 드롭다운 메뉴에서 Launch game를 누릅니다.
-  - 아래와 같은 창이 뜨면 Yes를 눌러 다시 빌드합니다.   
-    ![빌드 메뉴](images/how_to_play1.png)
-  - 몇 분 기다리면 빌드가 완료되고, 게임이 실행됩니다.
+  - [데모 다운로드](https://drive.google.com/file/d/1qY_DPr8J8oMFJID6m35nw-0haWrAdxRc/view?usp=sharing)에서 Windows.zip 파일을 다운로드 받고, 압축 해제합니다.
+  - Project_S.exe 파일을 실행합니다.
 - **참고 사항**   
-  - **같은 네트워크** 안의 **최소 2인의 플레이어**가 필요한 게임입니다.  
+  - **같은 네트워크** 안의 **최소 2인의 플레이어**가 필요한 게임입니다.
+  - **혼자서 플레이**하기 위해서는 **두 개의 클라이언트**를 실행해야 합니다.
   - **다른 네트워크**에서 플레이하고 싶다면 하마치와 같은 **외부 프로그램**이 필요합니다.  
 - **YouTube 링크**   
   [![Project SQ 테스트 영상](https://img.youtube.com/vi/AIy8zwr5r8M/0.jpg)](https://www.youtube.com/watch?v=AIy8zwr5r8M)
