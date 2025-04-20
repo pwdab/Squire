@@ -37,7 +37,7 @@
 ## 데모
 
 - **플레이 방법**
-  - [데모 다운로드](https://drive.google.com/file/d/1qY_DPr8J8oMFJID6m35nw-0haWrAdxRc/view?usp=sharing)에서 Windows.zip 파일을 다운로드 받고, 압축 해제합니다.
+  - [데모 다운로드](https://drive.google.com/file/d/1qY_DPr8J8oMFJID6m35nw-0haWrAdxRc/view?usp=sharing)에서 Squire_Demo.zip 파일을 다운로드 받고, 압축 해제합니다.
   - Project_S.exe 파일을 실행합니다.
 - **참고 사항**   
   - **같은 네트워크** 안의 **최소 2인의 플레이어**가 필요한 게임입니다.
