@@ -3,12 +3,7 @@
 ## 데모
 
 - **플레이 방법**
-  - [데모 다운로드](https://drive.google.com/file/d/1qY_DPr8J8oMFJID6m35nw-0haWrAdxRc/view?usp=sharing)에서 Squire_Demo.zip 파일을 다운로드 받고, 압축 해제합니다.
-  - Project_S.exe 파일을 실행합니다.
-- **참고 사항**   
-  - **같은 네트워크** 안의 **최소 2인의 플레이어**가 필요한 게임입니다.
-  - **혼자서 플레이**하기 위해서는 **두 개의 클라이언트**를 실행해야 합니다.
-  - **다른 네트워크**에서 플레이하고 싶다면 하마치와 같은 **외부 프로그램**이 필요합니다.  
+  - [Steam](https://store.steampowered.com/app/3634090/The_First_Foreigner/)에서 게임을 다운로드 받고, 실행합니다.   
 - **YouTube 링크**   
   [![Project SQ 테스트 영상](https://img.youtube.com/vi/AIy8zwr5r8M/0.jpg)](https://www.youtube.com/watch?v=AIy8zwr5r8M)
 
@@ -18,7 +13,7 @@
 
 ## 프로젝트 소개
 - **개발 기간**   
-  2024.09.10 ~ 2024.12.06 (1차 빌드 완료)
+  2024.09.10 ~ 2024.12.06 (2025.05.19 Steam 업로드 완료)
 - **개발 환경**   
   Unreal 5.2.1   
   Windows 10 (64bit)
@@ -35,11 +30,13 @@
   - Animation Blueprint, Montage, AnimNotify를 사용하여 애니메이션 전환을 제어   
   - Interface 및 Actor Component를 활용하여 유연하고 재사용 가능한 시스템을 설계   
   - Widget Blueprint를 활용하여 게임 로직과 연동된 동적 UI 시스템을 구현   
+  - Steamworks API를 활용하여 Steam과 연동 및 게임 매칭 시스템 구현   
 - **주요 기술 및 도구**   
   - **Framework**   
     - Unreal (C++, Blueprint)   
+    - Steamworks   
   - **Network**   
-    - Replication, RPC   
+    - Replication, RPC, OnlineSubsystem   
   - **UI**   
     - UMG
 
@@ -66,7 +63,7 @@ Source/
 │   ├── PS_Enemy.h
 │   ├── PS_Enemy.cpp                        # (미사용) AI에 의해 월드를 돌아다니는 폰으로, 유저를 발견하면 추적함
 │   ├── PS_GameInstance.h
-│   ├── PS_GameInstance.cpp                 # 게임 전체에서 일정하게 동기화 되어야 하는 변수들(Map, Stage, Life)의 값을 저장
+│   ├── PS_GameInstance.cpp                 # Steamworks API를 이용해 게임 호스트, 게임 참가를 구현
 │   ├── PS_GameMode.h
 │   ├── PS_GameMode.cpp                     # 게임의 규칙을 선언하고 게임의 흐름을 제어
 │   ├── PS_GameState.h
@@ -116,9 +113,10 @@ Content/
   Host가 Host Game 버튼을 눌러 게임 Session을 생성하고, 다른 유저는 Find Session 버튼을 눌러 생성된 게임 Session을 검색한다. 참가하고자 하는 Sesison에 Join Session 버튼을 눌러 참가할 수 있다.
 - **주요 기술**:   
   UMG와 블루프린트를 이용한 MainMenu UI와 Session UI 제작
+  Steamworks API를 활용한 게임 호스트 및 참가
 - **구조도**:   
   ![기능 1 구조도 1](images/features1-flowchart1.png)
-  ① Host Game 버튼을 누르면 PlayerController는 LAN 상에서 Listen Server로 서버를 열고, 로비 맵으로 이동한다.   
+  ① Host Game 버튼을 누르면 GameInstance는 Steamworks API를 이용해 Session을 생성한다.
   ② Join Game 버튼을 누르면 Find_Session_UI를 화면에 출력한다.   
   ③ Quit 버튼을 누르면 게임을 종료한다.   
   ![기능 1 구조도 2](images/features1-flowchart2.png)   
