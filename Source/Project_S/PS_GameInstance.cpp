@@ -96,21 +96,24 @@ void UPS_GameInstance::CreateSession()
 
 void UPS_GameInstance::DestroySession()
 {
+    UE_LOG(Project_S, Log, TEXT("Destroy Session"));
     if (SessionInterface.IsValid())
     {
         // Set the Handle
         FDelegateHandle DestroySessionCompleteHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
 
         const FName SessionName = NAME_GameSession;
+
         if (SessionInterface->DestroySession(SessionName))
         {
-            UE_LOG(LogTemp, Log, TEXT("Requested destroy for session [%s]"), *SessionName.ToString());
+            UE_LOG(Project_S, Log, TEXT("Requested destroy for session [%s]"), *SessionName.ToString());
+            UE_LOG(Project_S, Log, TEXT("Destroy Session Complete"));
         }
         else
         {
-            UE_LOG(LogTemp, Error, TEXT("Failed to start DestroySession for [%s]"), *SessionName.ToString());
+            UE_LOG(Project_S, Log, TEXT("Failed to start DestroySession for [%s]"), *SessionName.ToString());
             // 실패 즉시 Delegate 를 해제해줘도 좋습니다:
-            SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionCompleteHandle);
+            //SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionCompleteHandle);
         }
     }
 }
@@ -183,13 +186,12 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SesionName, bool bWasSucces
         if (IsSuccessful)
         {
             UE_LOG(Project_S, Log, TEXT("Start Session Complete"));
+            //ClientTravel(TEXT("/Game/Maps/Level_MainMenu"), ETravelType::TRAVEL_Absolute);
         }
         else
         {
             UE_LOG(Project_S, Log, TEXT("Start Session Fail"));
         }
-        
-
     }
     else
     {
@@ -199,13 +201,17 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SesionName, bool bWasSucces
 
 void UPS_GameInstance::OnDestroySessionComplete(FName SesionName, bool bWasSuccessful)
 {
+    UE_LOG(Project_S, Log, TEXT("Destroy Session Complete Successfully"));
     if (bWasSuccessful)
     {
         // 세션 생성 성공
+        BlueprintDestroySessionsCompleteDelegate.Broadcast();
+        UE_LOG(Project_S, Log, TEXT("Destroy Session Complete"));
     }
     else
     {
         // 세션 생성 실패
+        UE_LOG(Project_S, Log, TEXT("Start Session Fail"));
     }
 }
 
