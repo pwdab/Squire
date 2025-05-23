@@ -12,6 +12,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBlueprintFindSessionsCompleteDelegate, const TArray<FBlueprintSessionResult>&, Results);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBlueprintJoinSessionsCompleteDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBlueprintDestroySessionsCompleteDelegate);
 
 /**
  * 
@@ -50,6 +51,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Sessions")
 	FBlueprintJoinSessionsCompleteDelegate BlueprintJoinSessionsCompleteDelegate;
+
+	UPROPERTY(BlueprintAssignable, Category = "Sessions")
+	FBlueprintDestroySessionsCompleteDelegate BlueprintDestroySessionsCompleteDelegate;
 
 protected:
 	UFUNCTION(BlueprintCallable)

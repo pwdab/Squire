@@ -276,6 +276,8 @@ void APS_PlayerController::TransitionToStage_Implementation()
 void APS_PlayerController::TransitionToMainMenu()
 {
     PS_LOG_S(Log);
+
+    UE_LOG(Project_S, Log, TEXT("Transition To Main Menu Start"));
     
     IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
     if (OnlineSubsystem)
@@ -284,11 +286,13 @@ void APS_PlayerController::TransitionToMainMenu()
         if (SessionInterface.IsValid())
         {
             // 技记 辆丰
-            SessionInterface->DestroySession(NAME_GameSession, FOnDestroySessionCompleteDelegate::CreateUObject(this, &APS_PlayerController::OnDestroySessionComplete));
+            //SessionInterface->DestroySession(NAME_GameSession, FOnDestroySessionCompleteDelegate::CreateUObject(this, &APS_PlayerController::OnDestroySessionComplete));
+            ClientTravel(TEXT("/Game/Maps/Level_MainMenu"), ETravelType::TRAVEL_Absolute);
         }
     }
     else
     {
+        UE_LOG(Project_S, Log, TEXT("Transition To Main Menu Start"));
         // 技记 绝捞 流立 捞悼
         ClientTravel(TEXT("/Game/Maps/Level_MainMenu"), ETravelType::TRAVEL_Absolute);
     }
