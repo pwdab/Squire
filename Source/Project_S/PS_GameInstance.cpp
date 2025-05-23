@@ -74,12 +74,12 @@ void UPS_GameInstance::CreateSession()
         SessionSettings->bIsLANMatch = false;			// Lan을 통한 연결
         SessionSettings->NumPublicConnections = 2;		// 연결 가능 인원
         SessionSettings->bAllowJoinInProgress = false;	// 세션이 실행 중 참여가능 여부
-        SessionSettings->bAllowInvites = true;
         SessionSettings->bAllowJoinViaPresence = true;	// ???
         SessionSettings->bShouldAdvertise = true;		// Steam을 통해 세션을 알림(세션 조회 가능)
         SessionSettings->bUsesPresence = true;			// ???
-        SessionSettings->bAllowJoinViaPresence = true;
-        SessionSettings->bAllowJoinViaPresenceFriendsOnly = true;
+        //SessionSettings->bAllowInvites = true;
+        //SessionSettings->bAllowJoinViaPresence = true;
+        //SessionSettings->bAllowJoinViaPresenceFriendsOnly = true;
         SessionSettings->bUseLobbiesIfAvailable = true; // Lobby 사용 여부
         SessionSettings->Set(FName("MatchType"), FString("FreeForAll"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing); // 세션의 MatchType을 모두에게 열림, 온라인서비스와 핑을 통해 세션 홍보 옵션으로 설정
 
