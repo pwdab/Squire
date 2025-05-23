@@ -11,6 +11,7 @@
 #include "PS_GameInstance.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBlueprintFindSessionsCompleteDelegate, const TArray<FBlueprintSessionResult>&, Results);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBlueprintJoinSessionsCompleteDelegate);
 
 /**
  * 
@@ -47,6 +48,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Sessions")
 	FBlueprintFindSessionsCompleteDelegate BlueprintFindSessionsCompleteDelegate;
 
+	UPROPERTY(BlueprintAssignable, Category = "Sessions")
+	FBlueprintJoinSessionsCompleteDelegate BlueprintJoinSessionsCompleteDelegate;
+
 protected:
 	UFUNCTION(BlueprintCallable)
 	void CreateSession();
@@ -58,7 +62,7 @@ protected:
 	void FindSession();
 
 	UFUNCTION(BlueprintCallable)
-	void JoinSession();
+	void JoinSession(int Index);
 
 	void OnCreateSessionComplete(FName SesionName, bool bWasSuccessful);
 	void OnDestroySessionComplete(FName SesionName, bool bWasSuccessful);
@@ -70,4 +74,7 @@ private:
 	uint8 Stage;
 	uint8 Life;
 	bool bIsGameStart;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pawn", meta = (AllowPrivateAccess = "true"))
+	bool bIsJoining;
 };

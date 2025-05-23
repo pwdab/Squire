@@ -45,6 +45,8 @@ void UPS_GameInstance::Init()
             UE_LOG(Project_S, Warning, TEXT("SessionInterface is Not Valid!!"));
         }
     }
+
+    bIsJoining = false;
 }
 
 void UPS_GameInstance::CreateSession()
@@ -71,10 +73,13 @@ void UPS_GameInstance::CreateSession()
         TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
         SessionSettings->bIsLANMatch = false;			// Lan을 통한 연결
         SessionSettings->NumPublicConnections = 2;		// 연결 가능 인원
-        SessionSettings->bAllowJoinInProgress = true;	// 세션이 실행 중 참여가능 여부
+        SessionSettings->bAllowJoinInProgress = false;	// 세션이 실행 중 참여가능 여부
+        SessionSettings->bAllowInvites = true;
         SessionSettings->bAllowJoinViaPresence = true;	// ???
         SessionSettings->bShouldAdvertise = true;		// Steam을 통해 세션을 알림(세션 조회 가능)
         SessionSettings->bUsesPresence = true;			// ???
+        SessionSettings->bAllowJoinViaPresence = true;
+        SessionSettings->bAllowJoinViaPresenceFriendsOnly = true;
         SessionSettings->bUseLobbiesIfAvailable = true; // Lobby 사용 여부
         SessionSettings->Set(FName("MatchType"), FString("FreeForAll"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing); // 세션의 MatchType을 모두에게 열림, 온라인서비스와 핑을 통해 세션 홍보 옵션으로 설정
 
@@ -94,7 +99,19 @@ void UPS_GameInstance::DestroySession()
     if (SessionInterface.IsValid())
     {
         // Set the Handle
-        SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+        FDelegateHandle DestroySessionCompleteHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+
+        const FName SessionName = NAME_GameSession;
+        if (SessionInterface->DestroySession(SessionName))
+        {
+            UE_LOG(LogTemp, Log, TEXT("Requested destroy for session [%s]"), *SessionName.ToString());
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("Failed to start DestroySession for [%s]"), *SessionName.ToString());
+            // 실패 즉시 Delegate 를 해제해줘도 좋습니다:
+            SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionCompleteHandle);
+        }
     }
 }
 
@@ -131,19 +148,27 @@ void UPS_GameInstance::FindSession()
     }
 }
 
-void UPS_GameInstance::JoinSession()
+void UPS_GameInstance::JoinSession(int Index)
 {
+    UE_LOG(Project_S, Log, TEXT("Join Session Start"));
+    UE_LOG(Project_S, Log, TEXT("Index: %d"), Index);
+
     if (SessionInterface.IsValid())
     {
         // Set the Handle
         SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegate);
 
         // idx: 원하는 Session의 index
-        int idx = 0;
+        //int idx = 0;
         const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-        auto SessionName = FName(SessionSearch->SearchResults[idx].Session.OwningUserName);
-        auto Result = SessionSearch->SearchResults[idx];
+        auto SessionName = FName(SessionSearch->SearchResults[Index].Session.OwningUserName);
+        auto Result = SessionSearch->SearchResults[Index];
         SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), SessionName, Result);
+        UE_LOG(Project_S, Log, TEXT("Join Session Complete"));
+    }
+    else
+    {
+        UE_LOG(Project_S, Log, TEXT("Join Session Error"));
     }
 }
 
@@ -228,16 +253,78 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 
 void UPS_GameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
-    if (SessionInterface.IsValid())
-    {
-        APlayerController* const PlayerController = GetFirstLocalPlayerController();
-        FString TravelURL;
+    UE_LOG(Project_S, Log, TEXT("GameInstance : %s, Find Sessions Complete Successfully"), *this->GetName());
+    UE_LOG(Project_S, Log, TEXT("OnFindSessionsComplete called. SessionSearch pointer: %p"), SessionSearch.Get());
 
-        if (PlayerController && SessionInterface->GetResolvedConnectString(SessionName, TravelURL))
+    switch (Result)
+    {
+    /** The join worked as expected */
+    case EOnJoinSessionCompleteResult::Success:
+        if (SessionInterface.IsValid())
         {
-            PlayerController->ClientTravel(TravelURL, ETravelType::TRAVEL_Absolute);
+            APlayerController* const PlayerController = GetFirstLocalPlayerController();
+            FString TravelURL;
+
+            if (PlayerController && SessionInterface->GetResolvedConnectString(SessionName, TravelURL))
+            {
+                PlayerController->ClientTravel(TravelURL, ETravelType::TRAVEL_Absolute);
+            }
+            else
+            {
+                UE_LOG(Project_S, Log, TEXT("Failed to resolve connect string for session %s"), *SessionName.ToString());
+                BlueprintJoinSessionsCompleteDelegate.Broadcast();
+            }
         }
+
+        break;
+    /** There are no open slots to join */
+    case EOnJoinSessionCompleteResult::SessionIsFull:
+        UE_LOG(Project_S, Log, TEXT("Cannot join session %s: Session is full"), *SessionName.ToString());
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("방이 가득 찼습니다."));
+        }
+        BlueprintJoinSessionsCompleteDelegate.Broadcast();
+        break;
+    /** The session couldn't be found on the service */
+    case EOnJoinSessionCompleteResult::SessionDoesNotExist:
+        UE_LOG(Project_S, Log, TEXT("Cannot join session %s: Session does not exist"), *SessionName.ToString());
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("세션을 찾을 수 없습니다."));
+        }
+        BlueprintJoinSessionsCompleteDelegate.Broadcast();
+        break;
+    /** There was an error getting the session server's address */
+    case EOnJoinSessionCompleteResult::CouldNotRetrieveAddress:
+        UE_LOG(Project_S, Log, TEXT("Cannot join session %s: Could not retrieve server address"), *SessionName.ToString());
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("서버 주소를 가져올 수 없습니다."));
+        }
+        BlueprintJoinSessionsCompleteDelegate.Broadcast();
+        break;
+    /** The user attempting to join is already a member of the session */
+    case EOnJoinSessionCompleteResult::AlreadyInSession:
+        UE_LOG(Project_S, Log, TEXT("Player is already in session %s"), *SessionName.ToString());
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("이미 해당 세션에 접속되어 있습니다."));
+        }
+        BlueprintJoinSessionsCompleteDelegate.Broadcast();
+        break;
+    /** An error not covered above occurred */
+    case EOnJoinSessionCompleteResult::UnknownError:
+        UE_LOG(Project_S, Log, TEXT("Unknown error joining session %s, Result=%d"), *SessionName.ToString(), static_cast<int32>(Result));
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("알 수 없는 오류로 접속에 실패했습니다."));
+        }
+        BlueprintJoinSessionsCompleteDelegate.Broadcast();
+        break;
     }
+
+    bIsJoining = false;
 }
 
 void UPS_GameInstance::SetMap(uint8 InMap)
