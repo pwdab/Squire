@@ -190,6 +190,16 @@ void UPS_GameInstance::CreateSession(bool bMakePrivate, const FString& InPasswor
         SessionInterface->DestroySession(CurrentSessionName);
     }
 
+    /*
+    // 호스트 닉네임을 세션 이름으로 저장 (옵션)
+    IOnlineIdentityPtr Identity = IOnlineSubsystem::Get()->GetIdentityInterface();
+    if (Identity.IsValid() && Identity->GetUniquePlayerId(0).IsValid())
+    {
+        FString UserName = Identity->GetPlayerNickname(0);
+        SessionSettings->Set(FName("HostName"), UserName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+    }
+    */
+
     // 새로 생성할 세션 이름 지정
     // 호스트 닉네임과 UniqueNetId 문자열을 조합하여 세션 이름 생성
     FString HostNick = TEXT("Host");
@@ -237,14 +247,6 @@ void UPS_GameInstance::CreateSession(bool bMakePrivate, const FString& InPasswor
     {
         PendingSessionPassword.Empty();
         SessionSettings->Set(FName("RequirePassword"), FString("0"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-    }
-
-    // 호스트 닉네임을 세션 이름으로 저장 (옵션)
-    IOnlineIdentityPtr Identity = IOnlineSubsystem::Get()->GetIdentityInterface();
-    if (Identity.IsValid() && Identity->GetUniquePlayerId(0).IsValid())
-    {
-        FString UserName = Identity->GetPlayerNickname(0);
-        SessionSettings->Set(FName("HostName"), UserName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
     }
 
     // 실제 세션 생성 요청
