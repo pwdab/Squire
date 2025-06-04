@@ -339,10 +339,13 @@ void APS_GameMode::ClearStartGameTimer()
 void APS_GameMode::OnStartGameAfter5SecondsComplete()
 {
     PS_LOG_S(Log);
+
     bIsGameStart = true;
     if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
     {
         PS_GameInstance->SetIsGameStart(bIsGameStart);
+
+        if (!PS_GameInstance->StartGame()) return;
     }
     if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
     {

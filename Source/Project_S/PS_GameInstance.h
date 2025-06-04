@@ -45,7 +45,7 @@ public:
 	uint8 GetLife() const;
 	bool IsGameStart() const;
 
-	
+	bool StartGame();
 
 	/*
 	// Delegates
