@@ -343,46 +343,63 @@ void UPS_GameInstance::LeaveSession()
 
     // 현재 참가한 세션 정보 가져오기
     FNamedOnlineSession* ExistingSession = SessionInterface->GetNamedSession(CurrentSessionName);
-    if (!ExistingSession)
+    if (ExistingSession)
     {
-        UE_LOG(LogPSGameInstance, Warning, TEXT("현재 속한 세션이 없습니다"));
-        return;
-    }
-
-    // 자신이 호스트인지 판단 (세션 Settings 의 "HostName" 과 LocalPlayer NickName 비교)
-    bool bAmIHost = false;
-    {
-        // 1) OnlineIdentityInterface 를 통해 내 닉네임 구하기
-        IOnlineIdentityPtr Identity = IOnlineSubsystem::Get()->GetIdentityInterface();
-        FString MyNick;
-        if (Identity.IsValid() && Identity->GetUniquePlayerId(0).IsValid())
+        // ─── "Named Session이 있으면" → 호스트 혹은 Dedicated Server 모드 ───
+        // (NamedSession이 있는 건 호스트나 데디케이티드 서버로 세션을 생성했던 경우)
+        bool bAmIHost = false;
         {
-            MyNick = Identity->GetPlayerNickname(0);
+            IOnlineIdentityPtr Identity = IOnlineSubsystem::Get()->GetIdentityInterface();
+            if (Identity.IsValid())
+            {
+                TSharedPtr<const FUniqueNetId> MyId = Identity->GetUniquePlayerId(0);
+                if (MyId.IsValid())
+                {
+                    FString MyNick = Identity->GetPlayerNickname(*MyId);
+                    FString HostNick;
+                    ExistingSession->SessionSettings.Get(FName("HostName"), HostNick);
+                    bAmIHost = (HostNick == MyNick);
+                }
+            }
         }
-        // 2) 세션 Settings 내에 "HostName"으로 저장해둔 값을 읽어서 비교
-        FString HostNick;
-        ExistingSession->SessionSettings.Get(FName("HostName"), HostNick);
-        bAmIHost = (HostNick == MyNick);
-    }
 
-    if (bAmIHost)
-    {
-        // 호스트가 떠나면 세션 자체를 Destroy
-        UE_LOG(LogPSGameInstance, Log, TEXT("호스트가 세션을 종료합니다"));
-        OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
-        SessionInterface->EndSession(CurrentSessionName);
-        //SessionInterface->DestroySession(CurrentSessionName);
+        if (bAmIHost)
+        {
+            // ─── 호스트라면: EndSession → DestroySession 흐름 ───
+            UE_LOG(LogPSGameInstance, Log, TEXT("호스트가 세션 종료를 시작합니다: EndSession() 호출"));
+            bIsProcessingSession = true;
+            OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
+            SessionInterface->EndSession(CurrentSessionName);
+        }
+        else
+        {
+            // ─── NamedSession이 있긴 한데 내가 호스트가 아닐 경우 (드물지만 Dedicated Server라면?) ───
+            // 이 경우에도 EndSession만 호출하고, 나가는 클라이언트로 처리합니다.
+            UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트(소유된 NamedSession)로서 세션에서 나갑니다: EndSession() 호출"));
+            bIsProcessingSession = true;
+            OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
+            SessionInterface->EndSession(CurrentSessionName);
+        }
     }
     else
     {
-        // 일반 플레이어일 때, 세션을 DestroySession 하면 “자기 자신”만 세션에서 빠져나간다
-        UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트로서 세션에서 나갑니다"));
-        OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
-        //SessionInterface->DestroySession(CurrentSessionName);
-        SessionInterface->EndSession(CurrentSessionName);
-    }
+        // ─── "Named Session이 없다"는 건: 클라이언트가 호스트 세션에 접속해 있는 경우 ───
+        UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트: NamedSession 없음 → 서버 연결 끊고 메인 메뉴로 이동"));
 
-    bIsProcessingSession = true;
+        // 클라이언트가 서버에 접속 중인 경우, 그냥 클라이언트 트래블로 로비/메뉴 씬으로 돌아가면 됩니다.
+        // 예: "/Game/Maps/Level_MainMenu" 로 돌아가기
+        APlayerController* const PC = GetFirstLocalPlayerController();
+        //APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+        if (PC)
+        {
+            // 로비나 메인 메뉴 맵 경로를 실제 프로젝트 경로로 바꿔주세요
+            PC->ClientTravel(TEXT("/Game/Maps/Level_MainMenu"), ETravelType::TRAVEL_Absolute);
+        }
+
+        // 세션 정보가 남아 있지 않으므로, 블루프린트 알림 없이 종료
+        bIsProcessingSession = false;
+        CurrentSessionName = NAME_None;
+    }
 }
 
 void UPS_GameInstance::OnEndSessionComplete(FName SessionName, bool bWasSuccessful)
