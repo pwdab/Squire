@@ -108,6 +108,7 @@ protected:
 	void LeaveSession();
 
 	void OnCreateSessionComplete(FName SesionName, bool bWasSuccessful);
+	void OnEndSessionComplete(FName SessionName, bool bWasSuccessful);
 	void OnDestroySessionComplete(FName SesionName, bool bWasSuccessful);
 	void OnFindSessionsComplete(bool bWasSuccessful);
 	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
@@ -134,6 +135,9 @@ protected:
 	FOnCreateSessionCompleteDelegate OnCreateSessionCompleteDelegate;
 	FDelegateHandle OnCreateSessionCompleteDelegateHandle;
 
+	FOnEndSessionCompleteDelegate OnEndSessionCompleteDelegate;
+	FDelegateHandle OnEndSessionCompleteDelegateHandle;
+
 	FOnDestroySessionCompleteDelegate OnDestroySessionCompleteDelegate;
 	FDelegateHandle OnDestroySessionCompleteDelegateHandle;
 
@@ -145,6 +149,8 @@ protected:
 
 	FOnSessionParticipantRemovedDelegate OnSessionParticipantRemovedDelegate;
 	FDelegateHandle OnSessionParticipantRemovedDelegateHandle;
+
+	
 
 private:
 	uint8 Map;

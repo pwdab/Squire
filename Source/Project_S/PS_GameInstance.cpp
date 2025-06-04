@@ -55,6 +55,11 @@ void UPS_GameInstance::Init()
                 this, &UPS_GameInstance::OnCreateSessionComplete);
             SessionInterface->OnCreateSessionCompleteDelegates.Add(OnCreateSessionCompleteDelegate);
 
+            // EndSession 델리게이트 바인딩
+            OnEndSessionCompleteDelegate = FOnEndSessionCompleteDelegate::CreateUObject(
+                this, &UPS_GameInstance::OnEndSessionComplete
+            );
+
             // DestroySession 델리게이트 바인딩
             OnDestroySessionCompleteDelegate = FOnDestroySessionCompleteDelegate::CreateUObject(
                 this, &UPS_GameInstance::OnDestroySessionComplete);
@@ -345,20 +350,76 @@ void UPS_GameInstance::LeaveSession()
     {
         // 호스트가 떠나면 세션 자체를 Destroy
         UE_LOG(LogPSGameInstance, Log, TEXT("호스트가 세션을 종료합니다"));
-        OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+        OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
         SessionInterface->EndSession(CurrentSessionName);
-        SessionInterface->DestroySession(CurrentSessionName);
+        //SessionInterface->DestroySession(CurrentSessionName);
     }
     else
     {
         // 일반 플레이어일 때, 세션을 DestroySession 하면 “자기 자신”만 세션에서 빠져나간다
         UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트로서 세션에서 나갑니다"));
-        OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+        OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
         //SessionInterface->DestroySession(CurrentSessionName);
         SessionInterface->EndSession(CurrentSessionName);
     }
 
     bIsProcessingSession = true;
+}
+
+void UPS_GameInstance::OnEndSessionComplete(FName SessionName, bool bWasSuccessful)
+{
+    // 델리게이트 해제
+    if (SessionInterface.IsValid())
+    {
+        SessionInterface->ClearOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegateHandle);
+    }
+
+    if (!bWasSuccessful)
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("EndSession 실패: %s"), *SessionName.ToString());
+        bIsProcessingSession = false;
+        return;
+    }
+
+    UE_LOG(LogPSGameInstance, Log, TEXT("EndSession 성공: %s"), *SessionName.ToString());
+
+    // 호스트 여부 재확인
+    bool bAmIHost = false;
+    IOnlineIdentityPtr Identity = IOnlineSubsystem::Get()->GetIdentityInterface();
+    if (Identity.IsValid())
+    {
+        TSharedPtr<const FUniqueNetId> MyId = Identity->GetUniquePlayerId(0);
+        if (MyId.IsValid())
+        {
+            FString MyNick = Identity->GetPlayerNickname(*MyId);
+            FNamedOnlineSession* NamedSession = SessionInterface->GetNamedSession(CurrentSessionName);
+            if (NamedSession)
+            {
+                FString HostNick;
+                NamedSession->SessionSettings.Get(FName("HostName"), HostNick);
+                bAmIHost = (HostNick == MyNick);
+            }
+        }
+    }
+
+    if (bAmIHost)
+    {
+        // ─── 호스트라면 실제로 DestroySession 호출 ───
+        UE_LOG(LogPSGameInstance, Log, TEXT("호스트가 DestroySession() 호출"));
+        OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(
+            OnDestroySessionCompleteDelegate
+        );
+        SessionInterface->DestroySession(CurrentSessionName);
+    }
+    else
+    {
+        // ─── 클라이언트라면 여기서 세션 끝난 것으로 처리 ───
+        UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트 세션 종료 처리 완료"));
+        bIsProcessingSession = false;
+        CurrentSessionName = NAME_None;
+        //OnPlayerLeftSession.Broadcast(PlayerName);
+        BlueprintDestroySessionsCompleteDelegate.Broadcast(); // 블루프린트 알림
+    }
 }
 
 void UPS_GameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
