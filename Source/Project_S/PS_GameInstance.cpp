@@ -299,36 +299,19 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
         return;
     }
 
-    // 3) 실제 세션 정보(SessionInfo) 확인
+    UE_LOG(LogPSGameInstance, Log, TEXT("CreateSession 성공: %s"), *SessionName.ToString());
+
+    // 세션 정보(FNamedOnlineSession) 가져오기
     FNamedOnlineSession* NamedSession = SessionInterface->GetNamedSession(SessionName);
-    if (NamedSession)
+    if (!NamedSession)
     {
-        // 3-1) SessionSettings 내 bUseLobbiesIfAvailable 값 확인
-        bool bLobbyFlag = NamedSession->SessionSettings.bUseLobbiesIfAvailable;
-        UE_LOG(LogPSGameInstance, Log, TEXT("  [OnCreate] bUseLobbiesIfAvailable = %d"), bLobbyFlag);
-
-        // 3-2) 실제 Steam Lobby ID 또는 P2P ID 출력
-        //     SessionInfo는 IOnlineSession::FOnlineSessionInfo 타입의 객체 포인터를 가리킵니다.
-        const TSharedPtr<const FOnlineSessionInfo> SessionInfo = NamedSession->SessionInfo;
-        if (SessionInfo.IsValid())
-        {
-            // SessionInfo->GetSessionIdStr() 는 ID 문자열을 리턴합니다
-            FString SessionIdStr = SessionInfo->ToString();
-            UE_LOG(LogPSGameInstance, Log, TEXT("  [OnCreate] 세션 ID = %s"), *SessionIdStr);
-
-            // SteamLobby인 경우 LobbyID가, P2P인 경우 다른 형식이 출력됩니다.
-            // 실제 SteamLobby면 SessionInfo에 LobbyID가 있고, P2P면 PeerConnection을 시도했다는 로그가 남음
-        }
-        else
-        {
-            UE_LOG(LogPSGameInstance, Warning, TEXT("  [OnCreate] SessionInfo가 유효하지 않습니다."));
-        }
-    }
-    else
-    {
-        UE_LOG(LogPSGameInstance, Warning, TEXT("  [OnCreate] NamedSession을 찾을 수 없습니다."));
+        UE_LOG(LogPSGameInstance, Warning, TEXT("[OnCreate] NamedSession을 찾을 수 없습니다."));
+        return;
     }
 
+    // SessionSettings에 설정된 bUseLobbiesIfAvailable 값 로그
+    bool bLobbyFlag = NamedSession->SessionSettings.bUseLobbiesIfAvailable;
+    UE_LOG(LogPSGameInstance, Log, TEXT("[OnCreate] SessionSettings.bUseLobbiesIfAvailable = %d"), bLobbyFlag ? 1 : 0);
     UE_LOG(LogPSGameInstance, Log, TEXT("세션 생성 성공: %s"), *SessionName.ToString());
 
     // 세션 시작(StartSession)은 필요 시 바로 호출 가능
@@ -631,7 +614,7 @@ void UPS_GameInstance::OnSessionParticipantRemoved(FName SessionName, const FUni
 
             // UpdateSession 호출
             SessionInterface->UpdateSession(SessionName, NewSettings);
-            UE_LOG(LogPSGameInstance, Log, TEXT("호스트 로비 설정을 다시 joinable 상태로 갱신했습니다: %s"), *SessionName.ToString());
+            UE_LOG(LogPSGameInstance, Log, TEXT("호스트 로비 설정을 다시 joinable 상태로 갱신했습니다: %s"), SessionName);
         }
     }
 }
