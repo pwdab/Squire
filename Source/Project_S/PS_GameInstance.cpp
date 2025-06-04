@@ -191,7 +191,24 @@ void UPS_GameInstance::CreateSession(bool bMakePrivate, const FString& InPasswor
     }
 
     // 새로 생성할 세션 이름 지정
-    CurrentSessionName = NAME_GameSession;
+    // 호스트 닉네임과 UniqueNetId 문자열을 조합하여 세션 이름 생성
+    FString HostNick = TEXT("Host");
+    FString UniqueIdStr = TEXT("UnknownID");
+
+    IOnlineIdentityPtr Identity = IOnlineSubsystem::Get()->GetIdentityInterface();
+    if (Identity.IsValid())
+    {
+        TSharedPtr<const FUniqueNetId> UserId = Identity->GetUniquePlayerId(0);
+        if (UserId.IsValid())
+        {
+            HostNick = Identity->GetPlayerNickname(*UserId);
+            UniqueIdStr = UserId->ToString(); // 예: SteamID 문자열
+        }
+    }
+
+    // 최종 세션 이름: "HostNick_UniqueIdStr"
+    FString SessionNameString = FString::Printf(TEXT("%s_%s"), *HostNick, *UniqueIdStr);
+    CurrentSessionName = FName(*SessionNameString);
 
     // 세션 설정
     TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
@@ -417,7 +434,6 @@ void UPS_GameInstance::OnEndSessionComplete(FName SessionName, bool bWasSuccessf
         UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트 세션 종료 처리 완료"));
         bIsProcessingSession = false;
         CurrentSessionName = NAME_None;
-        //OnPlayerLeftSession.Broadcast(PlayerName);
         BlueprintDestroySessionsCompleteDelegate.Broadcast(); // 블루프린트 알림
     }
 }
@@ -761,6 +777,10 @@ void UPS_GameInstance::JoinSession(int32 SessionIndex, const FString& InPassword
     }
 
     const FOnlineSessionSearchResult& ChosenResult = SessionSearch->SearchResults[SessionIndex];
+
+    // 검색된 결과에서 SessionIdStr (세션 이름)을 불러와 CurrentSessionName에 저장
+    FString FoundSessionName = ChosenResult.Session.GetSessionIdStr();
+    CurrentSessionName = FName(*FoundSessionName);
 
     // 선택된 세션이 Private인지(커스텀 항목 “RequirePassword” 확인)
     bool bRequirePwd = false;
