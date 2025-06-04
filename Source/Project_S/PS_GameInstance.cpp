@@ -1,9 +1,16 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "PS_GameInstance.h"
 
+DEFINE_LOG_CATEGORY(LogPSGameInstance);
+
 UPS_GameInstance::UPS_GameInstance()
+    : PendingSessionPassword(TEXT(""))
+    , JoinAttemptPassword(TEXT(""))
+    , bIsPrivateSession(false)
+    , CurrentSessionName(NAME_None)
+    , bIsProcessingSession(false)
 {
     Map = 1;
     Stage = 1;
@@ -12,10 +19,14 @@ UPS_GameInstance::UPS_GameInstance()
 
 void UPS_GameInstance::Init()
 {
+    Super::Init();
+
     IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
     if (OnlineSubsystem)
     {
         SessionInterface = OnlineSubsystem->GetSessionInterface();
+
+        // 디버그용
         if (UWorld* World = GetWorld())
         {
             if (UGameInstance* GameInstance = World->GetGameInstance())
@@ -32,23 +43,54 @@ void UPS_GameInstance::Init()
         if (SessionInterface.IsValid())
         {
             // Setup Delegates
+            /*
             SessionInterface->OnCreateSessionCompleteDelegates.AddUObject(this, &UPS_GameInstance::OnCreateSessionComplete);
             SessionInterface->OnDestroySessionCompleteDelegates.AddUObject(this, &UPS_GameInstance::OnDestroySessionComplete);
             SessionInterface->OnFindSessionsCompleteDelegates.AddUObject(this, &UPS_GameInstance::OnFindSessionsComplete);
             SessionInterface->OnJoinSessionCompleteDelegates.AddUObject(this, &UPS_GameInstance::OnJoinSessionComplete);
+            */
 
-            UE_LOG(Project_S, Log, TEXT("GameInstance : %s, Setup Delegates Complete"), *this->GetName());
+            // CreateSession 델리게이트 바인딩
+            OnCreateSessionCompleteDelegate = FOnCreateSessionCompleteDelegate::CreateUObject(
+                this, &UPS_GameInstance::OnCreateSessionComplete);
+            SessionInterface->OnCreateSessionCompleteDelegates.Add(OnCreateSessionCompleteDelegate);
+
+            // DestroySession 델리게이트 바인딩
+            OnDestroySessionCompleteDelegate = FOnDestroySessionCompleteDelegate::CreateUObject(
+                this, &UPS_GameInstance::OnDestroySessionComplete);
+            SessionInterface->OnDestroySessionCompleteDelegates.Add(OnDestroySessionCompleteDelegate);
+
+            // FindSessions 델리게이트 바인딩
+            OnFindSessionsCompleteDelegate = FOnFindSessionsCompleteDelegate::CreateUObject(
+                this, &UPS_GameInstance::OnFindSessionsComplete);
+            // 바인딩은 FindSessions 호출 시 Handle을 저장하고 사용
+
+            // JoinSession 델리게이트 바인딩
+            OnJoinSessionCompleteDelegate = FOnJoinSessionCompleteDelegate::CreateUObject(
+                this, &UPS_GameInstance::OnJoinSessionComplete);
+            // 이벤트 바인딩은 JoinSession 호출 시 Handle을 저장하고 사용
+
+            // SessionParticipantRemoved 델리게이트 바인딩 (호스트가 참가자 퇴장을 감지하기 위함)
+            OnSessionParticipantRemovedDelegate = FOnSessionParticipantRemovedDelegate::CreateUObject(
+                this, &UPS_GameInstance::OnSessionParticipantRemoved);
+            SessionInterface->AddOnSessionParticipantRemovedDelegate_Handle(OnSessionParticipantRemovedDelegate);
+
+            UE_LOG(LogPSGameInstance, Warning, TEXT("GameInstance : %s, Setup Delegates Complete"), *this->GetName());
         }
         else
         {
-            PS_LOG_S(Log);
-            UE_LOG(Project_S, Warning, TEXT("SessionInterface is Not Valid!!"));
+            UE_LOG(LogPSGameInstance, Warning, TEXT("SessionInterface is not valid!"));
         }
     }
+    else
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("OnlineSubsystem not found!"));
+    }
 
-    bIsJoining = false;
+    //bIsJoining = false;
 }
 
+/*
 void UPS_GameInstance::CreateSession()
 {
     PS_LOG_S(Log);
@@ -58,7 +100,7 @@ void UPS_GameInstance::CreateSession()
         // Set the Handle
         SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSesionCompleteDelegate);
 
-        // ���� Session ����
+        // 기존 Session 제거
         const auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession); // 
         if (ExistingSession != nullptr)
         {
@@ -71,19 +113,19 @@ void UPS_GameInstance::CreateSession()
         }
 
         TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
-        SessionSettings->bIsLANMatch = false;			// Lan�� ���� ����
-        SessionSettings->NumPublicConnections = 2;		// ���� ���� �ο�
-        SessionSettings->bAllowJoinInProgress = false;	// ������ ���� �� �������� ����
+        SessionSettings->bIsLANMatch = false;			// Lan을 통한 연결
+        SessionSettings->NumPublicConnections = 2;		// 연결 가능 인원
+        SessionSettings->bAllowJoinInProgress = false;	// 세션이 실행 중 참여가능 여부
         SessionSettings->bAllowJoinViaPresence = true;	// ???
-        SessionSettings->bShouldAdvertise = true;		// Steam�� ���� ������ �˸�(���� ��ȸ ����)
+        SessionSettings->bShouldAdvertise = true;		// Steam을 통해 세션을 알림(세션 조회 가능)
         SessionSettings->bUsesPresence = true;			// ???
         //SessionSettings->bAllowInvites = true;
         //SessionSettings->bAllowJoinViaPresence = true;
         //SessionSettings->bAllowJoinViaPresenceFriendsOnly = true;
-        SessionSettings->bUseLobbiesIfAvailable = true; // Lobby ��� ����
-        SessionSettings->Set(FName("MatchType"), FString("FreeForAll"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing); // ������ MatchType�� ��ο��� ����, �¶��μ��񽺿� ���� ���� ���� ȫ�� �ɼ����� ����
+        SessionSettings->bUseLobbiesIfAvailable = true; // Lobby 사용 여부
+        SessionSettings->Set(FName("MatchType"), FString("FreeForAll"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing); // 세션의 MatchType을 모두에게 열림, 온라인서비스와 핑을 통해 세션 홍보 옵션으로 설정
 
-        // GameInstance���� �����ϱ� ����(PlayerController�� ���� �� �ְų� ���� �ִٸ� �ᵵ��)
+        // GameInstance에서 실행하기 때문(PlayerController를 얻어올 수 있거나 갖고 있다면 써도됨)
         const ULocalPlayer* Localplayer = GetWorld()->GetFirstLocalPlayerFromController();
         SessionInterface->CreateSession(*Localplayer->GetPreferredUniqueNetId(), NAME_GameSession, *SessionSettings);
         UE_LOG(Project_S, Log, TEXT("Create Session Complete"));
@@ -94,6 +136,136 @@ void UPS_GameInstance::CreateSession()
     }
 }
 
+void UPS_GameInstance::OnCreateSessionComplete(FName SesionName, bool bWasSuccessful)
+{
+    if (bWasSuccessful)
+    {
+        // 세션 생성 성공
+        UE_LOG(Project_S, Log, TEXT("Create Session Complete Successfully"));
+        bool IsSuccessful = SessionInterface->StartSession(NAME_GameSession);
+
+        if (IsSuccessful)
+        {
+            UE_LOG(Project_S, Log, TEXT("Start Session Complete"));
+            //ClientTravel(TEXT("/Game/Maps/Level_MainMenu"), ETravelType::TRAVEL_Absolute);
+        }
+        else
+        {
+            UE_LOG(Project_S, Log, TEXT("Start Session Fail"));
+        }
+    }
+    else
+    {
+        // 세션 생성 실패
+    }
+}
+*/
+
+#pragma region CreateSession
+
+void UPS_GameInstance::CreateSession(bool bMakePrivate, const FString& InPassword)
+{
+    if (!SessionInterface.IsValid())
+    {
+        UE_LOG(LogPSGameInstance, Error, TEXT("Cannot Create Session: SessionInterface invalid"));
+        BlueprintJoinSessionsCompleteDelegate.Broadcast(false, TEXT("세션 시스템 오류"));
+        return;
+    }
+
+    if (bIsProcessingSession)
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("이미 다른 세션 작업 진행 중입니다."));
+        return;
+    }
+
+    // 이미 생성된 세션이 있다면 파괴
+    if (SessionInterface->GetNamedSession(CurrentSessionName) != nullptr)
+    {
+        UE_LOG(LogPSGameInstance, Log, TEXT("기존 세션이 존재하여 Destroy 후 새로 생성"));
+        SessionInterface->DestroySession(CurrentSessionName);
+    }
+
+    // 새로 생성할 세션 이름 지정
+    CurrentSessionName = NAME_GameSession;
+
+    // 세션 설정
+    TSharedPtr<FOnlineSessionSettings> SessionSettings = MakeShareable(new FOnlineSessionSettings());
+    SessionSettings->bIsLANMatch = false; 
+    SessionSettings->NumPublicConnections = MAX_PUBLIC_CONNECTIONS;
+    SessionSettings->bAllowJoinInProgress = false;
+    SessionSettings->bAllowJoinViaPresence = true;
+    SessionSettings->bShouldAdvertise = true;
+    SessionSettings->bUsesPresence = true;
+    SessionSettings->bUseLobbiesIfAvailable = true;
+
+    // Private 세션 여부에 따라 슬롯 조정. (실제 인원 제한은 NumPublicConnections 사용)
+    bIsPrivateSession = bMakePrivate;
+    if (bMakePrivate)
+    {
+        // 비밀번호 필요
+        PendingSessionPassword = InPassword;
+
+        // 커스텀 키값으로 비밀번호 정보 저장
+        SessionSettings->Set(FName("RequirePassword"), FString("1"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+        SessionSettings->Set(FName("Password"), PendingSessionPassword, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+
+        // Private 세션이지만 블루프린트상에서 Visibility는 동일하게 광고됨
+    }
+    else
+    {
+        PendingSessionPassword.Empty();
+        SessionSettings->Set(FName("RequirePassword"), FString("0"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+    }
+
+    // 호스트 닉네임을 세션 이름으로 저장 (옵션)
+    IOnlineIdentityPtr Identity = IOnlineSubsystem::Get()->GetIdentityInterface();
+    if (Identity.IsValid() && Identity->GetUniquePlayerId(0).IsValid())
+    {
+        FString UserName = Identity->GetPlayerNickname(0);
+        SessionSettings->Set(FName("HostName"), UserName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+    }
+
+    // 실제 세션 생성 요청
+    bIsProcessingSession = true;
+    OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegate);
+    const auto LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+    SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), CurrentSessionName, *SessionSettings);
+
+    UE_LOG(LogPSGameInstance, Log, TEXT("CreateSession 요청 보냄: Private=%d, Password=%s"), (int)bMakePrivate, *InPassword);
+}
+
+void UPS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
+{
+    // 델리게이트 해제
+    if (SessionInterface.IsValid())
+    {
+        SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegateHandle);
+    }
+    bIsProcessingSession = false;
+
+    if (!bWasSuccessful)
+    {
+        UE_LOG(LogPSGameInstance, Error, TEXT("세션 생성 실패"));
+        BlueprintJoinSessionsCompleteDelegate.Broadcast(false, TEXT("세션 생성 실패"));
+        return;
+    }
+
+    UE_LOG(LogPSGameInstance, Log, TEXT("세션 생성 성공: %s"), *SessionName.ToString());
+
+    // 세션 시작(StartSession)은 필요 시 바로 호출 가능
+    bool bStarted = SessionInterface->StartSession(SessionName);
+    if (!bStarted)
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("StartSession 실패"));
+    }
+
+    // 생성 후 자동으로 참가된 것이므로, 블루프린트에 “성공” 전달
+    BlueprintJoinSessionsCompleteDelegate.Broadcast(true, TEXT("세션 생성 및 참가 완료"));
+}
+
+#pragma endregion
+
+/*
 void UPS_GameInstance::DestroySession()
 {
     UE_LOG(Project_S, Log, TEXT("Destroy Session"));
@@ -112,12 +284,149 @@ void UPS_GameInstance::DestroySession()
         else
         {
             UE_LOG(Project_S, Log, TEXT("Failed to start DestroySession for [%s]"), *SessionName.ToString());
-            // ���� ��� Delegate �� �������൵ �����ϴ�:
+            // 실패 즉시 Delegate 를 해제해줘도 좋습니다:
             //SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(DestroySessionCompleteHandle);
         }
     }
 }
 
+void UPS_GameInstance::OnDestroySessionComplete(FName SesionName, bool bWasSuccessful)
+{
+    UE_LOG(Project_S, Log, TEXT("Destroy Session Complete Successfully"));
+    if (bWasSuccessful)
+    {
+        // 세션 생성 성공
+        BlueprintDestroySessionsCompleteDelegate.Broadcast();
+        UE_LOG(Project_S, Log, TEXT("Destroy Session Complete"));
+    }
+    else
+    {
+        // 세션 생성 실패
+        UE_LOG(Project_S, Log, TEXT("Start Session Fail"));
+    }
+}
+*/
+
+#pragma region LeaveSession
+
+void UPS_GameInstance::LeaveSession()
+{
+    if (!SessionInterface.IsValid())
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("LeaveSession 불가: SessionInterface invalid"));
+        return;
+    }
+
+    // 현재 참가한 세션 정보 가져오기
+    FNamedOnlineSession* ExistingSession = SessionInterface->GetNamedSession(CurrentSessionName);
+    if (!ExistingSession)
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("현재 속한 세션이 없습니다"));
+        return;
+    }
+
+    // 자신이 호스트인지 판단 (세션 Settings 의 "HostName" 과 LocalPlayer NickName 비교)
+    bool bAmIHost = false;
+    {
+        // 1) OnlineIdentityInterface 를 통해 내 닉네임 구하기
+        IOnlineIdentityPtr Identity = IOnlineSubsystem::Get()->GetIdentityInterface();
+        FString MyNick;
+        if (Identity.IsValid() && Identity->GetUniquePlayerId(0).IsValid())
+        {
+            MyNick = Identity->GetPlayerNickname(0);
+        }
+        // 2) 세션 Settings 내에 "HostName"으로 저장해둔 값을 읽어서 비교
+        FString HostNick;
+        ExistingSession->SessionSettings.Get(FName("HostName"), HostNick);
+        bAmIHost = (HostNick == MyNick);
+    }
+
+    if (bAmIHost)
+    {
+        // 호스트가 떠나면 세션 자체를 Destroy
+        UE_LOG(LogPSGameInstance, Log, TEXT("호스트가 세션을 종료합니다"));
+        OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+        SessionInterface->EndSession(CurrentSessionName);
+        SessionInterface->DestroySession(CurrentSessionName);
+    }
+    else
+    {
+        // 일반 플레이어일 때, 세션을 DestroySession 하면 “자기 자신”만 세션에서 빠져나간다
+        UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트로서 세션에서 나갑니다"));
+        OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+        //SessionInterface->DestroySession(CurrentSessionName);
+        SessionInterface->EndSession(CurrentSessionName);
+    }
+
+    bIsProcessingSession = true;
+}
+
+void UPS_GameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
+{
+    // 델리게이트 해제
+    if (SessionInterface.IsValid())
+    {
+        SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
+    }
+    bIsProcessingSession = false;
+    CurrentSessionName = NAME_None;
+
+    if (!bWasSuccessful)
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("DestroySession 실패"));
+        return;
+    }
+
+    UE_LOG(LogPSGameInstance, Log, TEXT("DestroySession 성공: %s"), *SessionName.ToString());
+
+    // 블루프린트에 “세션 종료” 알림
+    BlueprintDestroySessionsCompleteDelegate.Broadcast();
+}
+
+#pragma endregion
+
+#pragma region OnSessionParticipantRemoved
+
+// 호스트 전용: 참가자가 떠났을 때 호출됨
+void UPS_GameInstance::OnSessionParticipantRemoved(FName SessionName, const FUniqueNetId& RemovedMemberId)
+{
+    // 다만, 호스트인지 여부를 간단히 확인하려면
+    // 기존 세션 Settings 의 "HostName" 과 내 닉네임 비교 -> 호스트가 맞으면 브로드캐스트
+
+    IOnlineIdentityPtr Identity = IOnlineSubsystem::Get()->GetIdentityInterface();
+    FString MyNick;
+    if (Identity.IsValid() && Identity->GetUniquePlayerId(0).IsValid())
+    {
+        MyNick = Identity->GetPlayerNickname(0);
+    }
+
+    // 호스트만 이 콜백에 유의하며, 자신이 호스트일 때만 블루프린트 알림
+    FNamedOnlineSession* NamedSession = SessionInterface->GetNamedSession(CurrentSessionName);
+    if (NamedSession)
+    {
+        FString HostNick;
+        NamedSession->SessionSettings.Get(FName("HostName"), HostNick);
+        bool bAmIHost = (HostNick == MyNick);
+        if (bAmIHost)
+        {
+            // 떠난 사용자 닉네임 얻기
+            FString LeftNick = TEXT("Unknown");
+            // RemovedMemberId.ToString() 대신, Identity->GetPlayerNicknameForUniqueNetId 로 실제 닉네임 얻기 시도
+            TSharedPtr<const FUniqueNetId> RemovedPtr = RemovedMemberId.AsShared();
+            if (RemovedPtr.IsValid() && Identity.IsValid())
+            {
+                LeftNick = Identity->GetPlayerNickname(*RemovedPtr);
+            }
+
+            UE_LOG(LogPSGameInstance, Log, TEXT("호스트에게 알림: 플레이어 '%s' 가 세션을 떠났습니다."), *LeftNick);
+            OnPlayerLeftSession.Broadcast(LeftNick);
+        }
+    }
+}
+
+#pragma endregion
+
+/*
 void UPS_GameInstance::FindSession()
 {
     UE_LOG(Project_S, Log, TEXT("Find Session Start"));
@@ -131,15 +440,15 @@ void UPS_GameInstance::FindSession()
 
     if (SessionInterface.IsValid())
     {
-        // Find Session Complete Delegate ���
+        // Find Session Complete Delegate 등록
         SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegate);
 
         // Find Game Session
         SessionSearch = MakeShareable(new FOnlineSessionSearch());
         UE_LOG(Project_S, Log, TEXT("SessionSearch created: %p"), SessionSearch.Get());
-        SessionSearch->MaxSearchResults = 10;	// �˻� ����� ������ ���� �� �ִ밪
-        SessionSearch->bIsLanQuery = false;			// LAN ��� ����
-        SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals); // ã�� ���� ������ ����� �����Ѵ�
+        SessionSearch->MaxSearchResults = 10;	// 검색 결과로 나오는 세션 수 최대값
+        SessionSearch->bIsLanQuery = false;			// LAN 사용 여부
+        SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals); // 찾을 세션 쿼리를 현재로 설정한다
 
         //const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
         SessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
@@ -151,77 +460,13 @@ void UPS_GameInstance::FindSession()
     }
 }
 
-void UPS_GameInstance::JoinSession(int Index)
-{
-    UE_LOG(Project_S, Log, TEXT("Join Session Start"));
-    UE_LOG(Project_S, Log, TEXT("Index: %d"), Index);
-
-    if (SessionInterface.IsValid())
-    {
-        // Set the Handle
-        SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegate);
-
-        // idx: ���ϴ� Session�� index
-        //int idx = 0;
-        const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-        auto SessionName = FName(SessionSearch->SearchResults[Index].Session.OwningUserName);
-        auto Result = SessionSearch->SearchResults[Index];
-        SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), SessionName, Result);
-        UE_LOG(Project_S, Log, TEXT("Join Session Complete"));
-    }
-    else
-    {
-        UE_LOG(Project_S, Log, TEXT("Join Session Error"));
-    }
-}
-
-void UPS_GameInstance::OnCreateSessionComplete(FName SesionName, bool bWasSuccessful)
-{
-    if (bWasSuccessful)
-    {
-        // ���� ���� ����
-        UE_LOG(Project_S, Log, TEXT("Create Session Complete Successfully"));
-        bool IsSuccessful = SessionInterface->StartSession(NAME_GameSession);
-
-        if (IsSuccessful)
-        {
-            UE_LOG(Project_S, Log, TEXT("Start Session Complete"));
-            //ClientTravel(TEXT("/Game/Maps/Level_MainMenu"), ETravelType::TRAVEL_Absolute);
-        }
-        else
-        {
-            UE_LOG(Project_S, Log, TEXT("Start Session Fail"));
-        }
-    }
-    else
-    {
-        // ���� ���� ����
-    }
-}
-
-void UPS_GameInstance::OnDestroySessionComplete(FName SesionName, bool bWasSuccessful)
-{
-    UE_LOG(Project_S, Log, TEXT("Destroy Session Complete Successfully"));
-    if (bWasSuccessful)
-    {
-        // ���� ���� ����
-        BlueprintDestroySessionsCompleteDelegate.Broadcast();
-        UE_LOG(Project_S, Log, TEXT("Destroy Session Complete"));
-    }
-    else
-    {
-        // ���� ���� ����
-        UE_LOG(Project_S, Log, TEXT("Start Session Fail"));
-    }
-}
-
 void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 {
     if (bWasSuccessful)
     {
         UE_LOG(Project_S, Log, TEXT("GameInstance : %s, Find Sessions Complete Successfully"), *this->GetName());
         UE_LOG(Project_S, Log, TEXT("OnFindSessionsComplete called. SessionSearch pointer: %p"), SessionSearch.Get());
-        // ����
+        // 성공
         if (SessionSearch.IsValid())
         {
             int cnt = 1;
@@ -252,8 +497,104 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
     }
     else
     {
-        // ���� ���� ����
+        // 세션 생성 실패
         UE_LOG(Project_S, Log, TEXT("Find Sessions Complete Failure"));
+    }
+}
+*/
+
+#pragma region FindSessions
+
+void UPS_GameInstance::FindSessions()
+{
+    if (!SessionInterface.IsValid())
+    {
+        UE_LOG(LogPSGameInstance, Error, TEXT("Cannot FindSessions: SessionInterface invalid"));
+        BlueprintFindSessionsCompleteDelegate.Broadcast(TArray<FBlueprintSessionResult>(), false);
+        return;
+    }
+
+    if (bIsProcessingSession)
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("이미 세션 작업 중이므로 검색 불가"));
+        return;
+    }
+
+    // 세션 검색 객체 생성
+    SessionSearch = MakeShareable(new FOnlineSessionSearch());
+    SessionSearch->MaxSearchResults = MAX_SESSION_RESULTS;
+    SessionSearch->bIsLanQuery = false;
+    SessionSearch->QuerySettings.Set(SEARCH_PRESENCE, true, EOnlineComparisonOp::Equals);
+
+    bIsProcessingSession = true;
+    OnFindSessionsCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegate);
+
+    const auto LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+    SessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
+
+    UE_LOG(LogPSGameInstance, Log, TEXT("FindSessions 요청 보냄"));
+}
+
+void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
+{
+    // 델리게이트 해제
+    if (SessionInterface.IsValid())
+    {
+        SessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegateHandle);
+    }
+    bIsProcessingSession = false;
+
+    TArray<FBlueprintSessionResult> ValidResults;
+
+    if (!bWasSuccessful || !SessionSearch.IsValid())
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("FindSessions 실패 또는 유효하지 않은 검색 결과"));
+        BlueprintFindSessionsCompleteDelegate.Broadcast(ValidResults, false);
+        return;
+    }
+
+    // 모든 검색 결과 중 “빈 슬롯(NumOpenPublicConnections > 0)” 인 세션만 추가
+    for (const FOnlineSessionSearchResult& SearchResult : SessionSearch->SearchResults)
+    {
+        // 남은 인원 슬롯이 0이면 건너뜀
+        if (SearchResult.Session.NumOpenPublicConnections <= 0)
+        {
+            continue;
+        }
+        // 결과 배열에 추가
+        FBlueprintSessionResult BlueprintResult;
+        BlueprintResult.OnlineResult = SearchResult;
+        ValidResults.Add(BlueprintResult);
+    }
+
+    UE_LOG(LogPSGameInstance, Log, TEXT("검색 완료: 유효한 세션 %d개"), ValidResults.Num());
+    BlueprintFindSessionsCompleteDelegate.Broadcast(ValidResults, true);
+}
+
+#pragma endregion
+
+/*
+void UPS_GameInstance::JoinSession(int Index)
+{
+    UE_LOG(Project_S, Log, TEXT("Join Session Start"));
+    UE_LOG(Project_S, Log, TEXT("Index: %d"), Index);
+
+    if (SessionInterface.IsValid())
+    {
+        // Set the Handle
+        SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegate);
+
+        // idx: 원하는 Session의 index
+        //int idx = 0;
+        const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+        auto SessionName = FName(SessionSearch->SearchResults[Index].Session.OwningUserName);
+        auto Result = SessionSearch->SearchResults[Index];
+        SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), SessionName, Result);
+        UE_LOG(Project_S, Log, TEXT("Join Session Complete"));
+    }
+    else
+    {
+        UE_LOG(Project_S, Log, TEXT("Join Session Error"));
     }
 }
 
@@ -264,7 +605,7 @@ void UPS_GameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 
     switch (Result)
     {
-    /** The join worked as expected */
+    /** The join worked as expected
     case EOnJoinSessionCompleteResult::Success:
         if (SessionInterface.IsValid())
         {
@@ -283,48 +624,48 @@ void UPS_GameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
         }
 
         break;
-    /** There are no open slots to join */
+    /** There are no open slots to join 
     case EOnJoinSessionCompleteResult::SessionIsFull:
         UE_LOG(Project_S, Log, TEXT("Cannot join session %s: Session is full"), *SessionName.ToString());
         if (GEngine)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("���� ���� á���ϴ�."));
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("방이 가득 찼습니다."));
         }
         BlueprintJoinSessionsCompleteDelegate.Broadcast();
         break;
-    /** The session couldn't be found on the service */
+    /** The session couldn't be found on the service 
     case EOnJoinSessionCompleteResult::SessionDoesNotExist:
         UE_LOG(Project_S, Log, TEXT("Cannot join session %s: Session does not exist"), *SessionName.ToString());
         if (GEngine)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("������ ã�� �� �����ϴ�."));
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("세션을 찾을 수 없습니다."));
         }
         BlueprintJoinSessionsCompleteDelegate.Broadcast();
         break;
-    /** There was an error getting the session server's address */
+    /** There was an error getting the session server's address 
     case EOnJoinSessionCompleteResult::CouldNotRetrieveAddress:
         UE_LOG(Project_S, Log, TEXT("Cannot join session %s: Could not retrieve server address"), *SessionName.ToString());
         if (GEngine)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("���� �ּҸ� ������ �� �����ϴ�."));
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("서버 주소를 가져올 수 없습니다."));
         }
         BlueprintJoinSessionsCompleteDelegate.Broadcast();
         break;
-    /** The user attempting to join is already a member of the session */
+    /** The user attempting to join is already a member of the session 
     case EOnJoinSessionCompleteResult::AlreadyInSession:
         UE_LOG(Project_S, Log, TEXT("Player is already in session %s"), *SessionName.ToString());
         if (GEngine)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("�̹� �ش� ���ǿ� ���ӵǾ� �ֽ��ϴ�."));
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("이미 해당 세션에 접속되어 있습니다."));
         }
         BlueprintJoinSessionsCompleteDelegate.Broadcast();
         break;
-    /** An error not covered above occurred */
+    /** An error not covered above occurred 
     case EOnJoinSessionCompleteResult::UnknownError:
         UE_LOG(Project_S, Log, TEXT("Unknown error joining session %s, Result=%d"), *SessionName.ToString(), static_cast<int32>(Result));
         if (GEngine)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("�� �� ���� ������ ���ӿ� �����߽��ϴ�."));
+            GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("알 수 없는 오류로 접속에 실패했습니다."));
         }
         BlueprintJoinSessionsCompleteDelegate.Broadcast();
         break;
@@ -332,6 +673,118 @@ void UPS_GameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
 
     bIsJoining = false;
 }
+*/
+
+#pragma region JoinSession
+
+void UPS_GameInstance::JoinSession(int32 SessionIndex, const FString& InPassword)
+{
+    if (!SessionInterface.IsValid() || !SessionSearch.IsValid())
+    {
+        UE_LOG(LogPSGameInstance, Error, TEXT("Cannot JoinSession: Invalid Interface/Search"));
+        BlueprintJoinSessionsCompleteDelegate.Broadcast(false, TEXT("세션 시스템 오류"));
+        return;
+    }
+
+    if (bIsProcessingSession)
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("이미 세션 작업 중이므로 참가 불가"));
+        return;
+    }
+
+    if (SessionIndex < 0 || SessionIndex >= SessionSearch->SearchResults.Num())
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("잘못된 세션 인덱스: %d"), SessionIndex);
+        BlueprintJoinSessionsCompleteDelegate.Broadcast(false, TEXT("잘못된 세션 인덱스"));
+        return;
+    }
+
+    const FOnlineSessionSearchResult& ChosenResult = SessionSearch->SearchResults[SessionIndex];
+
+    // 선택된 세션이 Private인지(커스텀 항목 “RequirePassword” 확인)
+    bool bRequirePwd = false;
+    FString StoredPwd;
+    ChosenResult.Session.SessionSettings.Get(FName("RequirePassword"), bRequirePwd);
+    if (bRequirePwd)
+    {
+        // 실제로 저장된 비밀번호를 읽어와서 비교
+        ChosenResult.Session.SessionSettings.Get(FName("Password"), StoredPwd);
+        if (StoredPwd != InPassword)
+        {
+            UE_LOG(LogPSGameInstance, Warning, TEXT("비밀번호 불일치: 입력='%s', 실제='%s'"), *InPassword, *StoredPwd);
+            BlueprintJoinSessionsCompleteDelegate.Broadcast(false, TEXT("비밀번호가 틀렸습니다"));
+            return;
+        }
+    }
+
+    // Join 요청
+    bIsProcessingSession = true;
+    JoinAttemptPassword = InPassword; // 필요 시 보관
+    OnJoinSessionCompleteDelegateHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegate);
+
+    const auto LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+    SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), FName(""), ChosenResult);
+
+    UE_LOG(LogPSGameInstance, Log, TEXT("JoinSession 요청 보냄"));
+}
+
+void UPS_GameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
+{
+    // 델리게이트 해제
+    if (SessionInterface.IsValid())
+    {
+        SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegateHandle);
+    }
+    bIsProcessingSession = false;
+
+    if (Result != EOnJoinSessionCompleteResult::Success)
+    {
+        FString Reason = TEXT("세션 참가 실패");
+        switch (Result)
+        {
+        case EOnJoinSessionCompleteResult::SessionIsFull:
+            Reason = TEXT("세션이 가득 찼습니다");
+            break;
+        case EOnJoinSessionCompleteResult::SessionDoesNotExist:
+            Reason = TEXT("세션을 찾을 수 없습니다");
+            break;
+        case EOnJoinSessionCompleteResult::CouldNotRetrieveAddress:
+            Reason = TEXT("서버 주소를 가져올 수 없습니다");
+            break;
+        case EOnJoinSessionCompleteResult::AlreadyInSession:
+            Reason = TEXT("이미 세션에 참여 중입니다");
+            break;
+        default:
+            Reason = TEXT("알 수 없는 오류로 참가 실패");
+            break;
+        }
+        UE_LOG(LogPSGameInstance, Warning, TEXT("JoinSession 실패: %s"), *Reason);
+        BlueprintJoinSessionsCompleteDelegate.Broadcast(false, Reason);
+        return;
+    }
+
+    // 참가 성공: Travel URL 얻어서 이동
+    FString TravelURL;
+    auto LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+    if (SessionInterface->GetResolvedConnectString(SessionName, TravelURL))
+    {
+        UE_LOG(LogPSGameInstance, Log, TEXT("세션 참가 성공, TravelURL=%s"), *TravelURL);
+        APlayerController* const PC = GetFirstLocalPlayerController();
+        //APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+        if (PC)
+        {
+            PC->ClientTravel(TravelURL, ETravelType::TRAVEL_Absolute);
+        }
+        BlueprintJoinSessionsCompleteDelegate.Broadcast(true, TEXT("세션 참가 완료"));
+    }
+    else
+    {
+        UE_LOG(LogPSGameInstance, Error, TEXT("GetResolvedConnectString 실패"));
+        BlueprintJoinSessionsCompleteDelegate.Broadcast(false, TEXT("서버 연결 실패"));
+    }
+}
+
+#pragma endregion
 
 void UPS_GameInstance::SetMap(uint8 InMap)
 {
