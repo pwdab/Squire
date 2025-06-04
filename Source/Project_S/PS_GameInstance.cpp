@@ -392,6 +392,7 @@ void UPS_GameInstance::LeaveSession()
         // 세션 정보가 남아 있지 않으므로, 블루프린트 알림 없이 종료
         bIsProcessingSession = false;
         CurrentSessionName = NAME_None;
+        return;
     }
 
     // ─── "Named Session이 있으면" → 호스트 혹은 Dedicated Server 모드 ───
