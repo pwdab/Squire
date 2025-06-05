@@ -345,7 +345,6 @@ void UPS_GameInstance::OnStartOnlineGameComplete(FName SessionName, bool bWasSuc
     }
 }
 
-/*
 bool UPS_GameInstance::StartGame()
 {
     if (!SessionInterface.IsValid())
@@ -367,7 +366,6 @@ bool UPS_GameInstance::StartGame()
         return false;
     }
 }
-*/
 
 #pragma endregion
 
