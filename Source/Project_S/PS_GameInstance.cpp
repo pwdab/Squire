@@ -230,6 +230,11 @@ void UPS_GameInstance::CreateSession(bool bMakePrivate, const FString& InPasswor
     SessionSettings->bUseLobbiesIfAvailable = true;
     SessionSettings->bIsDedicated = false;
     SessionSettings->Set(FName("HostName"), HostNick, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+    SessionSettings->Set(FName("CurrentSessionName"), SessionNameString, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+
+    FString DebugValue;
+    bool bCheck = SessionSettings->Get(FName("CurrentSessionName"), DebugValue);
+    UE_LOG(LogPSGameInstance, Log, TEXT("[Host] SessionSettings 안의 CurrentSessionName = '%s' (bCheck=%d)"), *DebugValue, bCheck);
 
     // Private 세션 여부에 따라 슬롯 조정. (실제 인원 제한은 NumPublicConnections 사용)
     bIsPrivateSession = bMakePrivate;
@@ -905,22 +910,39 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 
     TArray<FBlueprintSessionResult> ValidResults;
 
-    if (!bWasSuccessful || !SessionSearch.IsValid())
+    if (!SessionSearch.IsValid())
     {
         UE_LOG(LogPSGameInstance, Warning, TEXT("FindSessions 실패 또는 유효하지 않은 검색 결과"));
         BlueprintFindSessionsCompleteDelegate.Broadcast(ValidResults, false);
         return;
+    }// ‘검색 결과 배열의 개수’를 먼저 확인
+    const int32 FoundCount = SessionSearch->SearchResults.Num();
+    UE_LOG(LogPSGameInstance, Log, TEXT("OnFindSessionsComplete: bWasSuccessful=%d, SearchResults.Num()=%d"), bWasSuccessful ? 1 : 0, FoundCount);
+
+    // 검색 결과가 하나도 없으면 실패 처리
+    if (FoundCount <= 0)
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("검색 결과가 없습니다."));
+        BlueprintFindSessionsCompleteDelegate.Broadcast(ValidResults, false);
+        return;
     }
 
-    // 모든 검색 결과 중 “빈 슬롯(NumOpenPublicConnections > 0)” 인 세션만 추가
+    // (Optional) bWasSuccessful이 false이지만, FoundCount > 0이면 “부분 성공”으로 간주
+    if (!bWasSuccessful)
+    {
+        UE_LOG(LogPSGameInstance, Warning,
+            TEXT("Steam FindSessions 내부적으로 bWasSuccessful=false이지만, %d개 로비가 검색되었습니다. 결과를 계속 처리합니다."),
+            FoundCount);
+    }
+
+    // 3) 실제로 남은 슬롯이 있는 세션만 골라서 ValidResults에 담기
     for (const FOnlineSessionSearchResult& SearchResult : SessionSearch->SearchResults)
     {
-        // 남은 인원 슬롯이 0이면 건너뜀
         if (SearchResult.Session.NumOpenPublicConnections <= 0)
         {
+            // 빈 슬롯이 없는 세션이면 건너뛴다.
             continue;
         }
-        // 결과 배열에 추가
         FBlueprintSessionResult BlueprintResult;
         BlueprintResult.OnlineResult = SearchResult;
         ValidResults.Add(BlueprintResult);
@@ -1062,9 +1084,20 @@ void UPS_GameInstance::JoinSession(int32 SessionIndex, const FString& InPassword
     UE_LOG(LogPSGameInstance, Log, TEXT("Join 세션 인덱스: %d"), SessionIndex);
 
     // 검색된 결과에서 SessionIdStr (세션 이름)을 불러와 CurrentSessionName에 저장
-    FString FoundSessionName = ChosenResult.Session.GetSessionIdStr();
-    CurrentSessionName = FName(*FoundSessionName);
-    UE_LOG(LogPSGameInstance, Log, TEXT("Join CurrentSessionName: %s"), *FoundSessionName);
+    bool bHasCustomName = false;
+    FString CustomName;
+    bHasCustomName = ChosenResult.Session.SessionSettings.Get(FName("CurrentSessionName"), CustomName);
+    UE_LOG(LogPSGameInstance, Log, TEXT("Join CustomName: %s"), *CustomName);
+    if (bHasCustomName && !CustomName.IsEmpty())
+    {
+        CurrentSessionName = FName(*CustomName);
+    }
+    else
+    {
+        // 기존처럼 fallback: GetSessionIdStr() 를 넣어두거나, 오류 처리
+        CurrentSessionName = FName(*ChosenResult.Session.GetSessionIdStr());
+    }
+    UE_LOG(LogPSGameInstance, Log, TEXT("Join CurrentSessionName: %s"), *CurrentSessionName.ToString());
 
     // 선택된 세션이 Private인지(커스텀 항목 “RequirePassword” 확인)
     bool bRequirePwd = false;
@@ -1090,7 +1123,7 @@ void UPS_GameInstance::JoinSession(int32 SessionIndex, const FString& InPassword
     const auto LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
     SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), CurrentSessionName, ChosenResult);
 
-    UE_LOG(LogPSGameInstance, Log, TEXT("CurrentSessionName: %s"), *FoundSessionName);
+    UE_LOG(LogPSGameInstance, Log, TEXT("CurrentSessionName: %s"), *CurrentSessionName.ToString());
     UE_LOG(LogPSGameInstance, Log, TEXT("JoinSession 요청 보냄"));
 }
 
