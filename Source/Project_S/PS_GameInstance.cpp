@@ -966,6 +966,7 @@ void UPS_GameInstance::FindSessions()
     OnFindSessionsCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(OnFindSessionsCompleteDelegate);
 
     const auto LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+    BlueprintJoinOrFindStartDelegate.Broadcast();
     SessionInterface->FindSessions(*LocalPlayer->GetPreferredUniqueNetId(), SessionSearch.ToSharedRef());
 
     UE_LOG(LogPSGameInstance, Log, TEXT("FindSessions 요청 보냄"));
@@ -1193,6 +1194,7 @@ void UPS_GameInstance::JoinSession(int32 SessionIndex, const FString& InPassword
     OnJoinSessionCompleteDelegateHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegate);
 
     const auto LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+    BlueprintJoinOrFindStartDelegate.Broadcast();
     SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), CurrentSessionName, ChosenResult);
 
     UE_LOG(LogPSGameInstance, Log, TEXT("CurrentSessionName: %s"), *CurrentSessionName.ToString());

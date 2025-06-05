@@ -10,6 +10,7 @@
 #include "Interfaces/OnlineIdentityInterface.h"
 #include "OnlineSessionSettings.h"
 #include "FindSessionsCallbackProxy.h"
+//#include "Delegates/DelegateCombinations.h"
 #include "PS_GameInstance.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogPSGameInstance, Log, All);
@@ -18,10 +19,11 @@ DECLARE_LOG_CATEGORY_EXTERN(LogPSGameInstance, Log, All);
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBlueprintJoinSessionsCompleteDelegate);
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBlueprintDestroySessionsCompleteDelegate);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBlueprintDestroySessionsCompleteDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBlueprintJoinOrFindStartDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBlueprintPlayerLeftSessionDelegate, const FString&, PlayerName);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBlueprintFindSessionsCompleteDelegate, const TArray<FBlueprintSessionResult>&, Results, bool, bSuccess);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FBlueprintJoinSessionsCompleteDelegate, bool, bSuccess, const FString&, Message);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FBlueprintDestroySessionsCompleteDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FBlueprintPlayerLeftSessionDelegate, const FString&, PlayerName);
 
 /**
  * 
@@ -136,6 +138,10 @@ protected:
 	/** 일반 플레이어가 세션을 떠났을 때 호스트에게 알리는 이벤트 */
 	UPROPERTY(BlueprintAssignable, Category = "Sessions")
 	FBlueprintPlayerLeftSessionDelegate OnPlayerLeftSession;
+
+	/** Join, Find Session 버튼을 비활성화 해야 함을 알리는 이벤트 */
+	UPROPERTY(BlueprintAssignable, Category = "Sessions")
+	FBlueprintJoinOrFindStartDelegate BlueprintJoinOrFindStartDelegate;
 
 	// Delegates
 	FOnCreateSessionCompleteDelegate OnCreateSessionCompleteDelegate;

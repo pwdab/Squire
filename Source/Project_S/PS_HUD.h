@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Project_S.h"
+#include "PS_GameState.h"
 #include "GameFramework/HUD.h"
 #include "PS_HUD.generated.h"
 
@@ -89,6 +90,7 @@ protected:
 private:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = "true"))
     APS_GameState* PS_GameState;
+
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "HUD", meta = (AllowPrivateAccess = "true"))
     uint8 CurrentMap;
 
