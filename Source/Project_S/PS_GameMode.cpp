@@ -343,7 +343,7 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
     bIsGameStart = true;
     if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
     {
-        if (!PS_GameInstance->StartGame()) return;
+        //if (!PS_GameInstance->StartGame()) return;
 
         PS_GameInstance->SetIsGameStart(bIsGameStart);
     }
