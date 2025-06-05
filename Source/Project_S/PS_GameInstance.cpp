@@ -312,13 +312,11 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
     UE_LOG(LogPSGameInstance, Log, TEXT("세션 생성 성공: %s"), *SessionName.ToString());
 
     // 세션 시작(StartSession)은 필요 시 바로 호출 가능
-    /*
     bool bStarted = SessionInterface->StartSession(SessionName);
     if (!bStarted)
     {
         UE_LOG(LogPSGameInstance, Warning, TEXT("StartSession 실패"));
     }
-    */
     // StartSession() 을 호출하지 않으면, 세션은 계속 “Lobby(대기 상태)”로 남아 있게 되고,
     // 클라이언트가 떠나도 “InProgress”가 아니므로 FindSessions에 계속 노출됨.
 
