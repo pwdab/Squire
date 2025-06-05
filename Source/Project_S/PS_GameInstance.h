@@ -6,7 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
-#include "Interfaces/OnlineIdentityInterface.h" 
+#include "Interfaces/OnlineIdentityInterface.h"
 #include "OnlineSessionSettings.h"
 #include "FindSessionsCallbackProxy.h"
 #include "PS_GameInstance.generated.h"
@@ -153,8 +153,6 @@ protected:
 
 	FOnSessionParticipantRemovedDelegate OnSessionParticipantRemovedDelegate;
 	FDelegateHandle OnSessionParticipantRemovedDelegateHandle;
-
-	
 
 private:
 	uint8 Map;

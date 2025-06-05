@@ -609,15 +609,9 @@ void UPS_GameInstance::LeaveSession()
                     }
                 }
 
-                // 로컬 변수 정리
-                CurrentSessionName = NAME_None;
-
                 //SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
-                FOnDestroySessionCompleteDelegate DestroyDel = FOnDestroySessionCompleteDelegate::CreateUObject(
-                    this, &UPS_GameInstance::OnDestroySessionComplete
-                );
-                OnDestroySessionCompleteDelegateHandle =
-                    SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(DestroyDel);
+                FOnDestroySessionCompleteDelegate DestroyDel = FOnDestroySessionCompleteDelegate::CreateUObject(this, &UPS_GameInstance::OnDestroySessionComplete);
+                OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(DestroyDel);
                 SessionInterface->DestroySession(CurrentSessionName);
                 
                 BlueprintDestroySessionsCompleteDelegate.Broadcast();
@@ -648,6 +642,8 @@ void UPS_GameInstance::LeaveSession()
             UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트(기타 상태) → 세션 파괴 요청"));
             OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
             SessionInterface->DestroySession(CurrentSessionName);
+
+            CurrentSessionName = NAME_None;
             return;
         }
     }
