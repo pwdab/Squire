@@ -86,6 +86,11 @@ void UPS_GameInstance::Init()
         {
             UE_LOG(LogPSGameInstance, Warning, TEXT("SessionInterface is not valid!"));
         }
+
+        if (GEngine)
+        {
+            GEngine->OnNetworkFailure().AddUObject(this, &UPS_GameInstance::HandleNetworkFailure);
+        }
     }
     else
     {
@@ -694,6 +699,23 @@ void UPS_GameInstance::OnEndSessionComplete(FName SessionName, bool bWasSuccessf
 
     if (bAmIHost)
     {
+        // ───────── 호스트라면, 곧 DestroySession을 호출하기 전에
+        //    모든 원격 클라이언트에게 RPC로 "LeaveSession" 명령 ─────────
+
+        UWorld* World = GetWorld();
+        if (World)
+        {
+            for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+            {
+                APS_PlayerController* PC = Cast<APS_PlayerController>(It->Get());
+                if (PC && !PC->IsLocalController())
+                {
+                    // 원격 클라이언트에게만 RPC 호출
+                    PC->Client_OnHostEndSession();
+                }
+            }
+        }
+
         // ─── 호스트라면 실제로 DestroySession 호출 ───
         UE_LOG(LogPSGameInstance, Log, TEXT("호스트가 DestroySession() 호출"));
         OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(
@@ -738,6 +760,47 @@ void UPS_GameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSucc
         UGameplayStatics::OpenLevel(GetWorld(), "ThirdPersonExampleMap", true);
     }
     */
+}
+
+void UPS_GameInstance::HandleNetworkFailure(UWorld* InWorld, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString)
+{
+    UE_LOG(LogPSGameInstance, Warning, TEXT("HandleNetworkFailure.. Network Failure Detected: %s"), *ErrorString);
+
+    // 1) 세션 인터페이스가 유효하지 않으면 현재 상태만 초기화하고 종료
+    if (!SessionInterface.IsValid())
+    {
+        CurrentSessionName = NAME_None;
+        bIsProcessingSession = false;
+        BlueprintDestroySessionsCompleteDelegate.Broadcast();
+        return;
+    }
+
+    // 2) 세션이 남아 있는지 확인
+    FNamedOnlineSession* NamedSession = SessionInterface->GetNamedSession(CurrentSessionName);
+    if (NamedSession)
+    {
+        UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트: 네트워크 실패 → 세션 Destroy 시도: %s"), *CurrentSessionName.ToString());
+        bool bDestroyed = SessionInterface->DestroySession(CurrentSessionName);
+        if (!bDestroyed)
+        {
+            UE_LOG(LogPSGameInstance, Warning, TEXT("클라이언트: DestroySession 실패 (이미 세션이 없거나 NULL): %s"), *CurrentSessionName.ToString());
+        }
+    }
+    else
+    {
+        UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트: 세션이 이미 존재하지 않으므로 DestroySession 호출 생략"));
+        SessionInterface->DestroySession(CurrentSessionName);
+    }
+
+    // 3) 로컬 상태 무조건 초기화
+    CurrentSessionName = NAME_None;
+    bIsProcessingSession = false;
+
+    // 4) 블루프린트/상위 레벨에 “세션 종료” 알림
+    BlueprintDestroySessionsCompleteDelegate.Broadcast();
+
+    // **추가: UI 레벨 전환 (예시)**
+    // UGameplayStatics::OpenLevel(GetWorld(), TEXT("LobbyMapPath"), true);
 }
 
 #pragma endregion

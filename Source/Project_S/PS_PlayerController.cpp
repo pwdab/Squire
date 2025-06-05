@@ -20,6 +20,16 @@ void APS_PlayerController::BeginPlay()
     }
 }
 
+void APS_PlayerController::Client_OnHostEndSession_Implementation()
+{
+    UE_LOG(Project_S, Warning, TEXT("Clinet_LeaveSession"));
+    // 1) GameInstance에 접근해서 LeaveSession() 호출
+    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+    {
+        PS_GameInstance->LeaveSession();
+    }
+}
+
 void APS_PlayerController::HandleNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString)
 {
     UE_LOG(Project_S, Warning, TEXT("Network Failure Detected: %s"), *ErrorString);

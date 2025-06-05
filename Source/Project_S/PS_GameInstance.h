@@ -4,6 +4,7 @@
 
 #include "Project_S.h"
 #include "Engine/GameInstance.h"
+#include "PS_PlayerController.h"
 #include "OnlineSubsystem.h"
 #include "Interfaces/OnlineSessionInterface.h"
 #include "Interfaces/OnlineIdentityInterface.h"
@@ -46,6 +47,10 @@ public:
 	bool IsGameStart() const;
 
 	bool StartGame();
+
+	/** 현재 속해 있는 세션에서 퇴장 */
+	UFUNCTION(BlueprintCallable, Category = "Sessions")
+	void LeaveSession();
 
 	/*
 	// Delegates
@@ -103,9 +108,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Sessions")
 	void JoinSession(int32 SessionIndex, const FString& InPassword);
 
-	/** 현재 속해 있는 세션에서 퇴장 */
-	UFUNCTION(BlueprintCallable, Category = "Sessions")
-	void LeaveSession();
+	
 
 	void OnCreateSessionComplete(FName SesionName, bool bWasSuccessful);
 	void OnStartOnlineGameComplete(FName SessionName, bool bWasSuccessful);
@@ -114,6 +117,8 @@ protected:
 	void OnFindSessionsComplete(bool bWasSuccessful);
 	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	void OnSessionParticipantRemoved(FName SessionName, const FUniqueNetId& RemovedMemberId);
+
+	void HandleNetworkFailure(UWorld* InWorld, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString);
 
 	// Session Event Dispatcher
 	/** FindSessions() 후 결과가 준비되면 실행 */
