@@ -312,11 +312,8 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
     UE_LOG(LogPSGameInstance, Log, TEXT("세션 생성 성공: %s"), *SessionName.ToString());
 
     // 세션 시작(StartSession)은 필요 시 바로 호출 가능
+    OnStartSessionCompleteDelegateHandle = SessionInterface->AddOnStartSessionCompleteDelegate_Handle(OnStartSessionCompleteDelegate);
     bool bStarted = SessionInterface->StartSession(SessionName);
-    if (!bStarted)
-    {
-        UE_LOG(LogPSGameInstance, Warning, TEXT("StartSession 실패"));
-    }
     // StartSession() 을 호출하지 않으면, 세션은 계속 “Lobby(대기 상태)”로 남아 있게 되고,
     // 클라이언트가 떠나도 “InProgress”가 아니므로 FindSessions에 계속 노출됨.
 
@@ -324,6 +321,31 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
     BlueprintJoinSessionsCompleteDelegate.Broadcast(true, TEXT("세션 생성 및 참가 완료"));
 }
 
+void UPS_GameInstance::OnStartOnlineGameComplete(FName SessionName, bool bWasSuccessful)
+{
+    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("OnStartSessionComplete %s, %d"), *SessionName.ToString(), bWasSuccessful));
+
+    // Get the Online Subsystem so we can get the Session Interface
+    IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    if (OnlineSub)
+    {
+        // Get the Session Interface to clear the Delegate
+        IOnlineSessionPtr Sessions = OnlineSub->GetSessionInterface();
+        if (Sessions.IsValid())
+        {
+            // Clear the delegate, since we are done with this call
+            Sessions->ClearOnStartSessionCompleteDelegate_Handle(OnStartSessionCompleteDelegateHandle);
+        }
+    }
+
+    // If the start was successful, we can open a NewMap if we want. Make sure to use "listen" as a parameter!
+    if (bWasSuccessful)
+    {
+        //UGameplayStatics::OpenLevel(GetWorld(), "NewMap", true, "listen");
+    }
+}
+
+/*
 bool UPS_GameInstance::StartGame()
 {
     if (!SessionInterface.IsValid())
@@ -345,6 +367,7 @@ bool UPS_GameInstance::StartGame()
         return false;
     }
 }
+*/
 
 #pragma endregion
 
@@ -394,6 +417,7 @@ void UPS_GameInstance::OnDestroySessionComplete(FName SesionName, bool bWasSucce
 
 void UPS_GameInstance::LeaveSession()
 {
+    /*
     if (!SessionInterface.IsValid())
     {
         UE_LOG(LogPSGameInstance, Warning, TEXT("LeaveSession 불가: SessionInterface invalid"));
@@ -441,38 +465,9 @@ void UPS_GameInstance::LeaveSession()
                 SessionInterface->EndSession(CurrentSessionName);
                 return;
             }
-
-            // ③ 그 외 상태 → 일단 EndSession 호출해 봄
-            UE_LOG(LogPSGameInstance, Log, TEXT("호스트가 기타 상태에서 EndSession() 호출: State=%d"), (int)SessState);
-            bIsProcessingSession = true;
-            OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
-            SessionInterface->EndSession(CurrentSessionName);
-            return;
         }
         else
         {
-            /*
-            // ① Pending 상태인 로비(Pending)라면 DestroySession 바로 실행
-            if (SessState == EOnlineSessionState::Pending)
-            {
-                UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트가 Pending 로비를 탈퇴합니다"));
-                bIsProcessingSession = true;
-                OnSessionParticipantRemovedDelegateHandle = SessionInterface->AddOnSessionParticipantCompleteDelegate_Handle(OnSessionParticipantRemovedDelegate);
-                OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
-                SessionInterface->DestroySession(CurrentSessionName);
-                return;
-            }
-
-            // ② InProgress 상태라면 EndSession → DestroySession 순서
-            if (SessState == EOnlineSessionState::InProgress)
-            {
-                UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트가 InProgress 세션을 탈퇴합니다"));
-                bIsProcessingSession = true;
-                OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
-                SessionInterface->EndSession(CurrentSessionName);
-                return;
-            }
-            */
             // 1) Pending 상태일 경우 → UnregisterPlayer만 시도하고 로컬 정리 (EndSession/DestroySession 호출 X)
             if (NamedSession->SessionState == EOnlineSessionState::Pending)
             {
@@ -529,6 +524,124 @@ void UPS_GameInstance::LeaveSession()
     // ─── NamedSession == nullptr인 “순수 클라이언트 모드” ───
     // 이 경우 UE API로는 로비 탈퇴를 할 수 없으므로, Steam SDK를 직접 호출하여 LeaveLobby 해야 합니다.
     UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트 모드: Lobby에서 떠납니다 → Steam LeaveLobby 호출"));
+    SessionInterface->DestroySession(CurrentSessionName);
+
+    */
+
+    if (!SessionInterface.IsValid())
+    {
+        UE_LOG(LogPSGameInstance, Warning, TEXT("LeaveSession 불가: SessionInterface invalid"));
+        return;
+    }
+
+    UE_LOG(LogPSGameInstance, Log, TEXT("LeaveSession 호출됨. CurrentSessionName: %s"), *CurrentSessionName.ToString());
+
+    // 1. 현재 NamedOnlineSession이 있는지 확인
+    FNamedOnlineSession* NamedSession = SessionInterface->GetNamedSession(CurrentSessionName);
+    if (NamedSession)
+    {
+        // 1-1. 나(로컬 플레이어)가 호스트인지 확인
+        bool bAmIHost = false;
+        IOnlineIdentityPtr Identity = IOnlineSubsystem::Get()->GetIdentityInterface();
+        TSharedPtr<const FUniqueNetId> MyId = nullptr;
+        if (Identity.IsValid())
+        {
+            MyId = Identity->GetUniquePlayerId(0);
+            if (MyId.IsValid() && NamedSession->OwningUserId.IsValid())
+            {
+                bAmIHost = (MyId->ToString() == NamedSession->OwningUserId->ToString());
+            }
+        }
+
+        // 1-2. 현재 세션 상태 확인
+        EOnlineSessionState::Type SessState = NamedSession->SessionState;
+        UE_LOG(LogPSGameInstance, Log, TEXT("LeaveSession - 세션 상태: %d, bAmIHost=%d"), (int32)SessState, bAmIHost ? 1 : 0);
+
+        // 2. 호스트인 경우
+        if (bAmIHost)
+        {
+            // 2-1. Pending 로비 상태라면 바로 DestroySession
+            if (SessState == EOnlineSessionState::Pending)
+            {
+                UE_LOG(LogPSGameInstance, Log, TEXT("호스트(Pending) → 세션을 즉시 파괴합니다."));
+                OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+                SessionInterface->DestroySession(CurrentSessionName);
+                return;
+            }
+
+            // 2-2. InProgress 상태라면 EndSession → DestroySession 순으로 처리
+            if (SessState == EOnlineSessionState::InProgress)
+            {
+                UE_LOG(LogPSGameInstance, Log, TEXT("호스트(InProgress) → 세션 종료(EndSession) 진행"));
+                bIsProcessingSession = true;
+                OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
+                SessionInterface->EndSession(CurrentSessionName);
+                return;
+            }
+
+            // (기타 상태: 아마도 Ending, Destroying 등) → 안전하게 DestroySession 호출
+            UE_LOG(LogPSGameInstance, Log, TEXT("호스트(기타 상태) → 세션 파괴 요청"));
+            OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+            SessionInterface->DestroySession(CurrentSessionName);
+            return;
+        }
+        // 3. 클라이언트인 경우
+        else
+        {
+            // 3-1. Pending 로비 상태라면 UnregisterPlayer만 호출하고 로컬 정리
+            if (SessState == EOnlineSessionState::Pending)
+            {
+                UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트(Pending) → UnregisterPlayer 호출 후 로컬 정리"));
+
+                if (Identity.IsValid() && MyId.IsValid())
+                {
+                    bool bUnregisterSucceeded = SessionInterface->UnregisterPlayer(CurrentSessionName, *MyId);
+                    if (!bUnregisterSucceeded)
+                    {
+                        UE_LOG(LogPSGameInstance, Warning, TEXT("UnregisterPlayer 실패: 플레이어가 세션에 없거나 이미 나간 상태일 수 있습니다."));
+                    }
+                }
+
+                // 로컬 변수 정리
+                SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
+                CurrentSessionName = NAME_None;
+                BlueprintDestroySessionsCompleteDelegate.Broadcast();
+                return;
+            }
+
+            // 3-2. InProgress 상태라면 UnregisterPlayer + EndSession
+            if (SessState == EOnlineSessionState::InProgress)
+            {
+                UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트(InProgress) → UnregisterPlayer + EndSession 호출"));
+
+                if (Identity.IsValid() && MyId.IsValid())
+                {
+                    bool bUnregisterSucceeded = SessionInterface->UnregisterPlayer(CurrentSessionName, *MyId);
+                    if (!bUnregisterSucceeded)
+                    {
+                        UE_LOG(LogPSGameInstance, Warning, TEXT("UnregisterPlayer 실패: 플레이어가 세션에 없거나 이미 나간 상태일 수 있습니다."));
+                    }
+                }
+
+                bIsProcessingSession = true;
+                OnEndSessionCompleteDelegateHandle = SessionInterface->AddOnEndSessionCompleteDelegate_Handle(OnEndSessionCompleteDelegate);
+                SessionInterface->EndSession(CurrentSessionName);
+                return;
+            }
+
+            // 3-3. 그 외 상태라면 안전하게 DestroySession 호출
+            UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트(기타 상태) → 세션 파괴 요청"));
+            OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
+            SessionInterface->DestroySession(CurrentSessionName);
+            return;
+        }
+    }
+
+    // 4. NamedSession == nullptr인 “순수 클라이언트 모드”인 경우
+    //    (UE 세션 API로는 로비 탈퇴가 불가능하므로 Steam SDK 등을 직접 호출해야 하지만,
+    //     간단히 DestroySession 호출하도록 처리)
+    UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트 모드(순수) → 세션 파괴 요청"));
+    OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegate);
     SessionInterface->DestroySession(CurrentSessionName);
 }
 
@@ -607,6 +720,13 @@ void UPS_GameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSucc
 
     // 블루프린트에 “세션 종료” 알림
     BlueprintDestroySessionsCompleteDelegate.Broadcast();
+
+    /*
+    if (bWasSuccessful)
+    {
+        UGameplayStatics::OpenLevel(GetWorld(), "ThirdPersonExampleMap", true);
+    }
+    */
 }
 
 #pragma endregion

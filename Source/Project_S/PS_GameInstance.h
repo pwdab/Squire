@@ -108,6 +108,7 @@ protected:
 	void LeaveSession();
 
 	void OnCreateSessionComplete(FName SesionName, bool bWasSuccessful);
+	void OnStartOnlineGameComplete(FName SessionName, bool bWasSuccessful);
 	void OnEndSessionComplete(FName SessionName, bool bWasSuccessful);
 	void OnDestroySessionComplete(FName SesionName, bool bWasSuccessful);
 	void OnFindSessionsComplete(bool bWasSuccessful);
@@ -134,6 +135,9 @@ protected:
 	// Delegates
 	FOnCreateSessionCompleteDelegate OnCreateSessionCompleteDelegate;
 	FDelegateHandle OnCreateSessionCompleteDelegateHandle;
+
+	FOnStartSessionCompleteDelegate OnStartSessionCompleteDelegate;
+	FDelegateHandle OnStartSessionCompleteDelegateHandle;
 
 	FOnEndSessionCompleteDelegate OnEndSessionCompleteDelegate;
 	FDelegateHandle OnEndSessionCompleteDelegateHandle;
