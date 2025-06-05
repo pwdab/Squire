@@ -603,11 +603,23 @@ void UPS_GameInstance::LeaveSession()
                     {
                         UE_LOG(LogPSGameInstance, Warning, TEXT("UnregisterPlayer 실패: 플레이어가 세션에 없거나 이미 나간 상태일 수 있습니다."));
                     }
+                    else
+                    {
+                        UE_LOG(LogPSGameInstance, Log, TEXT("UnregisterPlayer 성공"));
+                    }
                 }
 
                 // 로컬 변수 정리
-                SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
                 CurrentSessionName = NAME_None;
+
+                //SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
+                FOnDestroySessionCompleteDelegate DestroyDel = FOnDestroySessionCompleteDelegate::CreateUObject(
+                    this, &UPS_GameInstance::OnDestroySessionComplete
+                );
+                OnDestroySessionCompleteDelegateHandle =
+                    SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(DestroyDel);
+                SessionInterface->DestroySession(CurrentSessionName);
+                
                 BlueprintDestroySessionsCompleteDelegate.Broadcast();
                 return;
             }
@@ -739,6 +751,7 @@ void UPS_GameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSucc
 // 호스트 전용: 참가자가 떠났을 때 호출됨
 void UPS_GameInstance::OnSessionParticipantRemoved(FName SessionName, const FUniqueNetId& RemovedMemberId)
 {
+    UE_LOG(LogPSGameInstance, Log, TEXT("OnSessionParticipantRemoved 호출"));
     // 다만, 호스트인지 여부를 간단히 확인하려면
     // 기존 세션 Settings 의 "HostName" 과 내 닉네임 비교 -> 호스트가 맞으면 브로드캐스트
 
@@ -1168,6 +1181,30 @@ void UPS_GameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCo
     {
         FString SessionIdStr = NamedSession->SessionInfo->ToString();
         UE_LOG(LogPSGameInstance, Log, TEXT("  [OnJoin] 세션 ID (ToString) = %s"), *SessionIdStr);
+    }
+
+    // 세션에 등록(RegisterPlayer)” 시도
+    {
+        IOnlineIdentityPtr Identity = IOnlineSubsystem::Get()->GetIdentityInterface();
+        if (Identity.IsValid() && Identity->GetUniquePlayerId(0).IsValid())
+        {
+            TSharedPtr<const FUniqueNetId> MyId = Identity->GetUniquePlayerId(0);
+
+            // RegisterPlayer 호출: 세션 내부에 “현재 클라이언트”를 등록해 달라고 요청
+            bool bRegistered = SessionInterface->RegisterPlayer(SessionName, *MyId, true);
+            if (bRegistered)
+            {
+                UE_LOG(LogPSGameInstance, Log, TEXT("클라이언트 RegisterPlayer 성공: %s"), *MyId->ToString());
+            }
+            else
+            {
+                UE_LOG(LogPSGameInstance, Warning, TEXT("클라이언트 RegisterPlayer 실패(Local 이미 등록되었거나, 서버가 닫힘)"));
+            }
+        }
+        else
+        {
+            UE_LOG(LogPSGameInstance, Warning, TEXT("RegisterPlayer 불가: Identity 또는 UniquePlayerId invalid"));
+        }
     }
 
     // 참가 성공: Travel URL 얻어서 이동
