@@ -544,6 +544,8 @@ void UPS_GameInstance::LeaveSession()
 
     UE_LOG(LogPSGameInstance, Log, TEXT("LeaveSession 호출됨. CurrentSessionName: %s"), *CurrentSessionName.ToString());
 
+    bIsGameStart = false;
+
     // 1. 현재 NamedOnlineSession이 있는지 확인
     FNamedOnlineSession* NamedSession = SessionInterface->GetNamedSession(CurrentSessionName);
     if (NamedSession)

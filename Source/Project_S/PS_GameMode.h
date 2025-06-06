@@ -22,6 +22,8 @@ class PROJECT_S_API APS_GameMode : public AGameMode
 
 public:
 	APS_GameMode();
+	~APS_GameMode();
+
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 	virtual void PostSeamlessTravel() override;
