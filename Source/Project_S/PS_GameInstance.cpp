@@ -993,12 +993,6 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
     }
     bIsProcessingSession = false;
 
-    /*
-    // OSS와 IdentityInterface 준비
-    IOnlineSubsystem* OSS = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
-    IOnlineIdentityPtr Identity = OSS ? OSS->GetIdentityInterface() : nullptr;
-    */
-
     TArray<FBlueprintSessionResult> ValidResults;
 
     if (!SessionSearch.IsValid())
@@ -1036,7 +1030,6 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
         }
 
         const FOnlineSessionSettings& Settings = SearchResult.Session.SessionSettings;
-
         // 1) Base64 문자열 꺼내기
         FString EncHost;
         Settings.Get(FName("HostNameB64"), EncHost);
@@ -1050,137 +1043,6 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
         FString DecodedHost = UTF8_TO_TCHAR(reinterpret_cast<const char*>(HostBytes.GetData()));
 
         UE_LOG(LogPSGameInstance, Log, TEXT("호스트 닉네임: %s"), *DecodedHost);
-
-        /*
-        // 유효성 체크
-        if (!SearchResult.Session.SessionInfo.IsValid())
-            continue;
-
-        // 1) 호스트 닉네임 조회 (Persona Name)
-        FString HostNick = TEXT("UnknownHost");
-        if (Identity.IsValid())
-        {
-            if (SearchResult.Session.OwningUserId.IsValid())
-            {
-                UE_LOG(LogPSGameInstance, Log, TEXT("SearchResult.Session.OwningUserId = %s"), *SearchResult.Session.OwningUserId);
-                TSharedPtr<FUserOnlineAccount> Account = Identity->GetUserAccount(*SearchResult.Session.OwningUserId);
-                if (Account.IsValid())
-                {
-                    HostNick = Account->GetDisplayName();
-                }
-                else
-                {
-                    UE_LOG(LogPSGameInstance, Log, TEXT("Account is not valid"));
-                }
-            }
-            else
-            {
-                UE_LOG(LogPSGameInstance, Log, TEXT("SearchResult.Session.OwningUserId is not valid"));
-            }
-        }
-        else
-        {
-            UE_LOG(LogPSGameInstance, Log, TEXT("Identity is not valid"));
-        }
-
-        // 2) 세션 이름(SessionName) 가져오기
-        //    SessionSettings에 Set 해두었다면 Get으로 읽어낼 수 있습니다.
-        FString SessionName;
-        const FOnlineSessionSettings& Settings = SearchResult.Session.SessionSettings;
-        if (!Settings.Get(FName("CurrentSessionName"), SessionName))
-        {
-            SessionName = TEXT("UnknownSession");
-        }
-
-        UE_LOG(LogPSGameInstance, Log, TEXT("발견된 로비 — 호스트: %s, 세션명: %s"), *HostNick, *SessionName);
-        */
-
-        /*
-        // 4) Steam 고유 ID 추출
-        const FUniqueNetId& UniqueId = SearchResult.Session.SessionInfo->GetSessionId();
-        const FUniqueNetIdSteam& SteamId = static_cast<const FUniqueNetIdSteam&>(UniqueId);
-        if (!SteamId.IsValid())
-            continue;
-
-        // operator CSteamID() 가 정의되어 있으므로 이렇게 간단히 변환
-        CSteamID LobbyId = *SteamId;
-
-        // 2) Steam API로 친구(호스트) Persona Name 가져오기
-        const char* RawPersona = SteamFriends()->GetFriendPersonaName(LobbyId);
-        UE_LOG(LogPSGameInstance, Log, TEXT("RawPersona: %s"), *RawPersona);
-        // RawPersona 는 UTF-8 문자열입니다.
-
-        // 3) UTF-8 → FString 변환
-        FString HostNick = RawPersona ? UTF8_TO_TCHAR(RawPersona) : FString(TEXT("UnknownHost"));
-
-        // 4) 세션 이름은 Unreal OSS SessionSettings 에서 읽기
-        FString SessionName;
-        SearchResult.Session.SessionSettings.Get(FName("CurrentSessionName"), SessionName);
-
-        UE_LOG(LogPSGameInstance, Log, TEXT("찾은 로비 — 호스트(Persona): %s, 세션명: %s"), *HostNick, *SessionName);
-        */
-
-        /*
-        // 1) Base64로 저장된 ASCII 문자열 꺼내기
-        const char* RawEncName = SteamMatchmaking()->GetLobbyData(LobbyId, "name");
-        const char* RawEncHost = SteamMatchmaking()->GetLobbyData(LobbyId, "host");
-
-        FString EncName = RawEncName ? UTF8_TO_TCHAR(RawEncName) : FString();
-        FString EncHost = RawEncHost ? UTF8_TO_TCHAR(RawEncHost) : FString();
-
-        // 2) Base64 → UTF-8 바이트 배열 디코딩
-        TArray<uint8> NameBytes, HostBytes;
-        if (FBase64::Decode(EncName, NameBytes))
-            NameBytes.Add(0);  // null-terminate
-        if (FBase64::Decode(EncHost, HostBytes))
-            HostBytes.Add(0);
-
-        // 3) UTF-8 → FString 복원
-        FString DecodedSessionName = NameBytes.Num() ? UTF8_TO_TCHAR(reinterpret_cast<const char*>(NameBytes.GetData())) : FString();
-        FString DecodedHostName = HostBytes.Num() ? UTF8_TO_TCHAR(reinterpret_cast<const char*>(HostBytes.GetData())) : FString();
-
-        UE_LOG(LogPSGameInstance, Log, TEXT("디코딩된 로비 — Host=%s, Session=%s"), *DecodedHostName, *DecodedSessionName);
-        */
-
-        /*
-        // 5) 직접 저장해 둔 UTF-8 문자열 꺼내기
-        //const char* RawHostName = SteamMatchmaking()->GetLobbyData(LobbyId, "HostName");
-        //const char* RawSessionName = SteamMatchmaking()->GetLobbyData(LobbyId, "CurrentSessionName");
-
-        // 2) UTF-8 raw → FString 복원
-        const char* RawName = SteamMatchmaking()->GetLobbyData(LobbyId, "name");
-        FString FoundSessionName = RawName ? UTF8_TO_TCHAR(RawName) : FString(TEXT(""));
-
-        // 6) UTF-8 → FString 복원
-        //FString HostNick = RawHostName ? UTF8_TO_TCHAR(RawHostName) : FString();
-        //FString SessionName = RawSessionName ? UTF8_TO_TCHAR(RawSessionName) : FString();
-
-        // 7) 이제 HostNick, SessionName 을 사용
-        //UE_LOG(LogPSGameInstance, Log, TEXT("찾은 세션: Host=%s, Name=%s"), *HostNick, *SessionName);
-        UE_LOG(LogPSGameInstance, Log, TEXT("찾은 세션: Host=%s"), *RawName);
-
-        const FOnlineSessionSettings& Settings = SearchResult.Session.SessionSettings;
-
-        // 2) HostName, CurrentSessionName 꺼내기
-        FString HostName;
-        if (!Settings.Get(FName("HostName"), HostName))
-        {
-            HostName = TEXT("UnknownHost");
-        }
-
-        FString SessionName;
-        if (!Settings.Get(FName("CurrentSessionName"), SessionName))
-        {
-            SessionName = TEXT("UnknownSession");
-        }
-
-        UE_LOG(LogPSGameInstance, Log, TEXT("찾은 세션: HostName = %s, CurrentSessionName = %s"), *HostName, *SessionName);
-        */
-
-        // **여기서 다시 SessionSettings에 저장**
-        // EOnlineDataAdvertisementType은 원래 쓰던 타입과 동일하게 사용
-        //const_cast<FOnlineSessionSettings&>(SearchResult.Session.SessionSettings).Set(FName("HostName"), HostNick, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-        //const_cast<FOnlineSessionSettings&>(SearchResult.Session.SessionSettings).Set(FName("CurrentSessionName"), SessionName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
         FBlueprintSessionResult BlueprintResult;
         BlueprintResult.OnlineResult = SearchResult;
