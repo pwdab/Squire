@@ -327,6 +327,7 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
     // StartSession() 을 호출하지 않으면, 세션은 계속 “Lobby(대기 상태)”로 남아 있게 되고,
     // 클라이언트가 떠나도 “InProgress”가 아니므로 FindSessions에 계속 노출됨.
 
+    /*
     UE_LOG(LogPSGameInstance, Log, TEXT("Steam Lobby Data에 UTF-8로 저장"));
     // 4) Steam Lobby Data에 UTF-8로 저장 (ANSI 변환 레이어 우회)
     if (bStarted)
@@ -399,6 +400,7 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
             }
         }
     }
+    */
 
 
     // 생성 후 자동으로 참가된 것이므로, 블루프린트에 “성공” 전달
@@ -1057,6 +1059,10 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
     }
     bIsProcessingSession = false;
 
+    // OSS와 IdentityInterface 준비
+    IOnlineSubsystem* OSS = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
+    IOnlineIdentityPtr Identity = OSS ? OSS->GetIdentityInterface() : nullptr;
+
     TArray<FBlueprintSessionResult> ValidResults;
 
     if (!SessionSearch.IsValid())
@@ -1093,6 +1099,36 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
             continue;
         }
 
+        // 유효성 체크
+        if (!SearchResult.Session.SessionInfo.IsValid())
+            continue;
+
+        // 1) 호스트 닉네임 조회 (Persona Name)
+        FString HostNick = TEXT("UnknownHost");
+        if (Identity.IsValid() && SearchResult.Session.OwningUserId.IsValid())
+        {
+            TSharedPtr<FUserOnlineAccount> Account =
+                Identity->GetUserAccount(*SearchResult.Session.OwningUserId);
+            if (Account.IsValid())
+            {
+                HostNick = Account->GetDisplayName();
+            }
+        }
+
+        // 2) 세션 이름(SessionName) 가져오기
+        //    SessionSettings에 Set 해두었다면 Get으로 읽어낼 수 있습니다.
+        FString SessionName;
+        const FOnlineSessionSettings& Settings = SearchResult.Session.SessionSettings;
+        if (!Settings.Get(FName("CurrentSessionName"), SessionName))
+        {
+            SessionName = TEXT("UnknownSession");
+        }
+
+        UE_LOG(LogPSGameInstance, Log,
+            TEXT("발견된 로비 — 호스트: %s, 세션명: %s"),
+            *HostNick, *SessionName);
+
+        /*
         // 4) Steam 고유 ID 추출
         const FUniqueNetId& UniqueId = SearchResult.Session.SessionInfo->GetSessionId();
         const FUniqueNetIdSteam& SteamId = static_cast<const FUniqueNetIdSteam&>(UniqueId);
@@ -1121,6 +1157,7 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
         FString DecodedHostName = HostBytes.Num() ? UTF8_TO_TCHAR(reinterpret_cast<const char*>(HostBytes.GetData())) : FString();
 
         UE_LOG(LogPSGameInstance, Log, TEXT("디코딩된 로비 — Host=%s, Session=%s"), *DecodedHostName, *DecodedSessionName);
+        */
 
         /*
         // 5) 직접 저장해 둔 UTF-8 문자열 꺼내기
