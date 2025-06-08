@@ -260,6 +260,15 @@ void UPS_GameInstance::CreateSession(bool bMakePrivate, const FString& InPasswor
         SessionSettings->Set(FName("RequirePassword"), FString("0"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
     }
 
+    // UTF-8 바이트로 변환
+    FTCHARToUTF8 Utf8Host(*HostNick);
+
+    // Base64로 ASCII 안전 문자열 생성
+    FString EncHost = FBase64::Encode(reinterpret_cast<const uint8*>(Utf8Host.Get()), (uint32)Utf8Host.Length());
+
+    // SessionSettings 에 저장
+    SessionSettings->Set(FName("HostNameB64"), EncHost, EOnlineDataAdvertisementType::ViaOnlineService);
+
     // ─────────────── 로그로 세팅값 출력 ───────────────
     UE_LOG(LogPSGameInstance, Log, TEXT("====== CreateSession 세팅값 ======"));
     UE_LOG(LogPSGameInstance, Log, TEXT("  SessionName          = %s"), *CurrentSessionName.ToString());
@@ -276,6 +285,7 @@ void UPS_GameInstance::CreateSession(bool bMakePrivate, const FString& InPasswor
     {
         UE_LOG(LogPSGameInstance, Log, TEXT("  Password             = %s"), *PendingSessionPassword);
     }
+    UE_LOG(LogPSGameInstance, Log, TEXT("  EncHost = %s"), *EncHost);
     UE_LOG(LogPSGameInstance, Log, TEXT("===================================="));
 
     // 실제 세션 생성 요청
@@ -1059,9 +1069,11 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
     }
     bIsProcessingSession = false;
 
+    /*
     // OSS와 IdentityInterface 준비
     IOnlineSubsystem* OSS = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
     IOnlineIdentityPtr Identity = OSS ? OSS->GetIdentityInterface() : nullptr;
+    */
 
     TArray<FBlueprintSessionResult> ValidResults;
 
@@ -1099,20 +1111,52 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
             continue;
         }
 
+        const FOnlineSessionSettings& Settings = SearchResult.Session.SessionSettings;
+
+        // 1) Base64 문자열 꺼내기
+        FString EncHost;
+        Settings.Get(FName("HostNameB64"), EncHost);
+
+        // 2) Base64 → UTF-8 바이트 디코딩
+        TArray<uint8> HostBytes;
+        if (FBase64::Decode(EncHost, HostBytes))
+            HostBytes.Add(0);
+
+        // 3) FString 복원
+        FString DecodedHost = UTF8_TO_TCHAR(reinterpret_cast<const char*>(HostBytes.GetData()));
+
+        UE_LOG(LogPSGameInstance, Log, TEXT("호스트 닉네임: %s"), *DecodedHost);
+
+        /*
         // 유효성 체크
         if (!SearchResult.Session.SessionInfo.IsValid())
             continue;
 
         // 1) 호스트 닉네임 조회 (Persona Name)
         FString HostNick = TEXT("UnknownHost");
-        if (Identity.IsValid() && SearchResult.Session.OwningUserId.IsValid())
+        if (Identity.IsValid())
         {
-            TSharedPtr<FUserOnlineAccount> Account =
-                Identity->GetUserAccount(*SearchResult.Session.OwningUserId);
-            if (Account.IsValid())
+            if (SearchResult.Session.OwningUserId.IsValid())
             {
-                HostNick = Account->GetDisplayName();
+                UE_LOG(LogPSGameInstance, Log, TEXT("SearchResult.Session.OwningUserId = %s"), *SearchResult.Session.OwningUserId);
+                TSharedPtr<FUserOnlineAccount> Account = Identity->GetUserAccount(*SearchResult.Session.OwningUserId);
+                if (Account.IsValid())
+                {
+                    HostNick = Account->GetDisplayName();
+                }
+                else
+                {
+                    UE_LOG(LogPSGameInstance, Log, TEXT("Account is not valid"));
+                }
             }
+            else
+            {
+                UE_LOG(LogPSGameInstance, Log, TEXT("SearchResult.Session.OwningUserId is not valid"));
+            }
+        }
+        else
+        {
+            UE_LOG(LogPSGameInstance, Log, TEXT("Identity is not valid"));
         }
 
         // 2) 세션 이름(SessionName) 가져오기
@@ -1124,9 +1168,8 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
             SessionName = TEXT("UnknownSession");
         }
 
-        UE_LOG(LogPSGameInstance, Log,
-            TEXT("발견된 로비 — 호스트: %s, 세션명: %s"),
-            *HostNick, *SessionName);
+        UE_LOG(LogPSGameInstance, Log, TEXT("발견된 로비 — 호스트: %s, 세션명: %s"), *HostNick, *SessionName);
+        */
 
         /*
         // 4) Steam 고유 ID 추출
@@ -1138,6 +1181,22 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
         // operator CSteamID() 가 정의되어 있으므로 이렇게 간단히 변환
         CSteamID LobbyId = *SteamId;
 
+        // 2) Steam API로 친구(호스트) Persona Name 가져오기
+        const char* RawPersona = SteamFriends()->GetFriendPersonaName(LobbyId);
+        UE_LOG(LogPSGameInstance, Log, TEXT("RawPersona: %s"), *RawPersona);
+        // RawPersona 는 UTF-8 문자열입니다.
+
+        // 3) UTF-8 → FString 변환
+        FString HostNick = RawPersona ? UTF8_TO_TCHAR(RawPersona) : FString(TEXT("UnknownHost"));
+
+        // 4) 세션 이름은 Unreal OSS SessionSettings 에서 읽기
+        FString SessionName;
+        SearchResult.Session.SessionSettings.Get(FName("CurrentSessionName"), SessionName);
+
+        UE_LOG(LogPSGameInstance, Log, TEXT("찾은 로비 — 호스트(Persona): %s, 세션명: %s"), *HostNick, *SessionName);
+        */
+
+        /*
         // 1) Base64로 저장된 ASCII 문자열 꺼내기
         const char* RawEncName = SteamMatchmaking()->GetLobbyData(LobbyId, "name");
         const char* RawEncHost = SteamMatchmaking()->GetLobbyData(LobbyId, "host");
