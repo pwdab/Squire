@@ -13,6 +13,7 @@
 #include "Interfaces/OnlineIdentityInterface.h"
 #include "OnlineSessionSettings.h"
 #include "FindSessionsCallbackProxy.h"
+#include "Misc/Base64.h"
 //#include "Delegates/DelegateCombinations.h"
 #include "PS_GameInstance.generated.h"
 

@@ -327,6 +327,7 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
     // StartSession() 을 호출하지 않으면, 세션은 계속 “Lobby(대기 상태)”로 남아 있게 되고,
     // 클라이언트가 떠나도 “InProgress”가 아니므로 FindSessions에 계속 노출됨.
 
+    /*
     UE_LOG(LogPSGameInstance, Log, TEXT("Steam Lobby Data에 UTF-8로 저장"));
     // 4) Steam Lobby Data에 UTF-8로 저장 (ANSI 변환 레이어 우회)
     if (bStarted)
@@ -374,32 +375,32 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
 
                     UE_LOG(LogPSGameInstance, Log, TEXT("Steam Lobby Data 저장 완료: HostName=%s"), *HostName);
 
-                    /*
+                    
 
                     // 4) CurrentSessionName 읽기
-                    FString StoredSessionName;
-                    if (Settings.Get(FName("CurrentSessionName"), StoredSessionName))
-                    {
-                        UE_LOG(LogPSGameInstance, Log, TEXT("Stored SessionName: %s"), *StoredSessionName);
-                    }
-                    else
-                    {
-                        UE_LOG(LogPSGameInstance, Warning, TEXT("CurrentSessionName 키가 없습니다."));
-                    }
+                    //FString StoredSessionName;
+                    //if (Settings.Get(FName("CurrentSessionName"), StoredSessionName))
+                    //{
+                    //    UE_LOG(LogPSGameInstance, Log, TEXT("Stored SessionName: %s"), *StoredSessionName);
+                    //}
+                    //else
+                    //{
+                    //    UE_LOG(LogPSGameInstance, Warning, TEXT("CurrentSessionName 키가 없습니다."));
+                    //}
 
-                    FTCHARToUTF8 HostUtf8(*HostName);             // HostNick: 생성 전에 저장된 FString
-                    FTCHARToUTF8 NameUtf8(*StoredSessionName);    // SessionNameString: 마찬가지
+                    //FTCHARToUTF8 HostUtf8(*HostName);             // HostNick: 생성 전에 저장된 FString
+                    //FTCHARToUTF8 NameUtf8(*StoredSessionName);    // SessionNameString: 마찬가지
 
                     // 4-5) SteamMatchmaking()->SetLobbyData 호출
-                    SteamMatchmaking()->SetLobbyData(LobbyId, "HostName", HostUtf8.Get());
-                    SteamMatchmaking()->SetLobbyData(LobbyId, "CurrentSessionName", NameUtf8.Get());
+                    //SteamMatchmaking()->SetLobbyData(LobbyId, "HostName", HostUtf8.Get());
+                    //SteamMatchmaking()->SetLobbyData(LobbyId, "CurrentSessionName", NameUtf8.Get());
 
-                    UE_LOG(LogPSGameInstance, Log, TEXT("Steam Lobby Data 저장 완료: HostName=%s, SessionName=%s"), *HostName, *StoredSessionName);
-                    */
+                    //UE_LOG(LogPSGameInstance, Log, TEXT("Steam Lobby Data 저장 완료: HostName=%s, SessionName=%s"), *HostName, *StoredSessionName);
                 }
             }
         }
     }
+    */
 
 
     // 생성 후 자동으로 참가된 것이므로, 블루프린트에 “성공” 전달
@@ -1094,6 +1095,7 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
             continue;
         }
 
+        /*
         // 4) Steam 고유 ID 추출
         const FUniqueNetId& UniqueId = SearchResult.Session.SessionInfo->GetSessionId();
         const FUniqueNetIdSteam& SteamId = static_cast<const FUniqueNetIdSteam&>(UniqueId);
@@ -1118,6 +1120,24 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
         // 7) 이제 HostNick, SessionName 을 사용
         //UE_LOG(LogPSGameInstance, Log, TEXT("찾은 세션: Host=%s, Name=%s"), *HostNick, *SessionName);
         UE_LOG(LogPSGameInstance, Log, TEXT("찾은 세션: Host=%s"), *RawName);
+        */
+
+        const FOnlineSessionSettings& Settings = SearchResult.Session.SessionSettings;
+
+        // 2) HostName, CurrentSessionName 꺼내기
+        FString HostName;
+        if (!Settings.Get(FName("HostName"), HostName))
+        {
+            HostName = TEXT("UnknownHost");
+        }
+
+        FString SessionName;
+        if (!Settings.Get(FName("CurrentSessionName"), SessionName))
+        {
+            SessionName = TEXT("UnknownSession");
+        }
+
+        UE_LOG(LogPSGameInstance, Log, TEXT("찾은 세션: HostName = %s, CurrentSessionName = %s"), *HostName, *SessionName);
 
         // **여기서 다시 SessionSettings에 저장**
         // EOnlineDataAdvertisementType은 원래 쓰던 타입과 동일하게 사용
