@@ -337,82 +337,6 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
     // StartSession() 을 호출하지 않으면, 세션은 계속 “Lobby(대기 상태)”로 남아 있게 되고,
     // 클라이언트가 떠나도 “InProgress”가 아니므로 FindSessions에 계속 노출됨.
 
-    /*
-    UE_LOG(LogPSGameInstance, Log, TEXT("Steam Lobby Data에 UTF-8로 저장"));
-    // 4) Steam Lobby Data에 UTF-8로 저장 (ANSI 변환 레이어 우회)
-    if (bStarted)
-    {
-        // Steam OSS 인터페이스 얻기
-        IOnlineSubsystem* OSS = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
-        if (OSS)
-        {
-            IOnlineSessionPtr Sess = OSS->GetSessionInterface();
-            if (Sess.IsValid())
-            {
-                const FNamedOnlineSession* SteamSession = Sess->GetNamedSession(SessionName);
-                if (SteamSession && SteamSession->SessionInfo.IsValid())
-                {
-                    // 4-1) UniqueNetId 레퍼런스 얻기
-                    const FUniqueNetId& UniqueNetId = SteamSession->SessionInfo->GetSessionId();
-
-                    // 4-2) Steam 전용 ID로 캐스팅
-                    const FUniqueNetIdSteam& SteamId = static_cast<const FUniqueNetIdSteam&>(UniqueNetId);
-
-                    // 4-3) CSteamID 생성
-                    CSteamID LobbyId(SteamId);
-
-                    const FOnlineSessionSettings& Settings = NamedSession->SessionSettings;
-                    // 3) HostName 읽기
-                    FString HostName;
-                    if (Settings.Get(FName("HostName"), HostName))
-                    {
-                        UE_LOG(LogPSGameInstance, Log, TEXT("Stored HostNick: %s"), *HostName);
-                    }
-                    else
-                    {
-                        UE_LOG(LogPSGameInstance, Warning, TEXT("HostName 키가 없습니다."));
-                    }
-
-                    // 2) UTF-8로 세션 이름(방 이름) 덮어쓰기
-                    //    SessionNameString 은 CreateGameSession() 호출 시 저장해 둔 FString
-                    FTCHARToUTF8 NameUtf8(*HostName);
-                    SteamMatchmaking()->SetLobbyData(
-                        LobbyId,
-                        "name",               // **engine이 “알고 있는” 유일한 키**
-                        NameUtf8.Get()
-                    );
-
-                    // 4) CurrentSessionName 읽기
-                    FString StoredSessionName;
-                    if (Settings.Get(FName("CurrentSessionName"), StoredSessionName))
-                    {
-                        UE_LOG(LogPSGameInstance, Log, TEXT("Stored SessionName: %s"), *StoredSessionName);
-                    }
-                    else
-                    {
-                        UE_LOG(LogPSGameInstance, Warning, TEXT("CurrentSessionName 키가 없습니다."));
-                    }
-
-                    FTCHARToUTF8 Utf8Name(*StoredSessionName);
-                    FTCHARToUTF8 Utf8Host(*HostName);
-
-                    // Base64로 ASCII 문자열로 변환
-                    FString EncodedSessionName = FBase64::Encode(reinterpret_cast<const uint8*>(Utf8Name.Get()), (uint32)Utf8Name.Length());
-                    FString EncodedHostName = FBase64::Encode(reinterpret_cast<const uint8*>(Utf8Host.Get()), (uint32)Utf8Host.Length());
-
-                    // 4-5) SteamMatchmaking()->SetLobbyData 호출
-                    SteamMatchmaking()->SetLobbyData(LobbyId, "HostName", TCHAR_TO_UTF8(*EncodedHostName));
-                    SteamMatchmaking()->SetLobbyData(LobbyId, "CurrentSessionName", TCHAR_TO_UTF8(*EncodedSessionName));
-
-                    //UE_LOG(LogPSGameInstance, Log, TEXT("Steam Lobby Data 저장 완료: HostName=%s, SessionName=%s"), *HostName, *StoredSessionName);
-                    UE_LOG(LogPSGameInstance, Log, TEXT("Base64로 저장 — host=%s, session=%s"), *EncodedHostName, *EncodedSessionName);
-                }
-            }
-        }
-    }
-    */
-
-
     // 생성 후 자동으로 참가된 것이므로, 블루프린트에 “성공” 전달
     BlueprintJoinSessionsCompleteDelegate.Broadcast(true, TEXT("세션 생성 및 참가 완료"));
 }
@@ -1260,6 +1184,7 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 
         FBlueprintSessionResult BlueprintResult;
         BlueprintResult.OnlineResult = SearchResult;
+        BlueprintResult.OnlineResult.Session.OwningUserName = DecodedHost;
         ValidResults.Add(BlueprintResult);
     }
 
