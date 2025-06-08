@@ -264,7 +264,7 @@ void UPS_GameInstance::CreateSession(bool bMakePrivate, const FString& InPasswor
     FTCHARToUTF8 Utf8Host(*HostNick);
 
     // Base64로 ASCII 안전 문자열 생성
-    FString EncHost = FBase64::Encode(reinterpret_cast<const uint8*>(Utf8Host.Get()), (uint32)Utf8Host.Length());
+    FString EncHost = FBase64::Encode(reinterpret_cast<const uint8*>(Utf8Host.Get()), (uint32)Utf8Host.Length(), EBase64Mode::Standard);
 
     // SessionSettings 에 저장
     SessionSettings->Set(FName("HostNameB64"), EncHost, EOnlineDataAdvertisementType::ViaOnlineService);
@@ -1029,6 +1029,9 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
             continue;
         }
 
+        FBlueprintSessionResult BlueprintResult;
+        BlueprintResult.OnlineResult = SearchResult;
+
         const FOnlineSessionSettings& Settings = SearchResult.Session.SessionSettings;
         // 1) Base64 문자열 꺼내기
         FString EncHost;
@@ -1036,17 +1039,27 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 
         // 2) Base64 → UTF-8 바이트 디코딩
         TArray<uint8> HostBytes;
-        if (FBase64::Decode(EncHost, HostBytes))
-            HostBytes.Add(0);
+        FString DecodedHost;
+        bool bDecoded = FBase64::Decode(EncHost, HostBytes, EBase64Mode::Standard);
+        if (bDecoded && HostBytes.Num() > 0)
+        {
+            HostBytes.Add(0); // null-terminate
+
+            // UTF-8 → FString 복원
+            DecodedHost = UTF8_TO_TCHAR(reinterpret_cast<const char*>(HostBytes.GetData()));
+            UE_LOG(LogPSGameInstance, Log, TEXT("복원된 호스트 닉네임: %s"), *DecodedHost);
+            BlueprintResult.OnlineResult.Session.OwningUserName = DecodedHost;
+        }
+        else
+        {
+            UE_LOG(LogPSGameInstance, Warning, TEXT("Base64 디코딩 실패 또는 빈 값: EncHost='%s'"), *EncHost);
+        }
 
         // 3) FString 복원
-        FString DecodedHost = UTF8_TO_TCHAR(reinterpret_cast<const char*>(HostBytes.GetData()));
+        //FString DecodedHost = UTF8_TO_TCHAR(reinterpret_cast<const char*>(HostBytes.GetData()));
 
-        UE_LOG(LogPSGameInstance, Log, TEXT("호스트 닉네임: %s"), *DecodedHost);
+        //UE_LOG(LogPSGameInstance, Log, TEXT("호스트 닉네임: %s"), *DecodedHost);
 
-        FBlueprintSessionResult BlueprintResult;
-        BlueprintResult.OnlineResult = SearchResult;
-        BlueprintResult.OnlineResult.Session.OwningUserName = DecodedHost;
         ValidResults.Add(BlueprintResult);
     }
 
