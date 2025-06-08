@@ -311,6 +311,25 @@ void APS_GameMode::OnHUDInitialized()
     if (bIsGameStart && CurrentPlayersCount == 2)
     {
         //StartFirstWordSelectionTimer(SelectionTime);
+
+        if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+        {
+            CurrentMap = 1;
+            CurrentStage = 1;
+            CurrentLife = 3;
+
+            PS_GameInstance->SetMap(CurrentMap);
+            PS_GameInstance->SetStage(CurrentStage);
+            PS_GameInstance->SetLife(CurrentLife);
+        }
+
+        if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
+        {
+            PS_GameState->SetStage(CurrentMap, CurrentStage);
+            PS_GameState->SetLife(CurrentLife);
+        }
+
+
         PostStartFirstWordSelectionTimer(SelectionTime);
     }
 }

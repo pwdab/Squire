@@ -327,6 +327,68 @@ void UPS_GameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucce
     // StartSession() 을 호출하지 않으면, 세션은 계속 “Lobby(대기 상태)”로 남아 있게 되고,
     // 클라이언트가 떠나도 “InProgress”가 아니므로 FindSessions에 계속 노출됨.
 
+    UE_LOG(LogPSGameInstance, Log, TEXT("Steam Lobby Data에 UTF-8로 저장"));
+    // 4) Steam Lobby Data에 UTF-8로 저장 (ANSI 변환 레이어 우회)
+    if (bStarted)
+    {
+        // Steam OSS 인터페이스 얻기
+        IOnlineSubsystem* OSS = IOnlineSubsystem::Get(STEAM_SUBSYSTEM);
+        if (OSS)
+        {
+            IOnlineSessionPtr Sess = OSS->GetSessionInterface();
+            if (Sess.IsValid())
+            {
+                const FNamedOnlineSession* SteamSession = Sess->GetNamedSession(SessionName);
+                if (SteamSession && SteamSession->SessionInfo.IsValid())
+                {
+                    // 4-1) UniqueNetId 레퍼런스 얻기
+                    const FUniqueNetId& UniqueNetId = SteamSession->SessionInfo->GetSessionId();
+
+                    // 4-2) Steam 전용 ID로 캐스팅
+                    const FUniqueNetIdSteam& SteamId = static_cast<const FUniqueNetIdSteam&>(UniqueNetId);
+
+                    // 4-3) CSteamID 생성
+                    CSteamID LobbyId(SteamId);
+
+                    // 4-4) FTCHARToUTF8 로 UTF-8 바이트열 변환
+                    const FOnlineSessionSettings& Settings = NamedSession->SessionSettings;
+                    // 3) HostName 읽기
+                    FString HostName;
+                    if (Settings.Get(FName("HostName"), HostName))
+                    {
+                        UE_LOG(LogPSGameInstance, Log, TEXT("Stored HostNick: %s"), *HostName);
+                    }
+                    else
+                    {
+                        UE_LOG(LogPSGameInstance, Warning, TEXT("HostName 키가 없습니다."));
+                    }
+
+                    // 4) CurrentSessionName 읽기
+                    FString StoredSessionName;
+                    if (Settings.Get(FName("CurrentSessionName"), StoredSessionName))
+                    {
+                        UE_LOG(LogPSGameInstance, Log, TEXT("Stored SessionName: %s"), *StoredSessionName);
+                    }
+                    else
+                    {
+                        UE_LOG(LogPSGameInstance, Warning, TEXT("CurrentSessionName 키가 없습니다."));
+                    }
+
+                    FTCHARToUTF8 HostUtf8(*HostName);             // HostNick: 생성 전에 저장된 FString
+                    FTCHARToUTF8 NameUtf8(*StoredSessionName);    // SessionNameString: 마찬가지
+
+                    // 4-5) SteamMatchmaking()->SetLobbyData 호출
+                    SteamMatchmaking()->SetLobbyData(LobbyId, "HostName", HostUtf8.Get());
+                    SteamMatchmaking()->SetLobbyData(LobbyId, "CurrentSessionName", NameUtf8.Get());
+
+                    UE_LOG(LogPSGameInstance, Log, TEXT("Steam Lobby Data 저장 완료: HostName=%s, SessionName=%s"),
+                        *HostName, *StoredSessionName);
+                }
+            }
+        }
+    }
+
+
     // 생성 후 자동으로 참가된 것이므로, 블루프린트에 “성공” 전달
     BlueprintJoinSessionsCompleteDelegate.Broadcast(true, TEXT("세션 생성 및 참가 완료"));
 }
@@ -1018,6 +1080,34 @@ void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
             // 빈 슬롯이 없는 세션이면 건너뛴다.
             continue;
         }
+
+        // 4) Steam 고유 ID 추출
+        const FUniqueNetId& UniqueId = SearchResult.Session.SessionInfo->GetSessionId();
+        const FUniqueNetIdSteam& SteamId = static_cast<const FUniqueNetIdSteam&>(UniqueId);
+        if (!SteamId.IsValid())
+            continue;
+
+        // operator CSteamID() 가 정의되어 있으므로 이렇게 간단히 변환
+        CSteamID LobbyId = *SteamId;
+
+        // 5) 직접 저장해 둔 UTF-8 문자열 꺼내기
+        const char* RawHostName = SteamMatchmaking()->GetLobbyData(LobbyId, "HostName");
+        const char* RawSessionName = SteamMatchmaking()->GetLobbyData(LobbyId, "CurrentSessionName");
+
+        // 6) UTF-8 → FString 복원
+        FString HostNick = RawHostName ? UTF8_TO_TCHAR(RawHostName) : FString();
+        FString SessionName = RawSessionName ? UTF8_TO_TCHAR(RawSessionName) : FString();
+
+        // 7) 이제 HostNick, SessionName 을 사용
+        UE_LOG(LogPSGameInstance, Log, TEXT("찾은 세션: Host=%s, Name=%s"), *HostNick, *SessionName);
+
+        // **여기서 다시 SessionSettings에 저장**
+        // EOnlineDataAdvertisementType은 원래 쓰던 타입과 동일하게 사용
+        const_cast<FOnlineSessionSettings&>(SearchResult.Session.SessionSettings)
+            .Set(FName("HostName"), HostNick, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+        const_cast<FOnlineSessionSettings&>(SearchResult.Session.SessionSettings)
+            .Set(FName("CurrentSessionName"), SessionName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+
         FBlueprintSessionResult BlueprintResult;
         BlueprintResult.OnlineResult = SearchResult;
         ValidResults.Add(BlueprintResult);
