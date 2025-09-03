@@ -1,52 +1,238 @@
-# Squire
+# The First Foreigner
+<p align="center">
+  <img src="images/The First Foreigner.jpg" alt="The First Foreigner" width="75%">>
+	<img src="images/The First Foreigner/features4.gif" width="32%">
+	<img src="images/The First Foreigner/features5.gif" width="32%">
+	<img src="images/The First Foreigner/features6.gif" width="32%">
+</p>
 
-## 데모
+## 🎮 게임 플레이
+- **직접 플레이**
+  - <img src="https://upload.wikimedia.org/wikipedia/commons/8/83/Steam_icon_logo.svg" width="15" align="absmiddle"/> [Steam](https://store.steampowered.com/app/3634090/The_First_Foreigner/)에서 게임 다운로드 후 실행
+- **플레이 영상**
+  - 아래 썸네일을 클릭하면 <img src="https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg" width="15" align="absmiddle"/> YouTube로 이동합니다.
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=AIy8zwr5r8M">
+    <img src="https://img.youtube.com/vi/AIy8zwr5r8M/0.jpg" width="50%">
+  </a>
+</div>
 
-- **플레이 방법**
-  - [Steam](https://store.steampowered.com/app/3634090/The_First_Foreigner/)에서 게임을 다운로드 받고, 실행합니다.   
-- **YouTube 링크**   
-  [![Project SQ 테스트 영상](https://img.youtube.com/vi/AIy8zwr5r8M/0.jpg)](https://www.youtube.com/watch?v=AIy8zwr5r8M)
-
----
-
-<br>
-
-## 프로젝트 소개
+## 📌 프로젝트 소개
+- **프로젝트 개요**   
+  Unreal Engine으로 제작한 3D 멀티플레이 캐주얼 게임\
+  두 명의 플레이어가 번갈아 제시어를 행동이나 사물로 표현하고, 상대가 이를 추리해 맞추는 방식
 - **개발 기간**   
-  2024.09.10 ~ 2024.12.06 (2025.05.19 Steam 업로드 완료)
+  2024.09.10 ~ 2024.12.06 : 리슨 서버 기반 빌드 개발 완료\
+  2025.05.17 ~ 2025.06.09 : Online Subsystem 기반 리팩토링 및 Steam 게시 완료
+- **개발 상태**   
+  Steam 게시 완료 (개발 종료)
 - **개발 환경**   
-  Unreal 5.2.1   
+  Unreal 5.2.1\
   Windows 10 (64bit)
-- **설명**   
-  Unreal Engine 5를 활용하여 제작한 리슨 서버 기반의 3D 멀티플레이 게임.   
-- **프로젝트 목적**   
-  Unreal Engine 5 프레임워크를 이해하고, 네트워크 프로그래밍을 적용해 클라이언트-서버 구조의 게임을 개발한다.   
-  제작된 게임은 패키징 및 배포 과정을 거쳐 실제 서비스로 제공하며, 유저들에게 피드백을 받아 게임을 개선하는 경험도 포함한다.
 - **멤버 구성**
-  - 기획 및 레벨 디자인 1명   
-  - 프로그래밍 1명   
-- **담당 업무**
-  - Replication 및 RPC를 통해 클라이언트-서버 간 데이터 동기화 및 명령 전파를 구현   
-  - Animation Blueprint, Montage, AnimNotify를 사용하여 애니메이션 전환을 제어   
-  - Interface 및 Actor Component를 활용하여 유연하고 재사용 가능한 시스템을 설계   
-  - Widget Blueprint를 활용하여 게임 로직과 연동된 동적 UI 시스템을 구현   
-  - Steamworks API를 활용하여 Steam과 연동 및 게임 매칭 시스템 구현   
-- **주요 기술 및 도구**   
-  - **Framework**   
-    - Unreal (C++, Blueprint)   
-    - Steamworks   
-  - **Network**   
-    - Replication, RPC, OnlineSubsystem   
-  - **UI**   
-    - UMG
+	기획 및 레벨 디자인 1명\
+	프로그래밍 1명
 
-<br>
+## 🎯 담당 업무
+- Unreal Gameplay Framework 기반 게임 플레이 로직 구현   
+- Replication·RPC 기반 클라이언트–서버 데이터 동기화 및 명령 처리   
+- Animation Blueprint·AnimInstance·State Machine 기반 캐릭터 애니메이션 제어   
+- Widget Blueprint 기반 동적 UI 제작 및 데이터 연동
+- Online Subsystem 기반 세션 관리 및 Steam 게시
 
----
+## 🛠 이슈 및 해결 과정
+- **캐릭터의 시선 Rotator 처리**
+	- **문제**   
+	  호스트 캐릭터는 시선 Rotator에 따라 정상적으로 회전\
+	  하지만 로컬 캐릭터는 시선 Rotator가 적용되지 않고 초기값으로 되돌아가는 현상이 발생   
+	  <div align="center">
+	    <img src="images/The First Foreigner/issues1-1.gif" width="50%">   
+	  </div>
+	  
+	- **원인**   
+	  AnimInstance::NativeUpdateAnimation()에서 캐릭터 시선의 Rotator를 직접 계산하고 Bone을 회전한 것이 문제\
+	  AnimInstance 멤버 변수는 동기화 되지 않으므로 로컬에서 변경된 시선 Rotator가 다른 로컬에 전파되지 않음
+		```C++
+		// Before
+		void UPS_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
+		{
+		  ︙
+			// AnimInstance에서 ControlRotation을 직접 계산
+			ControlRotation.Roll = -Character->GetControlRotation().Pitch + 90.0f;
+			if (ControlRotation.Roll < 0)
+			{
+			  ControlRotation.Roll += 360.0f;
+			}
+			ControlRotation.Roll = FMath::Clamp(ControlRotation.Roll, 90 - MAX_ROTATION_ROLL, 90 - MIN_ROTATION_ROLL);
+			ControlRotation.Yaw = Character->GetControlRotation().Yaw - 90.0f - Character->GetActorRotation().Yaw;
+		  ︙
+		}
+		```
+	
+	- **해결**   
+	  로컬 캐릭터의 시선 Rotator가 변경되면 RPC를 통해 서버에 전달하고, 서버가 NetMulticast로 모든 클라이언트에 전파하도록 구조를 변경   
+		```C++
+		// After
+		void APS_Character::SetHeadRotator(FRotator NewRotator)
+		{
+		  // 로컬에서 서버로 RPC 요청
+			SetHeadRotator_Server(NewRotator);
+		}
+		
+		UFUNCTION(Server, Reliable)
+		void SetHeadRotator_Server(FRotator NewRotator);
+		
+		void APS_Character::SetHeadRotator_Server_Implementation(FRotator NewRotator)
+		{
+		  // 서버에서 모든 클라이언트로 전파
+			SetHeadRotator_Client(NewRotator);
+		}
+		
+		UFUNCTION(NetMulticast, Reliable)
+		void SetHeadRotator_Client(FRotator NewRotator);
+		
+		void APS_Character::SetHeadRotator_Client_Implementation(FRotator NewRotator)
+		{
+			PS_AnimInstance->SetControlRotation(NewRotator);
+		}
+		```
+	
+	- **결과**   
+	  캐릭터의 시선 Rotator가 호스트와 모든 로컬 클라이언트에서 동일하게 동기화되어 자연스러운 시선 처리를 연출   
+	  <div align="center">
+	    <img src="images/The First Foreigner/features2.gif" width="50%">
+	  </div>
+	
+- **호스트 종료 시 클라이언트 세션이 초기화되지 않는 현상 수정**
+	- **문제**   
+	  호스트가 세션을 종료하면, 클라이언트의 세션이 정상적으로 종료되지 않아 존재하지 않는 세션에 접근하는 문제 발생\
+	  이로 인해 클라이언트는 Find Session 목록을 갱신하지 못하고, 강제로 Host Game을 실행해야만 정상적으로 출력됨   
+	  <div align="center">
+	    <img src="images/The First Foreigner/issues3-1.gif" width="50%">   
+	  </div>
+	  
+	- **원인**   
+	  호스트가 클라이언트보다 먼저 세션을 종료해 클라이언트에서는 이미 없는 세션을 참조하는 상태가 됨
+		```C++
+		// Before
+		void UPS_GameInstance::OnEndSessionComplete(FName SessionName, bool bWasSuccessful)
+		{
+		  ︙
+		    // 클라이언트 세션 종료 없이 호스트가 먼저 세션을 종료
+		    SessionInterface->DestroySession(CurrentSessionName);
+		  ︙
+		}
+		```
+	 
+	- **해결**   
+	  호스트가 세션을 종료하기 전에 모든 클라이언트를 순회하며 RPC를 통해 세션 종료를 요청하도록 변경\
+	  각 클라이언트는 GameInstance::LeaveSession()을 호출해 스스로 세션을 종료   
+		```C++
+		// After
+		void UPS_GameInstance::OnEndSessionComplete(FName SessionName, bool bWasSuccessful)
+		{
+		  ︙
+		    // 호스트 종료 전 모든 클라이언트에게 세션 종료 요청
+		    for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+		    {
+		        APS_PlayerController* PC = Cast<APS_PlayerController>(It->Get());
+		        if (PC && !PC->IsLocalController())
+		        {
+		            PC->Client_OnHostEndSession();
+		        }
+		    }
+	
+	 		// 호스트 세션 종료
+		    SessionInterface->DestroySession(CurrentSessionName);
+		  ︙
+		}
+		
+		UFUNCTION(Client, Reliable)
+		void Client_OnHostEndSession();
+		
+		void APS_PlayerController::Client_OnHostEndSession_Implementation()
+		{
+		    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+		    {
+		        // 클라이언트 세션 종료
+		        PS_GameInstance->LeaveSession();
+		    }
+		}
+		```
+	 
+	- **결과**   
+	  모든 클라이언트의 세션이 항상 정상적으로 종료되어 Find Session 목록이 정상적으로 출력됨   
+	  <div align="center">
+	    <img src="images/The First Foreigner/issues3-2.gif" width="50%">   
+	  </div>
 
-<br>
+- **유저의 Steam 닉네임이 비정상적으로 출력되는 현상 수정**
+	- **문제**   
+	  Find Session 결과에서 유저의 Steam 닉네임이 깨져 정상적인 구분이 불가능   
+	  <div align="center">
+	    <img src="images/The First Foreigner/issues3-1.png" width="50%">   
+	  </div>
+	  
+	- **원인**   
+	  Steam 닉네임은 한글 등 비-ASCII 문자를 포함할 수 있음\
+	  Unreal Engine은 닉네임을 UTF-16 기반 FString으로 받아오지만, Online Subsystem의 메타데이터 전송 구간은 ASCII를 전제로 직렬화\
+	  이 과정에서 UTF-16 → ASCII으로의 변환 손실이 발생하여 닉네임이 깨짐
+		```C++
+		// Before
+		void UPS_GameInstance::CreateSession(bool bMakePrivate, const FString& InPassword)
+		{
+		  ︙
+			// 호스트의 닉네임을 FString으로 받아옴
+			HostNick = Identity->GetPlayerNickname(*UserId);
+		
+			// FString을 변환 없이 그대로 SessionSettings에 저장
+			SessionSettings->Set(FName("HostName"), HostNick, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+		  ︙
+		}
+		```
+	- **해결**   
+	  세션 생성시 호스트의 Steam 닉네임을 UTF-8 → Base64 인코딩해 전송\
+	  클라이언트는 Base64 → UTF-8 → FString 디코딩 과정을 거쳐 깨지지 않은 문자열을 복원
+		```C++
+		// After
+		void UPS_GameInstance::CreateSession(bool bMakePrivate, const FString& InPassword)
+		{
+		  ︙
+			// FString을 UTF-8로 변환
+			FTCHARToUTF8 Utf8Host(*HostNick);
+			
+			// UTF-8을 Base64로 변환
+			FString EncHost = FBase64::Encode(reinterpret_cast<const uint8*>(Utf8Host.Get()), (uint32)Utf8Host.Length());
+			
+			// SessionSettings에 저장
+			SessionSettings->Set(FName("HostNameB64"), EncHost, EOnlineDataAdvertisementType::ViaOnlineService);
+		  ︙
+		}
+		
+		void UPS_GameInstance::OnFindSessionsComplete(bool bWasSuccessful)
+		{
+		  ︙
+			// SessionSettings에서 문자열을 꺼냄
+			FString EncHost;
+			Settings.Get(FName("HostNameB64"), EncHost);
+		
+			// Base64를 UTF-8로 변환
+			TArray<uint8> HostBytes;
+			if (FBase64::Decode(EncHost, HostBytes))
+				HostBytes.Add(0);
+		
+			// UTF-8을 FString으로 변환
+			FString DecodedHost = UTF8_TO_TCHAR(reinterpret_cast<const char*>(HostBytes.GetData()));
+		  ︙
+		}
+		```
+	- **결과**   
+	  ASCII 외 문자를 포함한 Steam 닉네임도 깨지지 않고 정상적으로 출력   
+	  <div align="center">
+	    <img src="images/The First Foreigner/issues3-2.png" width="50%">   
+	  </div>
 
-## 프로젝트 구조
+## 프로젝트 코드 구조도
 ```plaintext
 Source/
 ├── Project_S/
@@ -99,244 +285,6 @@ Content/
 │   ├── IA_*.uasset                     # 각 Action에 대한 값과 트리거를 설정
 └── └── IMC_Default.uasset              # InputAction과 키를 매핑
 ```
-                              
-<br>
-
----
-
-<br>
-
-## 주요 기능 및 구조도
-### 1. 게임 Session 생성 및 참가   
-  ![기능 1 이미지](images/features1.gif)
-- **설명**:   
-  Host가 Host Game 버튼을 눌러 게임 Session을 생성하고, 다른 유저는 Find Session 버튼을 눌러 생성된 게임 Session을 검색한다.   
-  참가하고자 하는 Sesison에 Join Session 버튼을 눌러 참가할 수 있다.   
-- **주요 기술**:   
-  UMG와 블루프린트를 이용한 MainMenu UI와 Session UI 제작   
-  Steamworks API를 활용한 게임 호스트 및 참가   
-- **구조도**:   
-  ![기능 1 구조도 1](images/features1-flowchart1.png)
-  ① Host Game 버튼을 누르면 GameInstance는 Steamworks API를 이용해 Session을 생성한다.   
-  ② Join Game 버튼을 누르면 Find_Session_UI를 화면에 출력한다.   
-  ③ Quit 버튼을 누르면 게임을 종료한다.   
-  ![기능 1 구조도 2](images/features1-flowchart2.png)   
-  ④ Find Session 버튼을 누르면 Session Scroll Box의 모든 요소들을 지우고, LAN 상에서 Session을 최대 10개 검색해 화면에 출력한다.   
-  ⑤ Back 버튼을 누르면 Main_Menu_UI를 화면에 출력한다.   
-  ![기능 1 구조도 3](images/features1-flowchart3.png)   
-  ⑥ Join 버튼을 누르면 Session에 참가한다. 만약 참가에 실패하면, 기존의 Session을 지우고 다시 시도한다.   
-
-### 2. 캐릭터 시선 처리  
-  ![기능 2 이미지](images/features2.gif)
-- **설명**:   
-  마우스로 캐릭터의 시선을 조종할 수 있다. 이때 일정 각도 이상으로 캐릭터의 고개가 회전하면 몸통이 따라 움직이게 된다.   
-  또한 카메라와 캐릭터 사이의 거리가 일정 이하로 가까워지면 캐릭터의 투명도가 증가해 시야를 넓힌다.   
-- **주요 기술**:   
-  RPC를 활용한 캐릭터의 Rotator 동기화
-- **구조도**:
-  ![기능 2 구조도 1](images/features2-flowchart1.png)
-  ① PS_Character.cpp의 Look() 메서드에서 ControlRotation를 이용해 HeadRotator 변수를 초기화한다. 이때 캐릭터의 머리가 과도하게 꺾이지 않도록 각도에 제한을 두었다.   
-  ② PS_Character.cpp의 SetHeadRotator() 메서드에서 RPC을 통해 모든 클라이언트의 PS_AnimInstance에게 HeadRotator 변수의 값을 전달한다. RPC를 사용했기 때문에 모든 클라이언트에게 동일한 값이 전달된다.   
-  ③ 모든 클라이언트의 PS_AnimInstance.cpp의 SetControlRotation() 메서드에서 전달받은 인자의 값을 이용해 Head 본의 Rotation을 바꾼다. 이를 통해 캐릭터의 고개가 항상 카메라가 바라보는 방향과 일치하게 된다.   
-  ![기능 2 구조도 2](images/features2-flowchart2.png)
-  ④ PS_Character.cpp의 Tick() 메서드에서 캐릭터의 몸통 Rotation(빨간색 화살표) 값과 캐릭터의 고개 Rotation(노란색 화살표) 값의 차이를 계산한다.   
-  ⑤ 몸통 Rotation 값과 캐릭터의 고개 Rotation 값이 일정한 각도보다 커지게 되면 캐릭터의 몸통을 캐릭터의 고개가 바라보는 방향으로 회전시킨다.
-  ![기능 2 구조도 3](images/features2-flowchart3.png)
-  ⑦ BP_Character 블루프린트의 틱 이벤트 노드에서 카메라와 캐릭터 사이의 거리를 계산한다. 이때 거리가 일정 이하로 가까워지면 Local에서 컨트롤 되는 Character의 DitherAlpha 값을 카메라와 캐릭터 사이의 거리를 선형 변환한 값으로 바꾼다. 이때 DitherAlpha는 캐릭터의 Material에서 투명도를 조절하는 값이다.
-
-### 3. 게임 흐름 제어와 데이터 동기화   
-  ![기능 3 이미지](images/features3.gif)
-- **설명**:   
-  한 유저가 단어를 선택하면 선택한 단어를 기억한다.   
-  일정 시간 이후 다른 유저가 제시어를 유추하는데, 이때 선택한 단어와 유추한 단어가 일치하면 정답으로 판정하고 다음 스테이지를 진행한다.   
-  일치하지 않으면 오답으로 판정하고 Life를 차감한다. 이 과정에서 유저 간 데이터가 동기화 되어야 한다.   
-- **주요 기술**:   
-  GameMode를 통한 게임 흐름 제어, 변수 Replication을 통한 데이터 동기화
-- **구조도**:
-  ![기능 3 구조도](images/features3-flowchart1.png)
-  ① PS_GameMode.cpp에서 상황에 따라 각 PlayerController에 맞는 UI를 출력하도록 요청한다. 이때 RPC를 활용해 PlayerController에 UI를 정확히 출력하도록 했고, 타이머의 남은 시간이 정확하게 전달될 수 있도록 했다.   
-  ② 플레이어가 제시어를 선택하기 전, PS_GameMode.cpp에서 제시어를 저장하고 있는 변수인 SelectedWord를 초기화하도록 요청한다. 이때 RPC를 활용해 모든 클라이언트가 동일한 SelectedWord 변수에 대해 초기화를 진행하고 동기화하도록 했다.
-<br>
-
----
-
-<br>
-
-## 이슈 및 해결 과정
-### 0. 기획 변경
-- **문제**:   
-  [최초 기획서](docs/24.09.01_최초_기획서.pdf)   
-  최초에 작성 되었던 기획서를 바탕으로 개발을 한 지 한달 반 정도 지났을 무렵, 멘토로부터 해당 프로젝트의 기획을 변경했으면 좋겠다는 요청을 받았다.
-- **원인**:   
-  이 프로젝트는 3개월의 개발 시간을 목표로 시작한 프로젝트였다. 하지만 최초 기획서에서 기획한 게임이 3개월 내에 개발할 볼륨의 게임이 아니라 1년 혹은 그 이상의 개발 기간을 필요로 할 것이라는 우려가 있었다.
-- **해결**:  
-  [수정한 기획서](docs/2차_기획서.pdf)   
-  이후 팀원과 상의하여 지금까지 개발한 기능의 일부를 폐기하더라도 기획을 틀어 지금의 캐주얼 게임을 개발하게 되었다. 결국 1개월이라는 짧은 시간 안에 해당 게임을 개발했고, 시간이 더 많았더라면 더 많은 기능을 구현했을 것이라는 아쉬움이 남아 있다.
-### 1. 캐릭터의 시선 처리   
-  ![이슈 1 이미지](images/issues1.gif)   
-  (좌 : 서버, 우 : 클라이언트)
-- **문제**:   
-  마우스로 캐릭터의 시선을 움직이는 기능을 구현하고, 캐릭터의 몸통 또한 시선을 따라가는 기능을 구현하는 도중 클라이언트 측 플레이어의 화면에서 다른 플레이어의 회전이 비정상적으로 출력됐다.
-- **원인**:   
-  PS_Character.cpp의 코드에서 단순히 SetActorRotation 메서드를 사용한 것이 문제였다. 로컬 변수의 값이 변경되었을 때, 서버는 클라이언트에게 레플리케이션을 통해 값이 변경되었음을 알릴 수 있다. 하지만 클라이언트는 서버에게 RPC를 사용하지 않으면 값이 변경되었음을 알릴 수 없다. 따라서 클라이언트의 Rotation이 변경되었음에도 다른 클라이언트들은 값이 변경되지 않았다고 판단해 계속 원래의 값으로 돌아가 이러한 문제가 발생한 것이다.
-  ```c++
-  PS_Character.cpp
-  void APS_Character::Look(const FInputActionValue& Value)
-  {
-  ...
-    // delta_angle이 70도보다 커지면 캐릭터의 몸체도 같이 움직여 delta_angle이 70도보다 커지는 것을 방지
-    // 오른쪽으로 회전
-    if (delta_angle > 70)
-    {
-      ActorYaw += delta_angle - 70.0f;
-      FRotator new_rotator = GetActorRotation();
-      new_rotator.Yaw = ActorYaw;
-      SetActorRotation(new_rotator);
-    }
-    // 왼쪽으로 회전
-    else if (delta_angle < -70)
-    {
-      ActorYaw += delta_angle + 70.0f;
-      FRotator new_rotator = GetActorRotation();
-      new_rotator.Yaw = ActorYaw;
-      SetActorRotation(new_rotator);
-    }
-  ...
-  }
-  ```
-- **해결**:   
-  클라이언트 플레이어의 Rotation 값이 변경되면 변경된 Rotation 값을 인자로 RPC를 요청하도록 수정했다. 이때 서버는 접속한 모든 클라이언트에게 변경된 Rotation 값으로 SetActorRotation 메서드를 호출하도록 해 모든 플레이어의 회전이 정상적으로 출력된다.
-  ```c++
-  PS_Character.cpp
-  void APS_Character::Look(const FInputActionValue& Value)
-  {
-  ...
-    // delta_angle이 70도보다 커지면 캐릭터의 몸체도 같이 움직여 delta_angle이 70도보다 커지는 것을 방지
-    // 오른쪽으로 회전
-    if (delta_angle > 70)
-    {
-      ActorYaw += delta_angle - 70.0f;
-      FRotator new_rotator = GetActorRotation();
-      new_rotator.Yaw = ActorYaw;
-      RotateActor(new_rotator);
-      bIsTurning = true;
-    }
-    // 왼쪽으로 회전
-    else if (delta_angle < -70)
-    {
-      ActorYaw += delta_angle + 70.0f;
-      FRotator new_rotator = GetActorRotation();
-      new_rotator.Yaw = ActorYaw;
-      RotateActor(new_rotator);
-      bIsTurning = true;
-    }
-    // delta_angle이 70도보다 커지면 캐릭터의 몸체를 카메라 방향으로 천천히 돌린다
-    if (FMath::Abs(ControlYaw - ActorYaw) <= 10.0f)
-    {
-      bIsTurning = false;
-    }
-    else
-    {
-      RotateActor(FMath::RInterpTo(GetActorRotation(), FRotator(GetActorRotation().Pitch, Controller->GetControlRotation().Yaw, GetActorRotation().Roll), GetWorld()->GetDeltaSeconds(), 5.0f));
-    }
-  ...
-  }
-    
-  void APS_Character::RotateActor(FRotator NewRotator)
-  {
-     RotateActor_Server(NewRotator);
-  }
-  void APS_Character::RotateActor_Server_Implementation(FRotator NewRotator)
-  {
-     RotateActor_Client(NewRotator);
-  }
-  void APS_Character::RotateActor_Client_Implementation(FRotator NewRotator)
-  {
-     SetActorRotation(NewRotator);
-  }
-  ```
-
-### 2. 타이머의 남은 시간 동기화
-  ![이슈 2 이미지](images/issues2.gif)   
-  (좌 : 서버, 우 : 클라이언트)
-- **문제**:   
-  서버 플레이어는 타이머의 남은 시간이 정상적으로 출력되지만, 클라이언트 플레이어는 타이머의 남은 시간이 비정상적으로 출력됐다.
-- **원인**:   
-  타이머를 ms 단위까지 표시하기 위해 int32가 아닌 FTimerHandle을 사용한 것이 문제였다. 타이머 UI의 남은 시간을 새로 설정할 때마다 GameMode.cpp에서 GetWorldTimerManager().SetTimer 메서드를 이용해 FTimerHandle를 초기화했다. 그리고 초기화한 FTimerHandle을 PlayerController가 HUD에 전달해 모든 클라이언트에 타이머를 출력하고자 했다. 하지만 GameMode는 서버에만 존재하므로 클라이언트에서 접근할 수 없었고, 따라서 클라이언트의 FTimerHandle은 값이 항상 null이었다.
-  ```c++
-  PS_GameMode.cpp
-  void APS_GameMode::StartGameAfter5Seconds()
-  {
-      // 타이머 설정
-      GetWorldTimerManager().SetTimer(StartGameTimerHandle, this, &APS_GameMode::OnStartGameAfter5SecondsComplete, GameStartWaitTime, false);
-  
-      // 모든 Player의 Stage UI 수정
-      for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
-      {
-          APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
-          if (PS_PlayerController)
-          {
-              PS_PlayerController->ReadyStartGame(StartGameTimerHandle);
-          }
-      }
-  }
-  ```
-
-  ```c++
-  PS_PlayerController.cpp
-  void APS_PlayerController::ReadyStartGame_Implementation(FTimerHandle TimerHandle)
-  {
-      APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
-      if (PS_HUD)
-      {
-          PS_HUD->SetStageTimer(TimerHandle);
-          PS_HUD->ShowTimer();
-      }
-  }
-  ```
-
-- **해결**:   
-  GameMode에서 PlayerController에게 FTimerHandle를 전달하지 않고, 남은 시간을 계산한 float 값을 전달하도록 수정했다. GameMode는 서버에 존재하므로 모든 PlayerController에게 float 값을 복사해 전달할 수 있었다.
-  ```c++
-  PS_GameMode.cpp
-  void APS_GameMode::StartGameAfter5Seconds()
-  {
-      // 타이머 설정
-      GetWorldTimerManager().SetTimer(StartGameTimerHandle, this, &APS_GameMode::OnStartGameAfter5SecondsComplete, GameStartWaitTime, false);
-  
-      // 모든 Player의 Stage UI 수정
-      for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
-      {
-          APS_PlayerController* PS_PlayerController = Cast<APS_PlayerController>(It->Get());
-          if (PS_PlayerController)
-          {
-              PS_PlayerController->ReadyStartGame(GetWorld()->GetTimerManager().GetTimerRemaining(StartGameTimerHandle));
-          }
-      }
-  }
-  ```
-
-  ```c++
-  PS_PlayerController.cpp
-  void APS_PlayerController::ReadyStartGame_Implementation(float RemainingTime)
-  {
-      APS_HUD* PS_HUD = Cast<APS_HUD>(GetHUD());
-      if (PS_HUD)
-      {
-          PS_HUD->SetStageTimer(RemainingTime);
-          PS_HUD->ShowTimer();
-      }
-  }
-  ```
-- **예상되는 문제**:   
-  위의 해결 방안은 레이턴시나 패킷 손실을 고려하지 않은 코드이다. 따라서 서버에서 출력되는 남은 시간과 클라이언트에서 출력되는 남은 시간이 서로 일치하지 않을 가능성이 여전히 남아 있다. 추후 예상되는 문제를 모두 해결한 코드로 수정해야 할 것이다.
-
-
-<br>
-
----
-
-<br>
 
 ## 프로젝트를 마치며...
   현재 서비스 되고 있는 게임의 절반 이상이 네트워크 기반의 멀티플레이 게임이라고 생각한다. 따라서 네트워크 기반의 게임 개발 역량이 필요한 것은 명백했다. 지금까지 이러한 게임의 개발을 경험해 본 적은 없었지만, 조금 욕심을 내어 이러한 프로젝트에 도전해보고 싶었다.   
