@@ -1,4 +1,4 @@
-# The First Foreigner <img src="https://img.shields.io/badge/Unreal%20Engine-0E1128?style=for-the-badge&logo=unrealengine&logoColor=white" align="absmiddle"/> <img src="https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=cplusplus&logoColor=white" align="absmiddle"/>
+# The First Foreigner <img src="https://img.shields.io/badge/Unreal%20Engine-0E1128?style=for-the-badge&logo=unrealengine&logoColor=white" align="absmiddle"/> <img src="https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=cplusplus&logoColor=white" align="absmiddle"/> <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" align="absmiddle"/> <img src="https://img.shields.io/badge/Steam-000000?style=for-the-badge&logo=steam&logoColor=white" align="absmiddle"/>
 <p align="center">
   <img src="images/The First Foreigner.jpg" alt="The First Foreigner" width="75%">>
 	<img src="images/The First Foreigner/features4.gif" width="32%">
@@ -41,7 +41,7 @@
 - Online Subsystem 기반 세션 관리 및 Steam 게시
 
 ## 🛠 이슈 및 해결 과정
-- **캐릭터의 시선 Rotator 처리**
+- **캐릭터 시선 Rotator 불일치**
 	- **문제**   
 	  호스트 캐릭터는 시선 Rotator에 따라 정상적으로 회전\
 	  하지만 로컬 캐릭터는 시선 Rotator가 적용되지 않고 초기값으로 되돌아가는 현상이 발생   
@@ -103,7 +103,7 @@
 	    <img src="images/The First Foreigner/features2.gif" width="50%">
 	  </div>
 	
-- **호스트 종료 시 클라이언트 세션이 초기화되지 않는 현상 수정**
+- **클라이언트 세션이 초기화되지 않는 현상**
 	- **문제**   
 	  호스트가 세션을 종료하면, 클라이언트의 세션이 정상적으로 종료되지 않아 존재하지 않는 세션에 접근하는 문제 발생\
 	  이로 인해 클라이언트는 Find Session 목록을 갱신하지 못하고, 강제로 Host Game을 실행해야만 정상적으로 출력됨   
@@ -166,7 +166,7 @@
 	    <img src="images/The First Foreigner/issues3-2.gif" width="50%">   
 	  </div>
 
-- **유저의 Steam 닉네임이 비정상적으로 출력되는 현상 수정**
+- **Steam 닉네임이 비정상적으로 출력**
 	- **문제**   
 	  Find Session 결과에서 유저의 Steam 닉네임이 깨져 정상적인 구분이 불가능   
 	  <div align="center">
