@@ -232,7 +232,7 @@
 	    <img src="images/The First Foreigner/issues3-2.png" width="50%">   
 	  </div>
 
-## 프로젝트 코드 구조도
+## 프로젝트 구조
 ```plaintext
 Source/
 ├── Project_S/
