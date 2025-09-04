@@ -61,6 +61,11 @@ APS_GameMode::APS_GameMode()
     UE_LOG(Project_S, Warning, TEXT(" "));
 }
 
+APS_GameMode::~APS_GameMode()
+{
+    PS_LOG_S(Log);
+}
+
 void APS_GameMode::BeginPlay()
 {
     Super::BeginPlay(); 
@@ -164,6 +169,8 @@ void APS_GameMode::PostLogin(APlayerController* NewPlayer)
 void APS_GameMode::Logout(AController* Exiting)
 {
     Super::Logout(Exiting);
+
+    PS_LOG_S(Log);
     //CurrentPlayersCount--;
 }
 
@@ -194,6 +201,7 @@ void APS_GameMode::TransitionToStage(uint8 MapNumber, uint8 StageNumber)
             PS_GameState->SetLife(CurrentLife);
             PS_GameState->SetGameStart(bIsGameStart);
         }
+
         GetWorld()->ServerTravel(TEXT("/Game/Maps/Level_Test?listen"), true);
     }
     else
@@ -212,6 +220,7 @@ void APS_GameMode::TransitionToStage(uint8 MapNumber, uint8 StageNumber)
             PS_GameState->SetGameStart(bIsGameStart);
         }
         //GetWorld()->ServerTravel(MapName, true);
+
         GetWorld()->ServerTravel(TEXT("/Game/Maps/Level_0_new?listen"), true);
     }
 }
@@ -250,6 +259,8 @@ void APS_GameMode::PostSeamlessTravel()
 
 void APS_GameMode::InitVariables()
 {
+    PS_LOG_S(Log);
+
     CurrentMap = 1;
     CurrentStage = 1;
     CurrentLife = 3;
@@ -272,6 +283,8 @@ void APS_GameMode::InitVariables()
 
 void APS_GameMode::OnHUDInitialized()
 {
+    PS_LOG_S(Log);
+
     CurrentPlayersCount++;
     UE_LOG(Project_S, Log, TEXT("CurrentPlayersCount = %d\n"), CurrentPlayersCount);
 
@@ -298,12 +311,33 @@ void APS_GameMode::OnHUDInitialized()
     if (bIsGameStart && CurrentPlayersCount == 2)
     {
         //StartFirstWordSelectionTimer(SelectionTime);
+
+        if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+        {
+            CurrentMap = 1;
+            CurrentStage = 1;
+            CurrentLife = 3;
+
+            PS_GameInstance->SetMap(CurrentMap);
+            PS_GameInstance->SetStage(CurrentStage);
+            PS_GameInstance->SetLife(CurrentLife);
+        }
+
+        if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
+        {
+            PS_GameState->SetStage(CurrentMap, CurrentStage);
+            PS_GameState->SetLife(CurrentLife);
+        }
+
+
         PostStartFirstWordSelectionTimer(SelectionTime);
     }
 }
 
 void APS_GameMode::StartGameAfter5Seconds()
 {
+    PS_LOG_S(Log);
+
     // 타이머 설정
     GetWorldTimerManager().SetTimer(StartGameTimerHandle, this, &APS_GameMode::OnStartGameAfter5SecondsComplete, GameStartWaitTime, false);
 
@@ -321,6 +355,7 @@ void APS_GameMode::StartGameAfter5Seconds()
 
 void APS_GameMode::ClearStartGameTimer()
 {
+    PS_LOG_S(Log);
     GetWorldTimerManager().ClearTimer(StartGameTimerHandle);
     //StartGameTimerHandle.Invalidate();
 
@@ -339,9 +374,12 @@ void APS_GameMode::ClearStartGameTimer()
 void APS_GameMode::OnStartGameAfter5SecondsComplete()
 {
     PS_LOG_S(Log);
+
     bIsGameStart = true;
     if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
     {
+        //if (!PS_GameInstance->StartGame()) return;
+
         PS_GameInstance->SetIsGameStart(bIsGameStart);
     }
     if (APS_GameState* PS_GameState = GetGameState<APS_GameState>())
@@ -365,6 +403,7 @@ void APS_GameMode::OnStartGameAfter5SecondsComplete()
 
 void APS_GameMode::PostStartFirstWordSelectionTimer(int TimeLimit)
 {
+    PS_LOG_S(Log);
     // 타이머 설정
     GetWorldTimerManager().SetTimer(SelectionUITimerHandle, this, &APS_GameMode::OnPostStartFirstWordSelectionTimerComplete, TimeLimit, false);
 
@@ -388,6 +427,7 @@ void APS_GameMode::PostStartFirstWordSelectionTimer(int TimeLimit)
 
 void APS_GameMode::OnPostStartFirstWordSelectionTimerComplete()
 {
+    PS_LOG_S(Log);
     // 모든 Player에 대기 메시지 제거
     for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; It++)
     {

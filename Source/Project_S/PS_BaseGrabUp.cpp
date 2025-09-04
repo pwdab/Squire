@@ -66,6 +66,21 @@ void APS_BaseGrabUp::Tick(float DeltaTime)
 
 		SetActorLocationandRotation(GetOwner()->GetActorLocation() + ViewVector * 250.0f + FVector(0.0f, 0.0f, 25.0f), NewRotation);
 	}
+
+	// 액터의 Z좌표가 일정 이하로 감소하면 맵 밖으로 떨어진 것으로 간주
+	if (GetActorLocation().Z <= -10000.0f)
+	{
+		FVector NextLocation = FVector(0.0f, 0.0f, 2500.0f);
+		SetActorLocation(NextLocation);
+
+		UPrimitiveComponent* RootPrim = Cast<UPrimitiveComponent>(GetRootComponent());
+		if (RootPrim && RootPrim->IsSimulatingPhysics())
+		{
+			// 선형 속도와 각속도 모두 0으로 설정
+			RootPrim->SetPhysicsLinearVelocity(FVector::ZeroVector);
+			RootPrim->SetPhysicsAngularVelocityInDegrees(FVector::ZeroVector);
+		}
+	}
 }
 
 // IPS_Grabable Interface functions

@@ -22,6 +22,8 @@ class PROJECT_S_API APS_GameMode : public AGameMode
 
 public:
 	APS_GameMode();
+	~APS_GameMode();
+
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 	virtual void PostSeamlessTravel() override;
@@ -98,9 +100,9 @@ private:
 	TArray<FString> ButtonWords;
 
 	// 타이머 시간
-	const uint8 GameStartWaitTime = 5;
-	const uint8 SelectionTime = 10;
-	const uint8 GameSessionTime = 45;
+	const uint8 GameStartWaitTime = 3;
+	const uint8 SelectionTime = 5;
+	const uint8 GameSessionTime = 30;
 
 	// Stage 변수
 	uint8 CurrentMap;

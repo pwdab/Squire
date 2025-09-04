@@ -20,6 +20,16 @@ void APS_PlayerController::BeginPlay()
     }
 }
 
+void APS_PlayerController::Client_OnHostEndSession_Implementation()
+{
+    UE_LOG(Project_S, Warning, TEXT("Clinet_LeaveSession"));
+    // 1) GameInstance에 접근해서 LeaveSession() 호출
+    if (UPS_GameInstance* PS_GameInstance = Cast<UPS_GameInstance>(GetGameInstance()))
+    {
+        PS_GameInstance->LeaveSession();
+    }
+}
+
 void APS_PlayerController::HandleNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString)
 {
     UE_LOG(Project_S, Warning, TEXT("Network Failure Detected: %s"), *ErrorString);
@@ -276,6 +286,8 @@ void APS_PlayerController::TransitionToStage_Implementation()
 void APS_PlayerController::TransitionToMainMenu()
 {
     PS_LOG_S(Log);
+
+    UE_LOG(Project_S, Log, TEXT("Transition To Main Menu Start"));
     
     IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
     if (OnlineSubsystem)
@@ -284,11 +296,13 @@ void APS_PlayerController::TransitionToMainMenu()
         if (SessionInterface.IsValid())
         {
             // 세션 종료
-            SessionInterface->DestroySession(NAME_GameSession, FOnDestroySessionCompleteDelegate::CreateUObject(this, &APS_PlayerController::OnDestroySessionComplete));
+            //SessionInterface->DestroySession(NAME_GameSession, FOnDestroySessionCompleteDelegate::CreateUObject(this, &APS_PlayerController::OnDestroySessionComplete));
+            ClientTravel(TEXT("/Game/Maps/Level_MainMenu"), ETravelType::TRAVEL_Absolute);
         }
     }
     else
     {
+        UE_LOG(Project_S, Log, TEXT("Transition To Main Menu Start"));
         // 세션 없이 직접 이동
         ClientTravel(TEXT("/Game/Maps/Level_MainMenu"), ETravelType::TRAVEL_Absolute);
     }

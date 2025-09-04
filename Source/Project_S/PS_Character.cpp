@@ -259,6 +259,17 @@ void APS_Character::Tick(float DeltaTime)
 
 	// 캐릭터가 공중에 떠 있으면 CharacterMovement의 RotationRate를 줄임
 	GetCharacterMovement()->RotationRate = (GetMovementComponent()->IsFalling() ? FRotator(0.0f, 150.0f, 0.0f) : FRotator(0.0f, 500.0f, 0.0f));
+
+
+	// 캐릭터의 Z좌표가 일정 이하로 감소하면 맵 밖으로 떨어진 것으로 간주
+	if (GetActorLocation().Z <= -10000.0f)
+	{
+		FVector NextLocation = FVector(0.0f, 0.0f, 2500.0f);
+		SetActorLocation(NextLocation);
+
+		GetCharacterMovement()->StopMovementImmediately();
+		GetCharacterMovement()->Velocity = FVector::ZeroVector;
+	}
 }
 
 void APS_Character::PostInitializeComponents()

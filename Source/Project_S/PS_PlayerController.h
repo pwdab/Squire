@@ -20,6 +20,10 @@ class PROJECT_S_API APS_PlayerController : public APlayerController
 public:
     void HandleNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString);
 
+    // 호스트가 RPC로 호출해줄 클라이언트용 함수 선언
+    UFUNCTION(Client, Reliable)
+    void Client_OnHostEndSession();
+
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = "Session")
     void DestroyCurrentSession();
 
